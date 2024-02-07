@@ -95,12 +95,25 @@ class ProjectEcoreGraph:
             return None
         return self.get_method_by_name(method_name, class_node)
 
+
     def get_method_by_name(self, name, structure):
         for method_object in structure.defines:
             if method_object.signature.method.tName == name:
                 return method_object
         return None
 
+    def get_module_by_location(self, location):
+        for module in self.graph.modules:
+            if module.location == location:
+                return module
+        return None
+
+    def get_method_in_module(self, method_name, module):
+        for object in module.contains:
+            if object.eClass == self.Types.METHOD_DEFINITION:
+                if object.signature.method.tName == method_name:
+                    return object
+        return None
     def get_package_by_path(self, path):
         package_hierarchy = path.replace(f"{self.root_directory}/", '').split('/')[:-1]
         parent_package = None
@@ -232,8 +245,8 @@ class ASTVisitor(ast.NodeVisitor):
             self.current_class = None
             self.current_method = self.graph_class.create_ecore_instance(self.graph_class.Types.METHOD_DEFINITION)
             self.graph_class.create_method_signature(self.current_method, node.name, node.args.args)
-            module_node = self.graph_class.get_class_by_name(self.graph_class.get_current_module().location)
-            module_node.defines.append(self.current_method)
+            module_node = self.graph_class.get_current_module()
+            module_node.contains.append(self.current_method)
         self.generic_visit(node)
 
     def get_dependency_nodes(self, structure):
@@ -271,33 +284,40 @@ class ASTVisitor(ast.NodeVisitor):
             if self.current_method is not None:
                 caller_node = self.current_method
             else:
-                module_node = self.graph_class.get_class_by_name(self.graph_class.get_current_module().location)
-                caller_node = self.graph_class.get_method_by_name(self.graph_class.get_current_module().location, module_node)
+                module_node = self.graph_class.get_module_by_location(self.graph_class.get_current_module().location)
+                caller_node = self.graph_class.get_method_in_module(self.graph_class.get_current_module().location, module_node)
                 if caller_node is None:
                     caller_node = self.graph_class.create_ecore_instance(self.graph_class.Types.METHOD_DEFINITION)
                     self.graph_class.create_method_signature(caller_node, self.graph_class.get_current_module().location, [])
-                    module_node.defines.append(caller_node)
+                    module_node.contains.append(caller_node)
+            for call_object in caller_node.accessing:
+                if call_object.target == called_node:
+                    self.generic_visit(node)
+                    return
             call = self.graph_class.create_ecore_instance(self.graph_class.Types.CALL)
             call.source = caller_node
             call.target = called_node
+            self.generic_visit(node)
 
-    # def visit_Assign(self, node):
-    #     for target in node.targets:
-    #         if isinstance(target, ast.Attribute) and isinstance(target.value, ast.Name) and isinstance(node.value, ast.Call):
-    #             class_name = target.value.id
+    def visit_Assign(self, node):
+        for target in node.targets:
+            if isinstance(target, ast.Attribute) and isinstance(target.value, ast.Name) and isinstance(node.value, ast.Call):
+                class_name = target.value.id
     #             attribute_name = target.attr
     #             self.graph.classes.append(Class(name=class_name))
     #             self.graph.add_edge(class_name, attribute_name)
     #             self.graph.add_edge(class_name, node.value.func.id)
+        self.generic_visit(node)
+
+    def visit_AugAssign(self, node):
+        pass
 
 
-
-project_directory = 'D:/Dokumente/Studium/Informatik/04/Studienprojekt'#/studienprojekt-grundrissgenerierung'
-output_file = 'test.xmi'
-
+project_directory = '/home/marwin/Documents/Studienprojekt_Master/studienprojekt-grundrissgenerierung'
+#project_directory = 'D:/Dokumente/Studium/Informatik/04/Studienprojekt'#/studienprojekt-grundrissgenerierung'
 project_graph = ProjectEcoreGraph(project_directory)
 
 rset = ResourceSet()
-resource = rset.create_resource(URI(output_file))
+resource = rset.create_resource(URI('test.xmi'))
 resource.append(project_graph.get_graph())
 resource.save()
