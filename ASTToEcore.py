@@ -23,7 +23,7 @@ class ProjectEcoreGraph:
         self.classes_without_module = []
         self.current_module = None
 
-        python_files = [os.path.join(root, file) for root, _, files in os.walk(project_directory) for file in files if file.endswith('.py')]
+        python_files = [os.path.join(root, file) for root, _, files in os.walk(self.root_directory) for file in files if file.endswith('.py')]
 
         for file_path in python_files:
             self.process_file(file_path)

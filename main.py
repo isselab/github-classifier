@@ -24,7 +24,7 @@ if __name__ == '__main__':
                 print(f"Problem with repository {repository}. Skipping.")
                 skip_counter += 1
         else:
+            skip_counter += 1
             repositories.remove(repository)
     print("------------------------------------")
     print(f"Skipped {skip_counter} of {len(repositories)}.")
-    
