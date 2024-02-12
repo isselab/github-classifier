@@ -2,8 +2,10 @@ import os
 from ASTToEcore import ProjectEcoreGraph
 from pyecore.resources import ResourceSet, URI
 
-repository_directory = '/mnt/volume1/mlexpmining/cloned_repos/'
-output_directory = '/mnt/volume1/mlexpmining/ecore_graphs/'
+# repository_directory = '/mnt/volume1/mlexpmining/cloned_repos/'
+# output_directory = '/mnt/volume1/mlexpmining/ecore_graphs/'
+repository_directory = '../Manual Analysis'
+output_directory = '../ecore_test'
 
 if __name__ == '__main__':
     if not os.path.exists(output_directory):
@@ -20,7 +22,8 @@ if __name__ == '__main__':
                 resource = resource_set.create_resource(URI(f"{output_directory}/{repository}.xmi"))
                 resource.append(project_graph.get_graph())
                 resource.save()
-            except:
+            except Exception as e:
+                print(e)
                 print(f"Problem with repository {repository}. Skipping.")
                 skip_counter += 1
         else:
