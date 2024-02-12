@@ -3,7 +3,7 @@ from ASTToEcore import ProjectEcoreGraph
 from pyecore.resources import ResourceSet, URI
 
 repository_directory = '/mnt/volume1/mlexpmining/cloned_repos/'
-output_directory = '/home/se-shk/Documents/github-classifier/output'
+output_directory = '/mnt/volume1/mlexpmining/ecore_graphs/'
 
 if __name__ == '__main__':
     if not os.path.exists(output_directory):
