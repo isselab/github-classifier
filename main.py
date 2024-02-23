@@ -2,15 +2,10 @@ import os
 from ASTToEcore import ProjectEcoreGraph
 from pyecore.resources import ResourceSet, URI
 
-<<<<<<< HEAD
 # repository_directory = '/mnt/volume1/mlexpmining/cloned_repos/'
 # output_directory = '/mnt/volume1/mlexpmining/ecore_graphs/'
 repository_directory = '../Manual Analysis'
 output_directory = '../ecore_test'
-=======
-repository_directory = '/mnt/volume1/mlexpmining/systems_dataset/'
-output_directory = '/mnt/volume1/mlexpmining/systems_ecore/'
->>>>>>> 8d986f1a725e4b8090186092ff4b80625588cfe3
 
 if __name__ == '__main__':
     if not os.path.exists(output_directory):

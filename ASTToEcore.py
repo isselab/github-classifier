@@ -14,8 +14,8 @@ class ProjectEcoreGraph:
         resource_set = ResourceSet()
         metamodel_resource = resource_set.get_resource(URI('metamodel.ecore'))
 
-        self.package = metamodel_resource.contents[0]
-        self.graph = self.package.getEClassifier('TypeGraph')(tName=self.root_directory.split('/')[-1])
+        self.epackage = metamodel_resource.contents[0]
+        self.graph = self.epackage.getEClassifier('TypeGraph')(tName=self.root_directory.split('/')[-1])
 
         self.instances = []
         self.imports = []
@@ -28,8 +28,8 @@ class ProjectEcoreGraph:
         for file_path in python_files:
             self.process_file(file_path)
 
-    def get_package(self):
-        return self.package
+    def get_epackage(self):
+        return self.epackage
 
     def get_graph(self):
         return self.graph
@@ -169,7 +169,7 @@ class ProjectEcoreGraph:
         return None
 
     def create_ecore_instance(self, type):
-        return self.package.getEClassifier(type.value)()
+        return self.epackage.getEClassifier(type.value)()
 
     def create_method_signature(self, method_node, name, arguments):
         method_signature = self.create_ecore_instance(self.Types.METHOD_SIGNATURE)
