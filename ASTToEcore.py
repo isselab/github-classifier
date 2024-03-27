@@ -5,14 +5,13 @@ from pyecore.resources import ResourceSet, URI
 
 
 class ProjectEcoreGraph:
-    def __init__(self, directory):
+    def __init__(self, directory, resource_set: ResourceSet):
         if directory is None or directory == '':
             raise ValueError('Directory is required')
 
         self.root_directory = directory.replace('\\', '/')
 
-        resource_set = ResourceSet()
-        metamodel_resource = resource_set.get_resource(URI('metamodel.ecore'))
+        metamodel_resource = resource_set.get_resource(URI('Basic.ecore'))
 
         self.epackage = metamodel_resource.contents[0]
         self.graph = self.epackage.getEClassifier('TypeGraph')(tName=self.root_directory.split('/')[-1])
