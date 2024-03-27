@@ -16,8 +16,8 @@ class ProjectEcoreGraph:
         self.epackage = metamodel_resource.contents[0]
         self.graph = self.epackage.getEClassifier('TypeGraph')(tName=self.root_directory.split('/')[-1])
 
-        self.instances = []
-        self.imports = []
+        self.instances = []  #entry structure [instance_name, class_name]
+        self.imports = []  #entry structure [module, alias]
         self.methods_without_signature = []
         self.classes_without_module = []
         self.current_module = None
@@ -55,6 +55,7 @@ class ProjectEcoreGraph:
     def add_method_without_signature(self, method_node):
         self.methods_without_signature.append(method_node)
 
+    #this function parses the code into an ast and traverses it for conversion into a metamodel, the modules are created here
     def process_file(self, path):
         path = path.replace('\\', '/')
         self.instances = []
@@ -124,7 +125,7 @@ class ProjectEcoreGraph:
     def get_method_by_name(self, name, structure):
         for method_object in structure.defines:
             if method_object.signature.method.tName == name:
-                return method_object
+                return method_object  #this is a TMethodDefinition object
         return None
 
     def get_module_by_location(self, location):
@@ -186,7 +187,8 @@ class ProjectEcoreGraph:
             method_signature.parameters.append(parameter)
 
         method_node.signature = method_signature
-
+    
+    #programm entities in metamodel
     class Types(Enum):
         CALL = "TCall"
         CLASS = "TClass"
@@ -198,11 +200,12 @@ class ProjectEcoreGraph:
         PACKAGE = "TPackage"
         PARAMETER = "TParameter"
 
-
+#class ASTVisitor defines the visits of the different node types of the ast
+#ASTVisitor calls the functions of ProjectEcoreGraph to create ecore instances
 class ASTVisitor(ast.NodeVisitor):
     def __init__(self, graph_class):
         self.graph = graph_class.get_graph()
-        self.graph_class = graph_class
+        self.graph_class = graph_class  #graph_class is the ecore graph instance
         self.current_method = None
         self.current_class = None
         self.current_indentation = 0

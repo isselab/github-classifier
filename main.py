@@ -21,7 +21,7 @@ if __name__ == '__main__':
         if os.path.isdir(current_directory):
             try:
                 project_graph = ProjectEcoreGraph(current_directory, resource_set)
-
+                #resource to serialize the metamodels
                 resource = resource_set.create_resource(URI(f"{output_directory}/{repository}.xmi"), use_uuid=True)
                 resource.append(project_graph.get_graph())
                 resource.save()
