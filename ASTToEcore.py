@@ -83,13 +83,13 @@ class ProjectEcoreGraph:
         first_name = name.split('.')[0]
         for import_reference in self.imports:
             if import_reference[1] == first_name:
-                return import_reference[0], 0
+                return import_reference[0], 0  #return module of the alias and 0 for type
         for instance in self.instances:
             if instance[0] == name:
                 for import_reference in self.imports:
                     if import_reference[1] == instance[1]:
                         return import_reference[0], 0
-                return instance[1], 1
+                return instance[1], 1  #return class_name of instance and 1 for type
         return None, None
 
     def get_class_by_name(self, name, structure=None, create_if_not_found=True, module=None, move_to_module=True):
