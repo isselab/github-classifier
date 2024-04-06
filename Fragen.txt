@@ -1,2 +1,5 @@
 #what calls do we want to appear in the files?!!! anscheinende werden in den test repos die definierten methoden nicht aufgerufen..nur paar importierte
        #--> dann müsste ich für die je ein tmodul objekt bauen mit den methoden um call mit target zu setzen
+
+
+das merkwürdige ist ich erstelle nur call objekte wenn ich geprüft habe ob ich ein target objekt habe, trotzdem sind manche/viele nicht gesetzt
