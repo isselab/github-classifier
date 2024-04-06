@@ -186,6 +186,7 @@ class ProjectEcoreGraph:
                 if object.signature.method.tName == method_name:
                     return object
         return None
+    
     def get_package_by_path(self, path):
         package_hierarchy = path.replace(f"{self.root_directory}/", '').split('/')[:-1]
         parent_package = None
@@ -365,6 +366,7 @@ class ASTVisitor(ast.NodeVisitor):
         self.instance_missing = None
 
         called_module = instance_from_graph.split('.')[0]
+        print(called_module)
         called_method = instance_from_graph.split('.')[-1]
         
         #check if called method is a constructor 
@@ -426,6 +428,11 @@ class ASTVisitor(ast.NodeVisitor):
         #check after all the files are processed if modules and methods called exist then
         if self.instance_missing is not None:
             self.graph_class.call_list.append([self.instance_missing, caller_node])
+        
+        if self.instance_missing is None: #mmmhhh now no targets appear but calls exist at least some of them
+            #what calls do we want to appear in the files?
+            self.generic_visit(node)
+            return
         else: #i tried checking here if self.called_node is set, did not change a lot of targets not being set
             call = self.graph_class.create_ecore_instance(self.graph_class.Types.CALL)
             call.source = caller_node
