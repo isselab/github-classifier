@@ -29,19 +29,24 @@ class ProjectEcoreGraph:
 
         for file_path in python_files:
             self.process_file(file_path)
-        
+
         self.check_missing_calls()
 
     def check_missing_calls(self):
         for object in self.call_list:
             called_instance = object[0]
+            #print(called_instance)
             caller_node = object[1]
             called_module = called_instance.split('.')[0]
             called_method = called_instance.split('.')[-1]
             module_node = self.get_module_by_name(called_module)
+            #print(called_method)
             if module_node is not None:
                 method_node = self.get_method_in_module(called_method, module_node)
+                #print(module_node.contains)
+                #print(method_node)
                 if method_node is not None:
+                   # print(method_node)
                     call = self.create_ecore_instance(self.Types.CALL)
                     call.source = caller_node
                     call.target = method_node
@@ -185,6 +190,10 @@ class ProjectEcoreGraph:
             if object.eClass.name == self.Types.METHOD_DEFINITION.value:
                 if object.signature.method.tName == method_name:
                     return object
+            if object.eClass.name == self.Types.CLASS.value:
+                for meth in object.defines:
+                    if meth.signature.method.tName == method_name:
+                        return meth
         return None
     
     def get_package_by_path(self, path):
@@ -344,6 +353,8 @@ class ASTVisitor(ast.NodeVisitor):
             self.current_indentation = node.col_offset
         instance = ""
         instance_node = node.func
+
+        #Call node can contain different node types
         while isinstance(instance_node, ast.Attribute):
             instance = f"{instance_node.attr}.{instance}"
             instance_node = instance_node.value
@@ -364,9 +375,9 @@ class ASTVisitor(ast.NodeVisitor):
         method_name = instance_name.split('.')[-1]
         self.called_node = None
         self.instance_missing = None
-
+        #if isinstance(instance_node, ast.Name) --> dann nur call machen bzw rest checken?
         called_module = instance_from_graph.split('.')[0]
-        print(called_module)
+        #print(called_module)
         called_method = instance_from_graph.split('.')[-1]
         
         #check if called method is a constructor 
@@ -375,12 +386,12 @@ class ASTVisitor(ast.NodeVisitor):
             return
 
         #if e.g. os.os was imported
-        if called_module == called_method:
-            self.generic_visit(node)
-            return
+       # if called_module == called_method:
+            #self.generic_visit(node)
+            #return
         
         #set called_node
-
+        #print(instance_from_graph, type)
         if type == 1: #instance from class being called
             self.graph_class.remove_instance(instance_name)
             instance_node = self.get_dependency_nodes(instance_name)
@@ -397,8 +408,10 @@ class ASTVisitor(ast.NodeVisitor):
         if type == 0: #instance from module being called
             module = instance_from_graph.split('.')[0]
             instance_node = self.graph_class.get_module_by_name(module)
+            #print(instance_node)
             if instance_node is not None:
                 called_node = self.graph_class.get_method_in_module(method_name, instance_node)
+                #print(called_node)
                 self.called_node = called_node
             if self.called_node is None and instance_node is not None:
                 called_node = self.graph_class.create_ecore_instance(self.graph_class.Types.METHOD_DEFINITION)
@@ -408,6 +421,7 @@ class ASTVisitor(ast.NodeVisitor):
                 self.called_node = called_node
             if instance_node is None:
                 self.instance_missing = instance_from_graph
+                #print(self.instance_missing)
 
         #set caller_node
         if self.current_method is not None:
@@ -428,12 +442,20 @@ class ASTVisitor(ast.NodeVisitor):
         #check after all the files are processed if modules and methods called exist then
         if self.instance_missing is not None:
             self.graph_class.call_list.append([self.instance_missing, caller_node])
+        #if self.called_node is None:
+            #self.graph_class.call_list.append([self.instance_missing, caller_node])
         
-        if self.instance_missing is None: #mmmhhh now no targets appear but calls exist at least some of them
-            #what calls do we want to appear in the files?
-            self.generic_visit(node)
-            return
-        else: #i tried checking here if self.called_node is set, did not change a lot of targets not being set
+        #if self.instance_missing is None: #mmmhhh now no targets appear but calls exist at least some of them
+            
+            #self.generic_visit(node)
+            #return
+        #if self.called_node is not None: #i tried checking here if self.called_node is set, did not change a lot of targets not being set
+       # else:
+
+       #what calls do we want to appear in the files?!!! anscheinende werden in den test repos die definierten methoden nicht aufgerufen..nur paar importierte
+       #--> dann müsste ich für die je ein tmodul objekt bauen mit den methoden um call mit target zu setzen
+
+        if self.called_node is not None:
             call = self.graph_class.create_ecore_instance(self.graph_class.Types.CALL)
             call.source = caller_node
             call.target = self.called_node #set to Meth Def
