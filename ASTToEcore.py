@@ -22,10 +22,27 @@ class ProjectEcoreGraph:
         self.classes_without_module = []
         self.current_module = None
 
+        self.module_list = []
+        self.call_list = []
+
         python_files = [os.path.join(root, file) for root, _, files in os.walk(self.root_directory) for file in files if file.endswith('.py')]
 
         for file_path in python_files:
             self.process_file(file_path)
+        
+        self.check_missing_calls()
+
+    def check_missing_calls(self):
+        for object in self.call_list:
+            called_instance = object[0]
+            call = object[1]
+            called_module = called_instance.split('.')[0]
+            called_method = called_instance.split('.')[-1]
+            module_node = self.get_module_by_name(called_module)
+            if module_node is not None:
+                method_node = self.get_method_in_module(called_method, module_node)
+                call.target = method_node
+                    
 
     def get_epackage(self):
         return self.epackage
@@ -63,6 +80,7 @@ class ProjectEcoreGraph:
         self.current_module = self.create_ecore_instance(self.Types.MODULE)
         self.current_module.location = path.removesuffix('.py')
         path_split = self.current_module.location.replace(f"{self.root_directory}/", '').split('/')
+        self.current_module_name = path_split[-1]
         for class_object in self.classes_without_module:
             for index, path_part in enumerate(path_split):
                 if class_object.tName == path_part:
@@ -72,12 +90,19 @@ class ProjectEcoreGraph:
                     self.classes_without_module.remove(class_object)
                     class_object.delete()
         self.current_module.namespace = self.get_package_by_path(path)
+        self.module_list.append([self.current_module, self.current_module_name])
         self.graph.modules.append(self.current_module)
         with open(path, 'r') as file:
             code = file.read()
         tree = ast.parse(code)
         visitor = ASTVisitor(self)
         visitor.visit(tree)
+
+    def get_module_by_name(self, name):
+        for module in self.module_list:
+            if name == module[1]:
+                return module[0]
+        return None
 
     def get_reference_by_name(self, name):
         first_name = name.split('.')[0]
@@ -313,17 +338,41 @@ class ASTVisitor(ast.NodeVisitor):
         instances = instance.split('.')
         instances[0] = instance_from_graph
         instance_name = ".".join(instances)
-        if type == 1:
-            self.graph_class.remove_instance(instance_name)
-        instance_node = self.get_dependency_nodes(instance_name)
         method_name = instance_name.split('.')[-1]
+        self.called_node = None
+        self.instance_missing = None
 
-        called_node = self.graph_class.get_method_by_name(method_name, instance_node)
-        if called_node is None and instance_node is not None:
-            called_node = self.graph_class.create_ecore_instance(self.graph_class.Types.METHOD_DEFINITION)
-            self.graph_class.create_method_signature(called_node, method_name, [])
-            self.graph_class.add_method_without_signature(called_node)
-            instance_node.defines.append(called_node)
+        #set called_node
+
+        if type == 1: #instance from class being called
+            self.graph_class.remove_instance(instance_name)
+            instance_node = self.get_dependency_nodes(instance_name)
+            called_node = self.graph_class.get_method_by_name(method_name, instance_node)
+            self.called_node = called_node
+        
+            if self.called_node is None and instance_node is not None:
+                called_node = self.graph_class.create_ecore_instance(self.graph_class.Types.METHOD_DEFINITION)
+                self.graph_class.create_method_signature(called_node, method_name, [])
+                self.graph_class.add_method_without_signature(called_node)
+                instance_node.defines.append(called_node)
+                self.called_node = called_node
+
+        if type == 0: #instance from module being called
+            module = instance_from_graph.split('.')[0]
+            instance_node = self.graph_class.get_module_by_name(module)
+            if instance_node is not None:
+                called_node = self.graph_class.get_method_in_module(method_name, instance_node)
+                self.called_node = called_node
+            if self.called_node is None and instance_node is not None:
+                called_node = self.graph_class.create_ecore_instance(self.graph_class.Types.METHOD_DEFINITION)
+                self.graph_class.create_method_signature(called_node, method_name, [])
+                self.graph_class.add_method_without_signature(called_node)
+                instance_node.contains.append(called_node)
+                self.called_node = called_node
+            if instance_node is None:
+                self.instance_missing = instance_from_graph
+
+        #set caller_node
         if self.current_method is not None:
             caller_node = self.current_method
         else:
@@ -332,14 +381,19 @@ class ASTVisitor(ast.NodeVisitor):
             if caller_node is None:
                 caller_node = self.graph_class.create_ecore_instance(self.graph_class.Types.METHOD_DEFINITION)
                 self.graph_class.create_method_signature(caller_node, self.graph_class.get_current_module().location, [])
+                self.graph_class.add_method_without_signature(caller_node) #i added this
                 module_node.contains.append(caller_node)
         for call_object in caller_node.accessing:
-            if call_object.target == called_node:
+            if call_object.target == self.called_node:
                 self.generic_visit(node)
                 return
         call = self.graph_class.create_ecore_instance(self.graph_class.Types.CALL)
         call.source = caller_node
-        call.target = called_node
+
+        if self.instance_missing is not None:
+            self.graph_class.call_list.append([self.instance_missing, call])
+
+        call.target = self.called_node
         self.generic_visit(node)
 
     def visit_Assign(self, node):

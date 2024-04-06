@@ -4,7 +4,7 @@ from pyecore.resources import ResourceSet, URI
 
 # repository_directory = '/mnt/volume1/mlexpmining/cloned_repos/'
 # output_directory = '/mnt/volume1/mlexpmining/ecore_graphs/'
-#repository_directory = '../'
+#repository_directory = '../unit_testing'
 repository_directory = '../test_repository'
 output_directory = '../ecore_test'
 
