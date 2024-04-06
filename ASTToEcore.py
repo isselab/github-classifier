@@ -41,6 +41,20 @@ class ProjectEcoreGraph:
             module_node = self.get_module_by_name(called_module)
             if module_node is not None:
                 method_node = self.get_method_in_module(called_method, module_node)
+                if method_node is not None:
+                    call.target = method_node
+                if method_node is None:
+                    method_node = self.create_ecore_instance(self.Types.METHOD_DEFINITION) 
+                    self.create_method_signature(method_node, called_method, [])
+                    module_node.contains.append(method_node)
+                    call.target = method_node
+            if module_node is None:
+                module = self.create_ecore_instance(self.Types.MODULE)
+                method_node = self.create_ecore_instance(self.Types.METHOD_DEFINITION) #check existing methods again!
+                self.create_method_signature(method_node, called_method, [])
+                self.graph.modules.append(module)
+                self.module_list.append([module, called_module])
+                module.contains.append(method_node)
                 call.target = method_node
                     
 
