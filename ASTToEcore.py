@@ -35,27 +35,29 @@ class ProjectEcoreGraph:
     def check_missing_calls(self):
         for object in self.call_list:
             called_instance = object[0]
-            call = object[1]
+            caller_node = object[1]
             called_module = called_instance.split('.')[0]
             called_method = called_instance.split('.')[-1]
             module_node = self.get_module_by_name(called_module)
             if module_node is not None:
                 method_node = self.get_method_in_module(called_method, module_node)
                 if method_node is not None:
+                    call = self.create_ecore_instance(self.Types.CALL)
+                    call.source = caller_node
                     call.target = method_node
-                if method_node is None:
-                    method_node = self.create_ecore_instance(self.Types.METHOD_DEFINITION) 
-                    self.create_method_signature(method_node, called_method, [])
-                    module_node.contains.append(method_node)
-                    call.target = method_node
-            if module_node is None:
-                module = self.create_ecore_instance(self.Types.MODULE)
-                method_node = self.create_ecore_instance(self.Types.METHOD_DEFINITION) #check existing methods again!
-                self.create_method_signature(method_node, called_method, [])
-                self.graph.modules.append(module)
-                self.module_list.append([module, called_module])
-                module.contains.append(method_node)
-                call.target = method_node
+                #if method_node is None:
+                   # method_node = self.create_ecore_instance(self.Types.METHOD_DEFINITION) 
+                   # self.create_method_signature(method_node, called_method, [])
+                    #module_node.contains.append(method_node)
+                    #call.target = method_node
+            #if module_node is None:
+                #module = self.create_ecore_instance(self.Types.MODULE)
+                #method_node = self.create_ecore_instance(self.Types.METHOD_DEFINITION) #check existing methods again!
+                #self.create_method_signature(method_node, called_method, [])
+                #self.graph.modules.append(module)
+                #self.module_list.append([module, called_module])
+                #module.contains.append(method_node)
+                #call.target = method_node
                     
 
     def get_epackage(self):
@@ -401,13 +403,14 @@ class ASTVisitor(ast.NodeVisitor):
             if call_object.target == self.called_node:
                 self.generic_visit(node)
                 return
-        call = self.graph_class.create_ecore_instance(self.graph_class.Types.CALL)
-        call.source = caller_node
-
+            
         if self.instance_missing is not None:
-            self.graph_class.call_list.append([self.instance_missing, call])
+            self.graph_class.call_list.append([self.instance_missing, caller_node])
+        else:
+            call = self.graph_class.create_ecore_instance(self.graph_class.Types.CALL)
+            call.source = caller_node
+            call.target = self.called_node
 
-        call.target = self.called_node
         self.generic_visit(node)
 
     def visit_Assign(self, node):
