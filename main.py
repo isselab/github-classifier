@@ -7,6 +7,7 @@ from pyecore.resources import ResourceSet, URI
 #repository_directory = '../'
 repository_directory = '../test_repository'
 output_directory = '../ecore_test'
+xmi_files = '../test_xmi'
 
 if __name__ == '__main__':
     if not os.path.exists(output_directory):
