@@ -56,6 +56,7 @@ class ProjectEcoreGraph:
                 if method_node is None:
                     method_node = self.create_ecore_instance(self.Types.METHOD_DEFINITION) 
                     self.create_method_signature(method_node, called_method, [])
+                    #print(called_method) #looks ok here
                     module_node.contains.append(method_node)
                     call = self.create_ecore_instance(self.Types.CALL)
                     call.source = caller_node
@@ -65,12 +66,14 @@ class ProjectEcoreGraph:
                 module = self.create_ecore_instance(self.Types.MODULE)
                 method_node = self.create_ecore_instance(self.Types.METHOD_DEFINITION) #check existing methods again!
                 self.create_method_signature(method_node, called_method, [])
+                #print(called_method) #looks ok
                 self.graph.modules.append(module)
                 self.module_list.append([module, called_module])
                 module.contains.append(method_node)
                 call = self.create_ecore_instance(self.Types.CALL)
                 call.source = caller_node
                 call.target = method_node
+                #print(call.target)
         #maybe check here if module contains another module? for targets not set
                     
 
@@ -203,6 +206,7 @@ class ProjectEcoreGraph:
     
     def get_package_by_path(self, path):
         package_hierarchy = path.replace(f"{self.root_directory}/", '').split('/')[:-1]
+        #print(package_hierarchy)
         parent_package = None
         package_node = None
         for package in package_hierarchy:
@@ -215,7 +219,8 @@ class ProjectEcoreGraph:
             return_package = self.get_package_recursive(package_node, name, parent)
             if return_package is not None:
                 return return_package
-        package_node = self.create_ecore_instance(self.Types.PACKAGE)
+        #for subpackages always new object created here
+        package_node = self.create_ecore_instance(self.Types.PACKAGE) #only here is a TPackage instance created
         package_node.tName = name
         package_node.parent = parent
         if parent is None:
@@ -224,7 +229,7 @@ class ProjectEcoreGraph:
 
     def get_package_recursive(self, package_node, name, parent):
         if package_node.tName == name and package_node.parent == parent:
-            return package_node
+            return package_node #problem, subpackages are created multiple times because not checked here
         for subpackage in package_node.subpackages:
             return self.get_package_recursive(subpackage, name, package_node)
         return None
@@ -235,7 +240,7 @@ class ProjectEcoreGraph:
     def create_method_signature(self, method_node, name, arguments):
         method_signature = self.create_ecore_instance(self.Types.METHOD_SIGNATURE)
         method = self.create_ecore_instance(self.Types.METHOD)
-        method.tName = method_node.tName = name
+        method.tName = name
         method.model = self.graph
         method_signature.method = method
 
@@ -321,7 +326,7 @@ class ASTVisitor(ast.NodeVisitor):
                 method_node = self.graph_class.get_method_by_name(method_name, class_node)
                 if method_node is None:
                     method_node = self.graph_class.create_ecore_instance(self.graph_class.Types.METHOD_DEFINITION)
-                    self.graph_class.create_method_signature(method_node, item.name, item.args.args)
+                    self.graph_class.create_method_signature(method_node, method_name, item.args.args)
                     class_node.defines.append(method_node)
         self.generic_visit(node)
 
@@ -382,12 +387,11 @@ class ASTVisitor(ast.NodeVisitor):
         method_name = instance_name.split('.')[-1]
         self.called_node = None
         self.instance_missing = None
-        #if isinstance(instance_node, ast.Name) --> dann nur call machen bzw rest checken?
         called_module = instance_name.split('.')[0] 
         #print(called_module)
         called_method = instance_name.split('.')[-1]
         
-        #check if called method is a constructor 
+        #check if called method is a constructor , maybe look for init?
         if called_method[0].isupper():
             self.generic_visit(node)
             return
@@ -415,10 +419,8 @@ class ASTVisitor(ast.NodeVisitor):
         if type == 0: #instance from module being called
             module = instance_name.split('.')[0]
             instance_node = self.graph_class.get_module_by_name(module)
-            #print(instance_node)
             if instance_node is not None:
                 called_node = self.graph_class.get_method_in_module(method_name, instance_node)
-                #print(called_node)
                 self.called_node = called_node
             if self.called_node is None and instance_node is not None:
                 called_node = self.graph_class.create_ecore_instance(self.graph_class.Types.METHOD_DEFINITION)
@@ -428,18 +430,19 @@ class ASTVisitor(ast.NodeVisitor):
                 self.called_node = called_node
             if instance_node is None:
                 self.instance_missing = instance_name
-                #print(self.instance_missing)
 
         #set caller_node
         if self.current_method is not None:
             caller_node = self.current_method
         else:
             module_node = self.graph_class.get_module_by_location(self.graph_class.get_current_module().location)
-            caller_node = self.graph_class.get_method_in_module(self.graph_class.get_current_module().location, module_node)
+            method_location = self.graph_class.get_current_module().location
+            method_name = method_location.split('/')[-1]
+            caller_node = self.graph_class.get_method_in_module(method_name, module_node)
             if caller_node is None:
                 caller_node = self.graph_class.create_ecore_instance(self.graph_class.Types.METHOD_DEFINITION)
-                self.graph_class.create_method_signature(caller_node, self.graph_class.get_current_module().location, [])
-                self.graph_class.add_method_without_signature(caller_node) #i added this
+                self.graph_class.create_method_signature(caller_node, method_name, [])
+                self.graph_class.add_method_without_signature(caller_node) 
                 module_node.contains.append(caller_node)
         for call_object in caller_node.accessing:
             if call_object.target == self.called_node:
@@ -449,15 +452,6 @@ class ASTVisitor(ast.NodeVisitor):
         #check after all the files are processed if modules and methods called exist then
         if self.instance_missing is not None:
             self.graph_class.call_list.append([self.instance_missing, caller_node])
-        #if self.called_node is None:
-            #self.graph_class.call_list.append([self.instance_missing, caller_node])
-        
-        #if self.instance_missing is None: #mmmhhh now no targets appear but calls exist at least some of them
-            
-            #self.generic_visit(node)
-            #return
-        #if self.called_node is not None: #i tried checking here if self.called_node is set, did not change a lot of targets not being set
-       # else:
 
        #what calls do we want to appear in the files?!!! anscheinende werden in den test repos die definierten methoden nicht aufgerufen..nur paar importierte
        #--> dann müsste ich für die je ein tmodul objekt bauen mit den methoden um call mit target zu setzen
@@ -466,7 +460,6 @@ class ASTVisitor(ast.NodeVisitor):
             call = self.graph_class.create_ecore_instance(self.graph_class.Types.CALL)
             call.source = caller_node
             call.target = self.called_node #set to Meth Def
-            #print(call.target)
 
         self.generic_visit(node)
 
