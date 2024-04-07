@@ -71,6 +71,7 @@ class ProjectEcoreGraph:
                 call = self.create_ecore_instance(self.Types.CALL)
                 call.source = caller_node
                 call.target = method_node
+        #maybe check here if module contains another module? for targets not set
                     
 
     def get_epackage(self):
@@ -190,6 +191,7 @@ class ProjectEcoreGraph:
 
     def get_method_in_module(self, method_name, module):
         for object in module.contains:
+            #maybe check here if module contains another module? for targets not set
             if object.eClass.name == self.Types.METHOD_DEFINITION.value:
                 if object.signature.method.tName == method_name:
                     return object
