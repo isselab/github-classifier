@@ -9,7 +9,6 @@ class xmiToGcnConverter:
         self.adjacency_matrix = [] #weighted graph edges
 
         self.convert_nodes(self.typegraph_root)
-        #print(self.node_matrix)
 
     def get_node_matrix(self):
         return self.node_matrix
@@ -20,6 +19,7 @@ class xmiToGcnConverter:
     def get_graph_name(self):
         return self.typegraph_root.tName
     
+    #this is the main function, that converts the nodes in the ecore graph into a matrix structure
     def convert_nodes(self, typegraph):
         #convert packages and subpackages
         for tpackage in typegraph.packages:
@@ -59,12 +59,8 @@ class xmiToGcnConverter:
                                 if hasattr(tobject, 'defines'):
                                     self.convert_defined_methods(tobject)
                         if tobject.eClass.name == ProjectEcoreGraph.Types.METHOD_DEFINITION.value:
-                                current_method_def = None
-                                tobject_name = tobject.signature.method.tName
-                                tobject_name += '_definition'
-                                current_method_def = self.get_node(tobject_name, self.NodeLabels.METHOD_DEFINITION.value)
-                                if current_method_def is None:
-                                    self.node_matrix.append([self.NodeLabels.METHOD_DEFINITION.value, tobject_name])
+                            #here are the TMember objects checked
+                            self.convert_method_definitions(tobject)
             
         
         #convert methods and contained objects
@@ -102,15 +98,31 @@ class xmiToGcnConverter:
             if hasattr(child, 'defines'):
                     self.convert_defined_methods(child)
 
+    #convert TMethod objects that are defined within a class
     def convert_defined_methods(self, tclass):
         for tobject in tclass.defines:
                 if tobject.eClass.name == ProjectEcoreGraph.Types.METHOD_DEFINITION.value:
-                    current_method_def = None
-                    tobject_name = tobject.signature.method.tName
-                    tobject_name += '_definition'
-                    current_method_def = self.get_node(tobject_name, self.NodeLabels.METHOD_DEFINITION.value)
-                    if current_method_def is None:
-                        self.node_matrix.append([self.NodeLabels.METHOD_DEFINITION.value, tobject_name])
+                    self.convert_method_definitions(tobject)
+
+    #convert TMethodDefinition objects and contained call objects
+    def convert_method_definitions(self, t_meth_def):
+        current_method_def = None
+        tobject_name = t_meth_def.signature.method.tName
+        tobject_name += '_definition'
+        current_method_def = self.get_node(tobject_name, self.NodeLabels.METHOD_DEFINITION.value)
+        if current_method_def is None:
+            self.node_matrix.append([self.NodeLabels.METHOD_DEFINITION.value, tobject_name])
+            if hasattr(t_meth_def, 'accessing'):
+                self.convert_call(t_meth_def, tobject_name)
+
+    #convert call objects, are only contained in TMethodDefinition objects
+    def convert_call(self, tmethod_def, tmethod_def_name):
+        tmethod_def_name += '_call'
+        for c,call in enumerate(tmethod_def.accessing):
+            call_counter = c+1
+            calls = str(call_counter)
+            current_call = tmethod_def_name + calls
+            self.node_matrix.append([self.NodeLabels.CALL.value, current_call])
 
     #this function checks if a node already exists by comparing both features
     def get_node(self, node_name, type):
