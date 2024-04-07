@@ -42,25 +42,30 @@ class xmiToGcnConverter:
         
         #convert modules and contained objects
         for tmodule in typegraph.modules:
-            self.node_matrix.append([self.NodeLabels.MODULE.value, tmodule.location]) #maybe only use last element of location as name?
-            for tobject in tmodule.contains: #can contain TContainableElements (TAbstractType and TMember)
-                #check TAbstractTypes
-                if tobject.eClass.name == ProjectEcoreGraph.Types.CLASS.value:
-                    current_class = None
-                    current_class = self.get_node(tobject.tName, self.NodeLabels.CLASS.value)
-                    if current_class is None:
-                        self.node_matrix.append([self.NodeLabels.CLASS.value, tobject.tName])
-                        if hasattr(tobject, 'childClasses'):
-                            self.convert_childClasses(tobject)
-                        if hasattr(tobject, 'defines'):
-                            self.convert_defined_methods(tobject)
-                if tobject.eClass.name == ProjectEcoreGraph.Types.METHOD_DEFINITION.value:
-                    current_method_def = None
-                    tobject_name = tobject.signature.method.tName
-                    tobject_name += '_definition'
-                    current_method_def = self.get_node(tobject_name, self.NodeLabels.METHOD_DEFINITION.value)
-                    if current_method_def is None:
-                        self.node_matrix.append([self.NodeLabels.METHOD_DEFINITION.value, tobject_name])
+            current_module = None
+            current_module = self.get_node(tmodule.location, self.NodeLabels.MODULE.value)
+            if current_module is None:
+                self.node_matrix.append([self.NodeLabels.MODULE.value, tmodule.location]) #maybe only use last element of location as name?
+                if hasattr(tmodule, 'contains'):
+                    for tobject in tmodule.contains: #can contain TContainableElements (TAbstractType and TMember)
+                    #check TAbstractTypes
+                        if tobject.eClass.name == ProjectEcoreGraph.Types.CLASS.value:
+                            current_class = None
+                            current_class = self.get_node(tobject.tName, self.NodeLabels.CLASS.value)
+                            if current_class is None:
+                                self.node_matrix.append([self.NodeLabels.CLASS.value, tobject.tName])
+                                if hasattr(tobject, 'childClasses'):
+                                    self.convert_childClasses(tobject)
+                                if hasattr(tobject, 'defines'):
+                                    self.convert_defined_methods(tobject)
+                        if tobject.eClass.name == ProjectEcoreGraph.Types.METHOD_DEFINITION.value:
+                                current_method_def = None
+                                tobject_name = tobject.signature.method.tName
+                                tobject_name += '_definition'
+                                current_method_def = self.get_node(tobject_name, self.NodeLabels.METHOD_DEFINITION.value)
+                                if current_method_def is None:
+                                    self.node_matrix.append([self.NodeLabels.METHOD_DEFINITION.value, tobject_name])
+            
         
         #convert methods and contained objects
         for tmethod in typegraph.methods:
@@ -72,6 +77,13 @@ class xmiToGcnConverter:
                 for tobject in tmethod.signatures:
                     node_name += '_signature'
                     self.node_matrix.append([self.NodeLabels.METHOD_SIGNATURE.value, node_name])
+                    if hasattr(tobject, 'parameters'):
+                        node_name += '_param'
+                        for p,tparam in enumerate(tobject.parameters):
+                            param_counter = p+1
+                            current_param = str(param_counter)
+                            param_name = node_name + current_param
+                            self.node_matrix.append([self.NodeLabels.PARAMETER.value, param_name])
         
         #convert classes and contained objects
         for tclass in typegraph.classes:
@@ -107,8 +119,6 @@ class xmiToGcnConverter:
                 if type == current_node[0]:
                     return current_node
         return None
-
-
 
     class NodeLabels(Enum):
         PACKAGE = 1
