@@ -22,6 +22,7 @@ class ProjectEcoreGraph:
         self.classes_without_module = []
         self.current_module = None
 
+        self.package_list = [] #entry structure [package_node, name, parent]
         self.module_list = []
         self.call_list = []
 
@@ -216,16 +217,33 @@ class ProjectEcoreGraph:
 
     def get_package_by_name_and_parent(self, name, parent):
         for package_node in self.graph.packages:
-            return_package = self.get_package_recursive(package_node, name, parent)
+            return_package = self.get_package_recursive(package_node, name, parent) #this is weird
             if return_package is not None:
                 return return_package
         #for subpackages always new object created here
+        print(name, parent)
+        my_package = self.check_package_list(name, parent) #i added this to hopefully catch subpackages
+        #print(my_package)
+        if my_package is not None:
+            return my_package
         package_node = self.create_ecore_instance(self.Types.PACKAGE) #only here is a TPackage instance created
         package_node.tName = name
         package_node.parent = parent
+        self.package_list.append([package_node, name, parent]) #parent is also tpackage
+        #print(self.package_list)
         if parent is None:
             self.graph.packages.append(package_node)
         return package_node
+    
+    #this fixed the multiple subpackages
+    def check_package_list(self, package_name, parent):
+        for package in self.package_list:
+            if package_name == package[1]:
+                if parent is None and package[2] is None:
+                    return package[0]
+                if parent.tName == package[2].tName:
+                    return package[0]
+        return None
 
     def get_package_recursive(self, package_node, name, parent):
         if package_node.tName == name and package_node.parent == parent:
