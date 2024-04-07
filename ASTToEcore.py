@@ -25,6 +25,8 @@ class ProjectEcoreGraph:
         self.package_list = [] #entry structure [package_node, name, parent]
         self.module_list = []
         self.call_list = []
+        self.class_list = [] #these are currently empty
+        self.method_list = [] #these are currently empty
 
         python_files = [os.path.join(root, file) for root, _, files in os.walk(self.root_directory) for file in files if file.endswith('.py')]
 
@@ -207,7 +209,6 @@ class ProjectEcoreGraph:
     
     def get_package_by_path(self, path):
         package_hierarchy = path.replace(f"{self.root_directory}/", '').split('/')[:-1]
-        #print(package_hierarchy)
         parent_package = None
         package_node = None
         for package in package_hierarchy:
@@ -221,16 +222,13 @@ class ProjectEcoreGraph:
             if return_package is not None:
                 return return_package
         #for subpackages always new object created here
-        print(name, parent)
-        my_package = self.check_package_list(name, parent) #i added this to hopefully catch subpackages
-        #print(my_package)
+        my_package = self.check_package_list(name, parent) #i added this to catch subpackages
         if my_package is not None:
             return my_package
         package_node = self.create_ecore_instance(self.Types.PACKAGE) #only here is a TPackage instance created
         package_node.tName = name
         package_node.parent = parent
         self.package_list.append([package_node, name, parent]) #parent is also tpackage
-        #print(self.package_list)
         if parent is None:
             self.graph.packages.append(package_node)
         return package_node
