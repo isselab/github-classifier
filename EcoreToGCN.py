@@ -23,32 +23,90 @@ class xmiToGcnConverter:
     def convert_nodes(self, typegraph):
         #convert packages and subpackages
         for tpackage in typegraph.packages:
-            self.node_matrix.append([self.NodeLabels.PACKAGE.value, tpackage.tName])
-            if hasattr(tpackage, 'subpackages'):
-                for tsubpackage in tpackage.subpackages:
-                    self.node_matrix.append([self.NodeLabels.PACKAGE.value, tsubpackage.tName])
-                    if hasattr(tsubpackage, 'subpackages'):
-                        for tsubsubpackage in tsubpackage.subpackages:
-                            self.node_matrix.append([self.NodeLabels.PACKAGE.value, tsubsubpackage.tName])
+            current_package = None
+            current_subpackage = None
+            current_subsubpackage = None
+            current_package = self.get_node(tpackage.tName, self.NodeLabels.PACKAGE.value) #necessary because too many objects in xmi file
+            if current_package is None:
+                self.node_matrix.append([self.NodeLabels.PACKAGE.value, tpackage.tName])
+                if hasattr(tpackage, 'subpackages'): 
+                    for tsubpackage in tpackage.subpackages: 
+                        current_subpackage = self.get_node(tsubpackage.tName, self.NodeLabels.PACKAGE.value)
+                        if current_subpackage is None:
+                            self.node_matrix.append([self.NodeLabels.PACKAGE.value, tsubpackage.tName])
+                            if hasattr(tsubpackage, 'subpackages'):
+                                for tsubsubpackage in tsubpackage.subpackages:
+                                    current_subsubpackage = self.get_node(tsubsubpackage.tName, self.NodeLabels.PACKAGE.value)
+                                    if current_subsubpackage is None:
+                                        self.node_matrix.append([self.NodeLabels.PACKAGE.value, tsubsubpackage.tName])
         
         #convert modules and contained objects
         for tmodule in typegraph.modules:
-            self.node_matrix.append([self.NodeLabels.MODULE.value, tmodule.location])
-            for tobject in tmodule.contains:
+            self.node_matrix.append([self.NodeLabels.MODULE.value, tmodule.location]) #maybe only use last element of location as name?
+            for tobject in tmodule.contains: #can contain TContainableElements (TAbstractType and TMember)
+                #check TAbstractTypes
                 if tobject.eClass.name == ProjectEcoreGraph.Types.CLASS.value:
-                    self.node_matrix.append([self.NodeLabels.CLASS.value, tobject.tName])
+                    current_class = None
+                    current_class = self.get_node(tobject.tName, self.NodeLabels.CLASS.value)
+                    if current_class is None:
+                        self.node_matrix.append([self.NodeLabels.CLASS.value, tobject.tName])
+                        if hasattr(tobject, 'childClasses'):
+                            self.convert_childClasses(tobject)
+                        if hasattr(tobject, 'defines'):
+                            self.convert_defined_methods(tobject)
                 if tobject.eClass.name == ProjectEcoreGraph.Types.METHOD_DEFINITION.value:
-                    self.node_matrix.append([self.NodeLabels.METHOD_DEFINITION.value])
+                    current_method_def = None
+                    tobject_name = tobject.signature.method.tName
+                    tobject_name += '_definition'
+                    current_method_def = self.get_node(tobject_name, self.NodeLabels.METHOD_DEFINITION.value)
+                    if current_method_def is None:
+                        self.node_matrix.append([self.NodeLabels.METHOD_DEFINITION.value, tobject_name])
         
         #convert methods and contained objects
         for tmethod in typegraph.methods:
-            self.node_matrix.append([self.NodeLabels.METHOD.value, tmethod.tName])
-            for tobject in tmethod.signatures:
-                self.node_matrix.append([self.NodeLabels.METHOD_SIGNATURE.value])
+            current_method = None
+            current_method = self.get_node(tmethod.tName, self.NodeLabels.METHOD.value)
+            if current_method is None:
+                self.node_matrix.append([self.NodeLabels.METHOD.value, tmethod.tName])
+                node_name = tmethod.tName
+                for tobject in tmethod.signatures:
+                    node_name += '_signature'
+                    self.node_matrix.append([self.NodeLabels.METHOD_SIGNATURE.value, node_name])
         
         #convert classes and contained objects
         for tclass in typegraph.classes:
-            self.node_matrix.append([self.NodeLabels.CLASS.value, tclass.tName])
+            current_class = None
+            current_class = self.get_node(tclass.tName, self.NodeLabels.CLASS.value)
+            if current_class is None:
+                self.node_matrix.append([self.NodeLabels.CLASS.value, tclass.tName])
+                if hasattr(tclass, 'childClasses'):
+                    self.convert_childClasses(tclass)
+                if hasattr(tclass, 'defines'):
+                    self.convert_defined_methods(tclass)
+
+    def convert_childClasses(self, tclass):
+        for child in tclass.childClasses:
+            self.node_matrix.append([self.NodeLabels.CLASS.value, child.tName])
+            if hasattr(child, 'defines'):
+                    self.convert_defined_methods(child)
+
+    def convert_defined_methods(self, tclass):
+        for tobject in tclass.defines:
+                if tobject.eClass.name == ProjectEcoreGraph.Types.METHOD_DEFINITION.value:
+                    current_method_def = None
+                    tobject_name = tobject.signature.method.tName
+                    tobject_name += '_definition'
+                    current_method_def = self.get_node(tobject_name, self.NodeLabels.METHOD_DEFINITION.value)
+                    if current_method_def is None:
+                        self.node_matrix.append([self.NodeLabels.METHOD_DEFINITION.value, tobject_name])
+
+    #this function checks if a node already exists by comparing both features
+    def get_node(self, node_name, type):
+        for current_node in self.node_matrix:
+            if node_name == current_node[1]:
+                if type == current_node[0]:
+                    return current_node
+        return None
 
 
 
