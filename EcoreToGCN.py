@@ -7,6 +7,9 @@ class xmiToGcnConverter:
         self.node_matrix = [] #nxc feature matrix with n nodes and c features for each node: node type and identifier (e.g. name or location)
         self.adjacency_matrix = [] #weighted graph edges
 
+        self.convert_nodes(self.typegraph_root)
+        #print(self.node_matrix)
+
     def get_node_matrix(self):
         return self.node_matrix
     
@@ -15,6 +18,14 @@ class xmiToGcnConverter:
     
     def get_graph_name(self):
         return self.typegraph_root.tName
+    
+    def convert_nodes(self, typegraph):
+        for package in typegraph.packages:
+            self.node_matrix.append([self.NodeLabels.PACKAGE.value, package.tName])
+        
+        for module in typegraph.modules:
+            self.node_matrix.append([self.NodeLabels.MODULE.value, module.location])
+
 
 
     class NodeLabels(Enum):

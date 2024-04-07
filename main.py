@@ -37,6 +37,7 @@ if __name__ == '__main__':
             # repositories.remove(repository)
     print("------------------------------------")
     print(f"Skipped {skip_counter} of {len(repositories)}.")
+
     print("---------convert ecore graphs to matrix structure--------------")
     #load xmi instance
     skip_xmi = 0
@@ -60,12 +61,16 @@ if __name__ == '__main__':
 
             #save matrices in two text files
             new_resource_nodes = open(f"{gcn_input_directory}/{output_name}_nxc.txt", "w+") 
-            for node in output_node_matrix: #iterate over slices?!
-                new_resource_nodes.write(output_node_matrix[node]) #i may need second for line to iterate over slice contents
+            for node in output_node_matrix: #iterate over slices
+                for item in node:
+                    new_resource_nodes.write("%s " % item)
+                new_resource_nodes.write("\n") #write next slice (node) in new line
             new_resource_nodes.close()
             new_resource_edges = open(f"{gcn_input_directory}/{output_name}_adjacency.txt", "w+")
             for edge in output_adjacency_matrix:
-                new_resource_edges.write(output_adjacency_matrix[edge])
+                for item in edge:
+                    new_resource_edges.write("%s " % item)
+                new_resource_edges.write("\n")
             new_resource_edges.close()
         except Exception as e:
             print(e)
