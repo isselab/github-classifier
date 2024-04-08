@@ -162,14 +162,14 @@ class ProjectEcoreGraph:
         for class_object in self.classes_without_module:
             if class_object.tName == name:
                 if move_to_module and module is not None:
-                    class_object.module = module
+                    module.contains.append(class_object)
                     self.classes_without_module.remove(class_object)
                 return class_object
         if create_if_not_found:
             class_node = self.create_ecore_instance(self.Types.CLASS)
             class_node.tName = name
             if module is not None:
-                class_node.module = module
+                module.contains.append(class_node)
             else:
                 self.classes_without_module.append(class_node)
             structure.append(class_node)
