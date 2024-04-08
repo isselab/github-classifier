@@ -122,7 +122,7 @@ class ProjectEcoreGraph:
                 if class_object.tName == path_part:
                     if index == len(path_split) - 1:
                         for child in class_object.childClasses:
-                            self.current_module.contains.append(child)
+                            self.current_module.contains.append(child) #why append only children and not class itself?
                     self.classes_without_module.remove(class_object)
                     class_object.delete()
         self.current_module.namespace = self.get_package_by_path(path)
@@ -172,7 +172,7 @@ class ProjectEcoreGraph:
                 module.contains.append(class_node)
             else:
                 self.classes_without_module.append(class_node)
-            structure.append(class_node)
+            structure.append(class_node) #class appended to typegraph
             return class_node
         return None
 
@@ -218,11 +218,11 @@ class ProjectEcoreGraph:
 
     def get_package_by_name_and_parent(self, name, parent):
         for package_node in self.graph.packages:
-            return_package = self.get_package_recursive(package_node, name, parent) #this is weird
+            return_package = self.get_package_recursive(package_node, name, parent) 
             if return_package is not None:
                 return return_package
         #for subpackages always new object created here
-        my_package = self.check_package_list(name, parent) #i added this to catch subpackages
+        my_package = self.check_package_list(name, parent) #added to catch subpackages
         if my_package is not None:
             return my_package
         package_node = self.create_ecore_instance(self.Types.PACKAGE) #only here is a TPackage instance created
@@ -245,7 +245,7 @@ class ProjectEcoreGraph:
 
     def get_package_recursive(self, package_node, name, parent):
         if package_node.tName == name and package_node.parent == parent:
-            return package_node #problem, subpackages are created multiple times because not checked here
+            return package_node 
         for subpackage in package_node.subpackages:
             return self.get_package_recursive(subpackage, name, package_node)
         return None
@@ -390,35 +390,20 @@ class ASTVisitor(ast.NodeVisitor):
         instance = f"{instance_node.id}.{instance}"
         if instance.endswith('.'):
             instance = instance[:-1]
-        #print(instance.split('.')[-1])
         instance_from_graph, type = self.graph_class.get_reference_by_name(instance.replace(f".{instance.split('.')[-1]}", ''))
         if instance_from_graph is None:
             self.generic_visit(node)
             return
         instances = instance.split('.')
-        #print(instances)
         instances[0] = instance_from_graph
         instance_name = ".".join(instances)
-        #print(instance_name)
         method_name = instance_name.split('.')[-1]
         self.called_node = None
         self.instance_missing = None
         called_module = instance_name.split('.')[0] 
-        #print(called_module)
         called_method = instance_name.split('.')[-1]
         
-        #check if called method is a constructor , maybe look for init?
-        if called_method[0].isupper():
-            self.generic_visit(node)
-            return
-
-        #if e.g. os.os was imported
-       # if called_module == called_method:
-            #self.generic_visit(node)
-            #return
-        
         #set called_node
-        #print(instance_from_graph, type)
         if type == 1: #instance from class being called
             self.graph_class.remove_instance(instance_name)
             instance_node = self.get_dependency_nodes(instance_name)
@@ -460,6 +445,7 @@ class ASTVisitor(ast.NodeVisitor):
                 self.graph_class.create_method_signature(caller_node, method_name, [])
                 self.graph_class.add_method_without_signature(caller_node) 
                 module_node.contains.append(caller_node)
+        #check if call already exists
         for call_object in caller_node.accessing:
             if call_object.target == self.called_node:
                 self.generic_visit(node)
@@ -468,9 +454,6 @@ class ASTVisitor(ast.NodeVisitor):
         #check after all the files are processed if modules and methods called exist then
         if self.instance_missing is not None:
             self.graph_class.call_list.append([self.instance_missing, caller_node])
-
-       #what calls do we want to appear in the files?!!! anscheinende werden in den test repos die definierten methoden nicht aufgerufen..nur paar importierte
-       #--> dann müsste ich für die je ein tmodul objekt bauen mit den methoden um call mit target zu setzen
 
         if self.called_node is not None:
             call = self.graph_class.create_ecore_instance(self.graph_class.Types.CALL)
