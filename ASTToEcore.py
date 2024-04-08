@@ -39,7 +39,8 @@ class ProjectEcoreGraph:
         for object in self.call_list:
             called_instance = object[0]
             caller_node = object[1]
-            #called = called_instance.split('.')
+            called = called_instance.split('.')
+            #if len(called)>= 3: check middle instance?
             called_module = called_instance.split('.')[0]
             called_method = called_instance.split('.')[-1]
             module_node = self.get_module_by_name(called_module)
