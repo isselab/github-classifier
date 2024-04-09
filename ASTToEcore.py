@@ -38,7 +38,7 @@ class ProjectEcoreGraph:
     def check_missing_calls(self):
         for object in self.call_list:
             called_instance = object[0]
-            caller_node = object[2]
+            caller_node = object[1]
             call_check = False
             called_module = called_instance.split('.')[0]
             called_method = called_instance.split('.')[-1]
@@ -440,8 +440,8 @@ class ASTVisitor(ast.NodeVisitor):
                         self.graph_class.add_method_without_signature(called_node)
                         instance_node.contains.append(called_node)
                         self.called_node = called_node
-            if instance_node is None:
-                self.instance_missing = instance_name
+            #if instance_node is None:
+               # self.instance_missing = instance_name
 
         #set caller_node
         if self.current_method is not None:
@@ -461,7 +461,7 @@ class ASTVisitor(ast.NodeVisitor):
            
         #check after all the files are processed if modules and methods called exist then
         if self.instance_missing is not None:
-            self.graph_class.call_list.append([self.instance_missing, type, caller_node])
+            self.graph_class.call_list.append([self.instance_missing, caller_node])
 
         if self.called_node is not None:
             #check if identical call object already exists
