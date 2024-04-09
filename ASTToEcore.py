@@ -25,8 +25,8 @@ class ProjectEcoreGraph:
         self.package_list = [] #entry structure [package_node, name, parent]
         self.module_list = []
         self.call_list = []
-        self.class_list = [] #these are currently empty, use this to check if every created class is part of the typegraph at the end?
-        self.method_list = [] #these are currently empty
+        self.class_list = [] #entry structure [class_node, name, module], module can be None
+        self.method_list = [] #entry structure [method_node, name, module_node]
 
         python_files = [os.path.join(root, file) for root, _, files in os.walk(self.root_directory) for file in files if file.endswith('.py')]
 
@@ -171,24 +171,19 @@ class ProjectEcoreGraph:
                     self.classes_without_module.remove(class_object)
                 return class_object
         if create_if_not_found:
-            class_node = self.create_ecore_instance(self.Types.CLASS)
+            class_node = self.create_ecore_instance(self.Types.CLASS) #only here are class objects created
             class_node.tName = name
             if module is not None:
                 module.contains.append(class_node)
+                self.class_list.append([class_node, name, module])
             else:
                 self.classes_without_module.append(class_node)
+                self.class_list.append([class_node, name, None])
             structure.append(class_node) #class appended to typegraph
             return class_node
         return None
 
-    def get_method_in_class(self, class_name, method_name):
-        class_node = self.get_class_by_name(class_name)
-        if class_node is None:
-            return None
-        return self.get_method_by_name(method_name, class_node)
-
-
-    def get_method_by_name(self, name, structure):
+    def get_method_in_class(self, name, structure):
         for method_object in structure.defines:
             if method_object.signature.method.tName == name:
                 return method_object  #this is a TMethodDefinition object
@@ -202,11 +197,10 @@ class ProjectEcoreGraph:
 
     def get_method_in_module(self, method_name, module):
         for object in module.contains:
-            #maybe check here if module contains another module? for targets not set
             if object.eClass.name == self.Types.METHOD_DEFINITION.value:
                 if object.signature.method.tName == method_name:
                     return object
-            if object.eClass.name == self.Types.CLASS.value: #alternatively i could call get method by name here
+            if object.eClass.name == self.Types.CLASS.value: 
                 for meth in object.defines:
                     if meth.signature.method.tName == method_name:
                         return meth
@@ -261,8 +255,20 @@ class ProjectEcoreGraph:
     def get_method_from_internal_structure(self, method_name, module):
         for current_method in self.method_list:
             if method_name == current_method[1]: 
-                if module.location == current_method[2].location: #only works for modules within the repo not imported
+                if module is None and current_method[2] is None:
                     return current_method[0]
+                if module.location == current_method[2].location: 
+                    return current_method[0]
+        return None
+                
+    def get_class_from_internal_structure(self, class_name, module):
+        for current_class in self.class_list:
+            if class_name == current_class[1]:
+                if module is None and current_class[2] is None:
+                    return current_class[0]
+                if module.location == current_class[2].location:
+                    return current_class[0]
+        return None
 
     def create_method_signature(self, method_node, name, arguments):
         method_signature = self.create_ecore_instance(self.Types.METHOD_SIGNATURE)
@@ -353,7 +359,7 @@ class ASTVisitor(ast.NodeVisitor):
             if isinstance(item, ast.FunctionDef):
                 self.current_indentation = item.col_offset
                 method_name = item.name
-                method_node = self.graph_class.get_method_by_name(method_name, class_node)
+                method_node = self.graph_class.get_method_in_class(method_name, class_node)
                 if method_node is None:
                     method_node = self.graph_class.create_ecore_instance(self.graph_class.Types.METHOD_DEFINITION)
                     self.graph_class.create_method_signature(method_node, method_name, item.args.args)
@@ -363,7 +369,7 @@ class ASTVisitor(ast.NodeVisitor):
     def visit_FunctionDef(self, node):
         self.current_method = None
         if self.current_class is not None:
-            self.current_method = self.graph_class.get_method_by_name(node.name, self.current_class)
+            self.current_method = self.graph_class.get_method_in_class(node.name, self.current_class)
         if self.current_method is None:
             self.current_class = None
             self.current_method = self.graph_class.create_ecore_instance(self.graph_class.Types.METHOD_DEFINITION)
@@ -422,8 +428,8 @@ class ASTVisitor(ast.NodeVisitor):
         #set called_node
         if type == 1: #instance from class being called
             self.graph_class.remove_instance(instance_name)
-            instance_node = self.get_dependency_nodes(instance_name)
-            called_node = self.graph_class.get_method_by_name(method_name, instance_node)
+            instance_node = self.get_dependency_nodes(instance_name) #get rid of this
+            called_node = self.graph_class.get_method_in_class(method_name, instance_node)
             self.called_node = called_node
         
             if self.called_node is None and instance_node is not None:
