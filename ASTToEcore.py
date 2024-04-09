@@ -38,72 +38,40 @@ class ProjectEcoreGraph:
     def check_missing_calls(self):
         for object in self.call_list:
             called_instance = object[0]
-            type = object[1]
             caller_node = object[2]
             call_check = False
-            if type == 0:
-                called_module = called_instance.split('.')[0]
-                called_method = called_instance.split('.')[-1]
-                module_node = self.get_module_by_name(called_module)
-                if module_node is not None:
-                    method_node = self.get_method_in_module(called_method, module_node)
+            called_module = called_instance.split('.')[0]
+            called_method = called_instance.split('.')[-1]
+            module_node = self.get_module_by_name(called_module)
+            if module_node is not None:
+                method_node = self.get_method_in_module(called_method, module_node)
+                if method_node is not None:
+                    call_check = self.get_calls(caller_node, method_node)
+                    if call_check is False:
+                        self.create_calls(caller_node, method_node)
+                        self.call_list.remove(object)
+                if method_node is None:
+                    method_node = self.get_method_from_internal_structure(called_method, module_node)
                     if method_node is not None:
                         call_check = self.get_calls(caller_node, method_node)
                         if call_check is False:
                             self.create_calls(caller_node, method_node)
                             self.call_list.remove(object)
-                    #is this second check necessary?
-                    if method_node is None:
-                        method_node = self.get_method_from_internal_structure(called_method, module_node)
-                        if method_node is not None:
-                            call_check = self.get_calls(caller_node, method_node)
-                            if call_check is False:
-                                self.create_calls(caller_node, method_node)
-                                self.call_list.remove(object)
-                        if method_node is None and call_check is False:
-                            method_node = self.create_ecore_instance(self.Types.METHOD_DEFINITION) 
-                            self.create_method_signature(method_node, called_method, [])
-                            module_node.contains.append(method_node)
-                            self.create_calls(caller_node, method_node)
-                            self.call_list.remove(object)
-                if module_node is None:
-                    module = self.create_ecore_instance(self.Types.MODULE)
-                    method_node = self.create_ecore_instance(self.Types.METHOD_DEFINITION) 
-                    self.create_method_signature(method_node, called_method, [])
-                    self.graph.modules.append(module)
-                    self.module_list.append([module, called_module])
-                    module.contains.append(method_node)
-                    self.create_calls(caller_node, method_node)
-                    self.call_list.remove(object)
-           # if type == 1:
-               # called_class = called_instance.split('.')[0]
-               # called_method = called_instance.split('.')[-1]
-               # class_node = self.get_class_from_internal_structure(called_class, None)
-               # if class_node is not None:
-                  #  method_node = self.get_method_in_class(called_method, class_node)
-                  #  if method_node is not None:
-                       # call_check = self.get_calls(caller_node, method_node)
-                       # if call_check is False:
-                          #  self.create_calls(caller_node, method_node)
-                          #  self.call_list.remove(object)
-                   # if method_node is None:
-                       # method_node = self.create_ecore_instance(self.Types.METHOD_DEFINITION)
-                       # self.create_method_signature(method_node, called_method, [])
-                       # class_node.defines.append(method_node)
-                       # self.create_calls(caller_node, method_node)
-                       # self.call_list.remove(object)
-              #  if class_node is None:
-                   # class_node = self.create_ecore_instance(self.Types.CLASS)
-                   # class_node.tName = called_class
-                   # method_node = self.create_ecore_instance(self.Types.METHOD_DEFINITION)
-                   # self.create_method_signature(method_node, called_method, [])
-                   # self.graph.classes.append(class_node)
-                   # self.class_list.append([class_node, called_class, None])
-                   # class_node.defines.append(method_node)
-                   # self.create_calls(caller_node, method_node)
-                   # self.call_list.remove(object)
-
-
+                    if method_node is None and call_check is False:
+                        method_node = self.create_ecore_instance(self.Types.METHOD_DEFINITION) 
+                        self.create_method_signature(method_node, called_method, [])
+                        module_node.contains.append(method_node)
+                        self.create_calls(caller_node, method_node)
+                        self.call_list.remove(object)
+            if module_node is None:
+                module = self.create_ecore_instance(self.Types.MODULE)
+                method_node = self.create_ecore_instance(self.Types.METHOD_DEFINITION) 
+                self.create_method_signature(method_node, called_method, [])
+                self.graph.modules.append(module)
+                self.module_list.append([module, called_module])
+                module.contains.append(method_node)
+                self.create_calls(caller_node, method_node)
+                self.call_list.remove(object)
 
     #check if call already exists                
     def get_calls(self, caller_node, called_node):
