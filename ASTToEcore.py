@@ -428,16 +428,17 @@ class ASTVisitor(ast.NodeVisitor):
         #set called_node
         if type == 1: #instance from class being called
             self.graph_class.remove_instance(instance_name)
-            instance_node = self.get_dependency_nodes(instance_name) #get rid of this
-            called_node = self.graph_class.get_method_in_class(method_name, instance_node)
-            self.called_node = called_node
-        
-            if self.called_node is None and instance_node is not None:
-                called_node = self.graph_class.create_ecore_instance(self.graph_class.Types.METHOD_DEFINITION)
-                self.graph_class.create_method_signature(called_node, method_name, [])
-                self.graph_class.add_method_without_signature(called_node)
-                instance_node.defines.append(called_node)
-                self.called_node = called_node
+            #instance_node = self.get_dependency_nodes(instance_name) #get rid of this
+            instance_node = self.graph_class.get_class_from_internal_structure(instance_name, None)
+            if instance_node is not None:
+                self.called_node = self.graph_class.get_method_in_class(method_name, instance_node)
+                if self.called_node is None:
+                    self.called_node = self.graph_class.get_method_from_internal_structure(method_name, instance_node)
+                    if self.called_node is None and instance_node is not None:
+                        self.called_node = self.graph_class.create_ecore_instance(self.graph_class.Types.METHOD_DEFINITION)
+                        self.graph_class.create_method_signature(self.called_node, method_name, [])
+                        self.graph_class.add_method_without_signature(self.called_node)
+                        instance_node.defines.append(self.called_node)
             if instance_node is None: #this should be obsolete because get class by ame returns always a tclass object
                 self.instance_missing = instance_name
 
