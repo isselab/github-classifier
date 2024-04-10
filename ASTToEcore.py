@@ -414,7 +414,7 @@ class ASTVisitor(ast.NodeVisitor):
         #set called_node
         if type == 1: #instance from class being called
             self.graph_class.remove_instance(instance_name)
-            instance_node = self.graph_class.get_class_from_internal_structure(instance_name, None)
+            instance_node = self.graph_class.get_class_from_internal_structure(instance_name, None) 
             if instance_node is not None:
                 self.called_node = self.graph_class.get_method_in_class(method_name, instance_node)
                 if self.called_node is None:
@@ -440,8 +440,8 @@ class ASTVisitor(ast.NodeVisitor):
                         self.graph_class.add_method_without_signature(called_node)
                         instance_node.contains.append(called_node)
                         self.called_node = called_node
-            #if instance_node is None:
-               # self.instance_missing = instance_name
+            if instance_node is None:
+                self.instance_missing = instance_name
 
         #set caller_node
         if self.current_method is not None:
