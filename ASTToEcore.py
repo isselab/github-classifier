@@ -68,7 +68,7 @@ class ProjectEcoreGraph:
                 module = self.create_ecore_instance(self.Types.MODULE)
                 method_node = self.create_ecore_instance(self.Types.METHOD_DEFINITION) 
                 self.create_method_signature(method_node, called_method, [])
-                self.graph.modules.append(module)
+                #self.graph.modules.append(module)
                 self.module_list.append([module, called_module])
                 module.contains.append(method_node)
                 self.create_calls(caller_node, method_node)
@@ -134,7 +134,7 @@ class ProjectEcoreGraph:
                     class_object.delete()
         self.current_module.namespace = self.get_package_by_path(path)
         self.module_list.append([self.current_module, self.current_module_name])
-        self.graph.modules.append(self.current_module)
+        #self.graph.modules.append(self.current_module)
         with open(path, 'r') as file:
             code = file.read()
         tree = ast.parse(code)
@@ -192,7 +192,8 @@ class ProjectEcoreGraph:
         return None
 
     def get_module_by_location(self, location):
-        for module in self.graph.modules:
+        for list_object in self.module_list:
+            module = list_object[0]
             if module.location == location:
                 return module
         return None
