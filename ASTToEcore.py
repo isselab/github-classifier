@@ -34,7 +34,11 @@ class ProjectEcoreGraph:
             self.process_file(file_path)
 
         self.check_missing_calls()
-        #self.sort_modules() #resort modules to resolve reference errors
+        self.sort_modules() #resort modules to resolve reference errors
+    
+    def sort_modules(self):
+        for module in self.module_list:
+            self.graph.modules.append(module[0])
 
     def check_missing_calls(self):
         for object in self.call_list:
