@@ -34,6 +34,7 @@ class ProjectEcoreGraph:
             self.process_file(file_path)
 
         self.check_missing_calls()
+        #self.sort_modules() #resort modules to resolve reference errors
 
     def check_missing_calls(self):
         for object in self.call_list:
