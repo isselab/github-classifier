@@ -72,7 +72,6 @@ class ProjectEcoreGraph:
                 module = self.create_ecore_instance(self.Types.MODULE)
                 method_node = self.create_ecore_instance(self.Types.METHOD_DEFINITION) 
                 self.create_method_signature(method_node, called_method, [])
-                #self.graph.modules.append(module)
                 self.module_list.append([module, called_module])
                 module.contains.append(method_node)
                 self.create_calls(caller_node, method_node)
@@ -133,12 +132,11 @@ class ProjectEcoreGraph:
                 if class_object.tName == path_part:
                     if index == len(path_split) - 1:
                         for child in class_object.childClasses:
-                            self.current_module.contains.append(child) #why append only children and not class itself?
+                            self.current_module.contains.append(child) 
                     self.classes_without_module.remove(class_object)
                     class_object.delete()
         self.current_module.namespace = self.get_package_by_path(path)
         self.module_list.append([self.current_module, self.current_module_name])
-        #self.graph.modules.append(self.current_module)
         with open(path, 'r') as file:
             code = file.read()
         tree = ast.parse(code)
