@@ -23,7 +23,7 @@ class ProjectEcoreGraph:
         self.current_module = None
 
         self.package_list = [] #entry structure [package_node, name, parent]
-        self.module_list = []
+        self.module_list = [] #entry structure [module_node, module_name]
         self.call_list = []
         self.class_list = [] #entry structure [class_node, name, module], module can be None
         self.method_list = [] #entry structure [method_node, name, module_node]
