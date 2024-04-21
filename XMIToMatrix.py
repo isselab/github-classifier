@@ -2,7 +2,7 @@ from pyecore.resources import ResourceSet, URI
 from enum import Enum
 from ASTToEcore import ProjectEcoreGraph
 
-class xmiToGcnConverter:
+class xmiToMatrixConverter:
     def __init__(self, resource:ResourceSet):
         self.typegraph_root = resource.contents[0] #we have the entire typegraph object here
         self.node_matrix = [] #nxc feature matrix with n nodes and c features for each node: node type and identifier (e.g. name or location)

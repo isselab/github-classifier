@@ -1,14 +1,14 @@
 import os
 from ASTToEcore import ProjectEcoreGraph
 from pyecore.resources import ResourceSet, URI
-from EcoreToGCN import xmiToGcnConverter
+from EcoreToGCN import xmiToMatrixConverter
 
 # repository_directory = '/mnt/volume1/mlexpmining/cloned_repos/'
 # output_directory = '/mnt/volume1/mlexpmining/ecore_graphs/'
 #repository_directory = '../unit_testing'
 repository_directory = '../test_repository'
 output_directory = '../ecore_test'
-xmi_file_directory = '../test_xmi'
+xmi_file_directory = '../test_xmi' #i can now set this to ecore_test?!
 gcn_input_directory = '../gcn_input'
 
 if __name__ == '__main__':
@@ -54,7 +54,7 @@ if __name__ == '__main__':
         print(current_xmi_file)
         resource = rset.get_resource(URI(f"{xmi_file_directory}/{xmi_file}"))
         try:
-            project_gcn_input = xmiToGcnConverter(resource)
+            project_gcn_input = xmiToMatrixConverter(resource)
             output_name = project_gcn_input.get_graph_name()
             output_node_matrix = project_gcn_input.get_node_matrix()
             output_adjacency_matrix = project_gcn_input.get_adjacency_matrix()
