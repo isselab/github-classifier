@@ -24,7 +24,7 @@ class EcoreToMatrixConverter:
         return self.typegraph_root.tName
     
     #this is the main function, that converts the nodes in the ecore graph into a matrix structure
-    def convert_nodes(self, typegraph):
+    def convert_nodes(self, typegraph): #maybe add the nodes to a dictioary to call on them for edges later?
         #convert packages and subpackages
         for tpackage in typegraph.packages:
             current_package = None
