@@ -5,18 +5,20 @@ from EcoreToMatrix import EcoreToMatrixConverter
 
 # repository_directory = '/mnt/volume1/mlexpmining/cloned_repos/'
 # output_directory = '/mnt/volume1/mlexpmining/ecore_graphs/'
-#repository_directory = '../unit_testing'
-repository_directory = '../test_repository'
-output_directory = '../ecore_test'
-xmi_file_directory = '../test_xmi' #i can now set this to ecore_test?!
-gcn_input_directory = '../gcn_input'
+repository_directory = '../unit_testing'
+#repository_directory = '../test_repository'
+output_directory = '../test_tool' #output of entire tool
 
 if __name__ == '__main__':
-    if not os.path.exists(output_directory):
+    if not os.path.exists(output_directory): #for the results of the entire tool
         os.makedirs(output_directory)
     repositories = os.listdir(repository_directory)
     skip_counter = 0
     resource_set = ResourceSet()
+    #for output of first converter
+    ecore_files = '../ecore_test'
+    if not os.path.exists(ecore_files):
+        os.makedirs(ecore_files)
     for i,repository in enumerate(repositories):
         print(f"Progress: {i}/{len(repositories)}")
         current_directory = os.path.join(repository_directory, repository)
@@ -25,7 +27,7 @@ if __name__ == '__main__':
             try:
                 project_graph = ProjectEcoreGraph(current_directory, resource_set)
                 #resource to serialize the metamodels
-                resource = resource_set.create_resource(URI(f"{output_directory}/{repository}.xmi"), use_uuid=True)
+                resource = resource_set.create_resource(URI(f"{ecore_files}/{repository}.xmi"), use_uuid=True)
                 resource.append(project_graph.get_graph())
                 resource.save()
             except Exception as e:
@@ -41,18 +43,20 @@ if __name__ == '__main__':
     print("---------convert ecore graphs to matrix structure--------------")
     #load xmi instance
     skip_xmi = 0
-    xmi_files = os.listdir(xmi_file_directory)
-    if not os.path.exists(gcn_input_directory):
-        os.makedirs(gcn_input_directory)
+    list_xmi_files = os.listdir(ecore_files) #get output from above
+    #for output of second converter
+    matrix_files = '../csv_files'
+    if not os.path.exists(matrix_files):
+        os.makedirs(matrix_files)
     rset = ResourceSet()
     resource = rset.get_resource(URI('Basic.ecore'))
     mm_root = resource.contents[0]
     rset.metamodel_registry[mm_root.nsURI] = mm_root
-    for x, xmi_file in enumerate(xmi_files):
-        print(f"Progress: {x}/{len(xmi_files)}")
-        current_xmi_file = os.path.join(xmi_file_directory, xmi_file)
+    for x, xmi_file in enumerate(list_xmi_files):
+        print(f"Progress: {x}/{len(list_xmi_files)}")
+        current_xmi_file = os.path.join(ecore_files, xmi_file)
         print(current_xmi_file)
-        resource = rset.get_resource(URI(f"{xmi_file_directory}/{xmi_file}"))
+        resource = rset.get_resource(URI(f"{ecore_files}/{xmi_file}"))
         try:
             project_gcn_input = EcoreToMatrixConverter(resource)
             output_name = project_gcn_input.get_graph_name()
@@ -60,16 +64,27 @@ if __name__ == '__main__':
             output_adjacency_matrix = project_gcn_input.get_adjacency_matrix()
 
             #save matrices in two text files
-            new_resource_nodes = open(f"{gcn_input_directory}/{output_name}_nxc.txt", "w+") 
+            new_resource_nodes = open(f"{matrix_files}/{output_name}_nxc.csv", "w+") 
             for node in output_node_matrix: #iterate over slices
+                node_count = 0
                 for item in node:
-                    new_resource_nodes.write("%s " % item)
+                    if node_count<len(node)-1:
+                        new_resource_nodes.write("%s, " % item)
+                        node_count += 1
+                    else:
+                        new_resource_nodes.write("%s " % item)
                 new_resource_nodes.write("\n") #write next slice (node) in new line
             new_resource_nodes.close()
-            new_resource_edges = open(f"{gcn_input_directory}/{output_name}_adjacency.txt", "w+")
+            new_resource_edges = open(f"{matrix_files}/{output_name}_adjacency.csv", "w+")
+            #I'm not sure yet if this will fit the structure of the matrix
             for edge in output_adjacency_matrix:
+                edge_count = 0
                 for item in edge:
-                    new_resource_edges.write("%s " % item)
+                    if edge_count<len(edge)-1:
+                        new_resource_edges.write("%s, " % item)
+                        edge_count += 1
+                    else:
+                        new_resource_edges.write("%s " % item)
                 new_resource_edges.write("\n")
             new_resource_edges.close()
         except Exception as e:
@@ -77,5 +92,5 @@ if __name__ == '__main__':
             print(f"Problem with xmi file {xmi_file}. Skipping")
             skip_xmi += 1
     print("-----------------------------------")
-    print(f"Skipped {skip_xmi} of {len(xmi_files)}")
+    print(f"Skipped {skip_xmi} of {len(list_xmi_files)}")
 
