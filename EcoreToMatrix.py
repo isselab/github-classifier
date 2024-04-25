@@ -6,9 +6,13 @@ class EcoreToMatrixConverter:
     def __init__(self, resource:ResourceSet):
         self.typegraph_root = resource.contents[0] #we have the entire typegraph object here
         self.node_matrix = [] #nxc feature matrix with n nodes and c features for each node: node type and identifier (e.g. name or location)
-        self.adjacency_matrix = [] #weighted graph edges
 
         self.convert_nodes(self.typegraph_root)
+
+        number_of_nodes = len(self.get_node_matrix())
+        self.adjacency_matrix = [[0 for i in range(number_of_nodes)] for i in range(number_of_nodes)] #initialize nxn matrix, with n number of nodes
+
+        self.convert_edges(self.typegraph_root)
 
     def get_node_matrix(self):
         return self.node_matrix
@@ -131,6 +135,10 @@ class EcoreToMatrixConverter:
                 if type == current_node[0]:
                     return current_node
         return None
+    
+    #this function sets the existing edges in the adjacency matrix to 1
+    def convert_edges(self, typegraph):
+        return None
 
     class NodeLabels(Enum):
         PACKAGE = 1
@@ -141,14 +149,3 @@ class EcoreToMatrixConverter:
         METHOD = 6
         PARAMETER = 7
         CALL = 8
-
-    class EdgeLabels(Enum):
-        UNLABELED = 1
-        CONTAINS = 2
-        DEFINES = 3
-        ACCESSING = 4
-        CHILDCLASSES = 5
-        NEXT = 6
-        PREVIOUS = 7
-        TARGET = 8
-        SOURCE = 9
