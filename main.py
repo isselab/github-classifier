@@ -66,11 +66,11 @@ if __name__ == '__main__':
             #save matrices in two text files
             new_resource_nodes = open(f"{matrix_files}/{output_name}_nxc.csv", "w+") 
             for node in output_node_matrix: #iterate over slices
-                node_count = 0
+                node_counter = 0
                 for item in node:
-                    if node_count<len(node)-1:
+                    if node_counter<len(node)-1:
                         new_resource_nodes.write("%s, " % item)
-                        node_count += 1
+                        node_counter += 1
                     else:
                         new_resource_nodes.write("%s " % item)
                 new_resource_nodes.write("\n") #write next slice (node) in new line
@@ -78,11 +78,11 @@ if __name__ == '__main__':
             new_resource_edges = open(f"{matrix_files}/{output_name}_adjacency.csv", "w+")
             #I'm not sure yet if this will fit the structure of the matrix
             for edge in output_adjacency_matrix:
-                edge_count = 0
+                edge_counter = 0
                 for item in edge:
-                    if edge_count<len(edge)-1:
+                    if edge_counter<len(edge)-1:
                         new_resource_edges.write("%s, " % item)
-                        edge_count += 1
+                        edge_counter += 1
                     else:
                         new_resource_edges.write("%s " % item)
                 new_resource_edges.write("\n")
