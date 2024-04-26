@@ -165,7 +165,19 @@ class EcoreToMatrixConverter:
     
     #this function sets the existing edges in the adjacency matrix to 1
     def convert_edges(self):
-        return None
+        #I'm skipping the subpackages for now, cover that case later
+        for keys in self.node_dict:
+            current_node = self.node_dict[keys]
+            #set edges between Modules and Packages
+            if current_node[0] == 'TModule':
+                if current_node[2] == 'TPackage':
+                    for find_key in self.node_dict:
+                        find_node = self.node_dict[find_key]
+                        if find_node[0] == 'TPackage':
+                            if find_node[1] == current_node[3]:
+                                self.adjacency_matrix[keys][find_key] = 1
+                                self.adjacency_matrix[find_key][keys] = 1
+            #set edges for
 
     class NodeLabels(Enum):
         PACKAGE = 1
