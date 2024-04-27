@@ -58,7 +58,7 @@ class EcoreToMatrixConverter:
             current_module = None
             current_module = self.get_node(tmodule.location, self.NodeLabels.MODULE.value)
             if current_module is None:
-                self.node_matrix.append([self.NodeLabels.MODULE.value, tmodule.location]) #maybe only use last element of location as name?
+                self.node_matrix.append([self.NodeLabels.MODULE.value, tmodule.location]) 
                 self.node_dict[self.node_count] = ['TModule', tmodule.location, 'TPackage', tmodule.namespace.tName] #name of TPackage object
                 self.node_count += 1
                 if hasattr(tmodule, 'contains'):
@@ -110,7 +110,7 @@ class EcoreToMatrixConverter:
             current_class = self.get_node(tclass.tName, self.NodeLabels.CLASS.value)
             if current_class is None:
                 self.node_matrix.append([self.NodeLabels.CLASS.value, tclass.tName])
-                self.node_dict[self.node_count] = ['TClass', tclass.tName, 'TPackage', tclass.namespace.tName]
+                self.node_dict[self.node_count] = ['TClass', tclass.tName] #does not have package in namespace
                 self.node_count += 1
                 if hasattr(tclass, 'childClasses'):
                     self.convert_childClasses(tclass)
@@ -166,18 +166,33 @@ class EcoreToMatrixConverter:
     #this function sets the existing edges in the adjacency matrix to 1
     def convert_edges(self):
         #I'm skipping the subpackages for now, cover that case later
+        #check for classes in packages later, does not seem to appear?/exist?
         for keys in self.node_dict:
             current_node = self.node_dict[keys]
             #set edges between Modules and Packages
             if current_node[0] == 'TModule':
                 if current_node[2] == 'TPackage':
-                    for find_key in self.node_dict:
-                        find_node = self.node_dict[find_key]
-                        if find_node[0] == 'TPackage':
-                            if find_node[1] == current_node[3]:
-                                self.adjacency_matrix[keys][find_key] = 1
-                                self.adjacency_matrix[find_key][keys] = 1
-            #set edges for
+                    find_key = self.find_connected_node('TPackage', keys)
+                    #in both directions
+                    self.adjacency_matrix[keys][find_key] = 1
+                    self.adjacency_matrix[find_key][keys] = 1
+
+            #set edges between classes and modules
+            if current_node[0] == 'TClass':
+                if len(current_node) == 4:
+                    if current_node[2] == 'TModule':
+                        find_key = self.find_connected_node('TModule', keys)
+                        #in one direction
+                        self.adjacency_matrix[find_key][keys] = 1
+
+    def find_connected_node(self, type_string, keys):
+        current_node = self.node_dict[keys]
+        for find_key in self.node_dict:
+            find_node = self.node_dict[find_key]
+            if find_node[0] == type_string:
+                if find_node[1] == current_node[3]:
+                    return find_key
+                    
 
     class NodeLabels(Enum):
         PACKAGE = 1
