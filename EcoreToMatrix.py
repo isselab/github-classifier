@@ -92,7 +92,7 @@ class EcoreToMatrixConverter:
                 for tobject in tmethod.signatures:
                     node_name += '_signature'
                     self.node_matrix.append([self.NodeLabels.METHOD_SIGNATURE.value, node_name])
-                    self.node_dict[self.node_count] = ['TMethodSignature', node_name, 'TMethod', tmethod.tName]
+                    self.node_dict[self.node_count] = ['TMethodSignature', node_name, 'TMethod', tmethod.tName] #savig method name helps later on!!
                     self.node_count += 1
                     if hasattr(tobject, 'parameters'):
                         node_name += '_param'
@@ -172,7 +172,7 @@ class EcoreToMatrixConverter:
             #set edges between Modules and Packages
             if current_node[0] == 'TModule':
                 if current_node[2] == 'TPackage':
-                    find_key = self.find_connected_node('TPackage', keys)
+                    find_key = self.find_key_of_connected_node('TPackage', keys)
                     #in both directions
                     self.adjacency_matrix[keys][find_key] = 1
                     self.adjacency_matrix[find_key][keys] = 1
@@ -181,7 +181,7 @@ class EcoreToMatrixConverter:
             if current_node[0] == 'TClass':
                 if len(current_node) == 4:
                     if current_node[2] == 'TModule':
-                        find_key = self.find_connected_node('TModule', keys)
+                        find_key = self.find_key_of_connected_node('TModule', keys)
                         #in one direction
                         self.adjacency_matrix[find_key][keys] = 1
             
@@ -189,13 +189,24 @@ class EcoreToMatrixConverter:
             if current_node[0] == 'TMethodDefinition':
                 if len(current_node) == 4:
                     if current_node[2] == 'TModule':
-                        find_key = self.find_connected_node('TModule', keys)
+                        find_key = self.find_key_of_connected_node('TModule', keys)
                         self.adjacency_matrix[find_key][keys] = 1
                     if current_node[2] == 'TClass':
-                        find_key = self.find_connected_node('TClass', keys)
+                        find_key = self.find_key_of_connected_node('TClass', keys)
                         self.adjacency_matrix[find_key][keys] = 1
+            
+            #set edges for TMethod objects
+            if current_node[0] == 'TMethodSignature':
+                find_key = self.find_key_of_connected_node('TMethod', keys)
+                self.adjacency_matrix[find_key][keys] = 1 #edge from TMethod to TMethodSignature object
+            if current_node[0] == 'TMethod':
+                method_name = current_node[1]
+                method_name += '_definition'
+                find_key = self.find_connected_node('TMethodDefinition', method_name)
+                self.adjacency_matrix[keys][find_key] = 1 #edge from TMethod to TMethodDef object!
+                
 
-    def find_connected_node(self, type_string, keys):
+    def find_key_of_connected_node(self, type_string, keys):
         current_node = self.node_dict[keys]
         for find_key in self.node_dict:
             find_node = self.node_dict[find_key]
@@ -203,6 +214,12 @@ class EcoreToMatrixConverter:
                 if find_node[1] == current_node[3]:
                     return find_key
                     
+    def find_connected_node(self, type_string, node_name):
+        for find_key in self.node_dict:
+            find_node = self.node_dict[find_key]
+            if find_node[0] == type_string:
+                if find_node[1] == node_name:
+                    return find_key
 
     class NodeLabels(Enum):
         PACKAGE = 1
