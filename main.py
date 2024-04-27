@@ -8,7 +8,7 @@ from EcoreToMatrix import EcoreToMatrixConverter
 #repository_directory = '../unit_testing'
 repository_directory = '../test_repository'
 output_directory = '../ecore_test'
-xmi_file_directory = '../test_xmi' #i can now set this to ecore_test?!
+xmi_file_directory = '../ecore_test' #i can now set this to ecore_test?!
 gcn_input_directory = '../gcn_input'
 
 if __name__ == '__main__':
