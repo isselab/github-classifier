@@ -183,17 +183,17 @@ class EcoreToMatrixConverter:
                     if current_node[2] == 'TModule':
                         find_key = self.find_connected_node('TModule', keys)
                         #in one direction
-                        self.adjacency_matrix[keys][find_key] = 1
+                        self.adjacency_matrix[find_key][keys] = 1
             
             #set edges between classes/modules and method definitions
             if current_node[0] == 'TMethodDefinition':
                 if len(current_node) == 4:
                     if current_node[2] == 'TModule':
                         find_key = self.find_connected_node('TModule', keys)
-                        self.adjacency_matrix[keys][find_key] = 1
+                        self.adjacency_matrix[find_key][keys] = 1
                     if current_node[2] == 'TClass':
                         find_key = self.find_connected_node('TClass', keys)
-                        self.adjacency_matrix[keys][find_key] = 1
+                        self.adjacency_matrix[find_key][keys] = 1
 
     def find_connected_node(self, type_string, keys):
         current_node = self.node_dict[keys]
