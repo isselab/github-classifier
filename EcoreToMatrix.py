@@ -91,6 +91,7 @@ class EcoreToMatrixConverter:
                 node_name = tmethod.tName
                 for tobject in tmethod.signatures:
                     node_name += '_signature'
+                    signature_name = node_name
                     self.node_matrix.append([self.NodeLabels.METHOD_SIGNATURE.value, node_name])
                     self.node_dict[self.node_count] = ['TMethodSignature', node_name, 'TMethod', tmethod.tName] #savig method name helps later on!!
                     self.node_count += 1
@@ -101,7 +102,7 @@ class EcoreToMatrixConverter:
                             current_param = str(param_counter)
                             param_name = node_name + current_param
                             self.node_matrix.append([self.NodeLabels.PARAMETER.value, param_name])
-                            self.node_dict[self.node_count] = ['TParameter', param_name, 'TMethodSignature', node_name] #edges for next maybe later instead of saving them all here?! this gets faulty
+                            self.node_dict[self.node_count] = ['TParameter', param_name, 'TMethodSignature', signature_name] #edges for next maybe later instead of saving them all here?! this gets faulty
                             self.node_count += 1
         
         #convert classes and contained objects
@@ -146,13 +147,17 @@ class EcoreToMatrixConverter:
 
     #convert call objects, are only contained in TMethodDefinition objects
     def convert_call(self, tmethod_def, tmethod_def_name):
+        call_source = tmethod_def_name
         tmethod_def_name += '_call'
         for c,call in enumerate(tmethod_def.accessing):
+            methoddef_target = call.target
+            target_name = methoddef_target.signature.method.tName #name of the TMethod object that's being called
+            #create a ame for the call object
             call_counter = c+1
             calls = str(call_counter)
             current_call = tmethod_def_name + calls
             self.node_matrix.append([self.NodeLabels.CALL.value, current_call])
-            self.node_dict[self.node_count] = ['TCall', current_call]
+            self.node_dict[self.node_count] = ['TCall', current_call, 'Source', call_source, 'Target', target_name]
             self.node_count += 1
 
     #this function checks if a node already exists by comparing both features
@@ -172,7 +177,7 @@ class EcoreToMatrixConverter:
             #set edges between Modules and Packages
             if current_node[0] == 'TModule':
                 if current_node[2] == 'TPackage':
-                    find_key = self.find_key_of_connected_node('TPackage', keys)
+                    find_key = self.find_key_of_connected_node('TPackage', current_node)
                     #in both directions
                     self.adjacency_matrix[keys][find_key] = 1
                     self.adjacency_matrix[find_key][keys] = 1
@@ -181,7 +186,7 @@ class EcoreToMatrixConverter:
             if current_node[0] == 'TClass':
                 if len(current_node) == 4:
                     if current_node[2] == 'TModule':
-                        find_key = self.find_key_of_connected_node('TModule', keys)
+                        find_key = self.find_key_of_connected_node('TModule', current_node)
                         #in one direction
                         self.adjacency_matrix[find_key][keys] = 1
             
@@ -189,31 +194,48 @@ class EcoreToMatrixConverter:
             if current_node[0] == 'TMethodDefinition':
                 if len(current_node) == 4:
                     if current_node[2] == 'TModule':
-                        find_key = self.find_key_of_connected_node('TModule', keys)
+                        find_key = self.find_key_of_connected_node('TModule', current_node)
                         self.adjacency_matrix[find_key][keys] = 1
                     if current_node[2] == 'TClass':
-                        find_key = self.find_key_of_connected_node('TClass', keys)
+                        find_key = self.find_key_of_connected_node('TClass', current_node)
                         self.adjacency_matrix[find_key][keys] = 1
             
             #set edges for TMethod objects
             if current_node[0] == 'TMethodSignature':
-                find_key = self.find_key_of_connected_node('TMethod', keys)
+                find_key = self.find_key_of_connected_node('TMethod', current_node)
                 self.adjacency_matrix[find_key][keys] = 1 #edge from TMethod to TMethodSignature object
             if current_node[0] == 'TMethod':
                 method_name = current_node[1]
                 method_name += '_definition'
                 find_key = self.find_connected_node('TMethodDefinition', method_name)
                 self.adjacency_matrix[keys][find_key] = 1 #edge from TMethod to TMethodDef object!
-                
 
-    def find_key_of_connected_node(self, type_string, keys):
-        current_node = self.node_dict[keys]
+            #set edges for parameters
+            if current_node[0] == 'TParameter':
+                find_key = self.find_key_of_connected_node('TMethodSignature', current_node)
+                self.adjacency_matrix[find_key][keys] = 1 #edge from TMethodSignature to TParameter
+                #edges between parameters are missig here next/previous
+
+            #set edges for calls
+            if current_node[0] == 'TCall':
+                find_key = self.find_key_of_connected_node('TMethodDefinition', current_node)
+                self.adjacency_matrix[find_key][keys] = 1 #edge TMethDef to TCall, 'accessing'
+                if len(current_node) == 6:
+                    target_name = current_node[5] #method name that's being called
+                    target_name += '_definition'
+                    find_key = self.find_connected_node('TMethodDefinition', target_name)
+                    self.adjacency_matrix[find_key][keys] = 1 #edge TMethDef to TCall, 'accessedBy'
+                    self.adjacency_matrix[keys][find_key] = 1 #edge TCall to TMethDef, 'target'
+
+    #find number of node (key), name explicitly saved in current_node
+    def find_key_of_connected_node(self, type_string, current_node):
         for find_key in self.node_dict:
             find_node = self.node_dict[find_key]
             if find_node[0] == type_string:
                 if find_node[1] == current_node[3]:
                     return find_key
-                    
+
+    #find number of node (key), name not explicitly saved                
     def find_connected_node(self, type_string, node_name):
         for find_key in self.node_dict:
             find_node = self.node_dict[find_key]
