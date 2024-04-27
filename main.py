@@ -7,10 +7,10 @@ from EcoreToMatrix import EcoreToMatrixConverter
 # output_directory = '/mnt/volume1/mlexpmining/ecore_graphs/'
 #repository_directory = '../unit_testing'
 repository_directory = '../test_repository'
-output_directory = '../test_tool' #output of entire tool
+output_directory = '../test_tool' #output of the entire tool pipeline
 
 if __name__ == '__main__':
-    if not os.path.exists(output_directory): #for the results of the entire tool
+    if not os.path.exists(output_directory): 
         os.makedirs(output_directory)
     repositories = os.listdir(repository_directory)
     skip_counter = 0
@@ -36,7 +36,7 @@ if __name__ == '__main__':
                 skip_counter += 1
         else:
             skip_counter += 1
-            # repositories.remove(repository)
+
     print("------------------------------------")
     print(f"Skipped {skip_counter} of {len(repositories)}.")
 
@@ -76,7 +76,6 @@ if __name__ == '__main__':
                 new_resource_nodes.write("\n") #write next slice (node) in new line
             new_resource_nodes.close()
             new_resource_edges = open(f"{matrix_files}/{output_name}_adjacency.csv", "w+")
-            #I'm not sure yet if this will fit the structure of the matrix
             for edge in output_adjacency_matrix:
                 edge_counter = 0
                 for item in edge:
