@@ -77,7 +77,7 @@ class EcoreToMatrixConverter:
                                     self.convert_defined_methods(tobject)
                         if tobject.eClass.name == ProjectEcoreGraph.Types.METHOD_DEFINITION.value:
                             #here are the TMember objects checked
-                            self.convert_method_definitions(tobject)
+                            self.convert_method_definitions(tobject, 'TModule', tmodule.location)
             
         
         #convert methods and contained objects
@@ -129,17 +129,17 @@ class EcoreToMatrixConverter:
     def convert_defined_methods(self, tclass):
         for tobject in tclass.defines:
                 if tobject.eClass.name == ProjectEcoreGraph.Types.METHOD_DEFINITION.value:
-                    self.convert_method_definitions(tobject)
+                    self.convert_method_definitions(tobject, 'TClass', tclass.tName)
 
     #convert TMethodDefinition objects and contained call objects
-    def convert_method_definitions(self, t_meth_def):
+    def convert_method_definitions(self, t_meth_def, container_type, tcontainer_name): 
         current_method_def = None
         tobject_name = t_meth_def.signature.method.tName
         tobject_name += '_definition'
         current_method_def = self.get_node(tobject_name, self.NodeLabels.METHOD_DEFINITION.value)
         if current_method_def is None:
             self.node_matrix.append([self.NodeLabels.METHOD_DEFINITION.value, tobject_name])
-            self.node_dict[self.node_count] = ['TMethodDefinition', tobject_name] #i think i need more parameters?
+            self.node_dict[self.node_count] = ['TMethodDefinition', tobject_name, container_type, tcontainer_name] 
             self.node_count += 1
             if hasattr(t_meth_def, 'accessing'):
                 self.convert_call(t_meth_def, tobject_name)
@@ -184,6 +184,8 @@ class EcoreToMatrixConverter:
                         find_key = self.find_connected_node('TModule', keys)
                         #in one direction
                         self.adjacency_matrix[find_key][keys] = 1
+            
+            #set edges between classes/modules and method definitions
 
     def find_connected_node(self, type_string, keys):
         current_node = self.node_dict[keys]
