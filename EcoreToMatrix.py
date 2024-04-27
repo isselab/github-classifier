@@ -189,6 +189,9 @@ class EcoreToMatrixConverter:
                         find_key = self.find_key_of_connected_node('TModule', current_node)
                         #in one direction
                         self.adjacency_matrix[find_key][keys] = 1
+                    if current_node[2] == 'TClass':
+                        find_key = self.find_key_of_connected_node('TClass', current_node)
+                        self.adjacency_matrix[find_key][keys] = 1 #edge from TClass to child class
             
             #set edges between classes/modules and method definitions
             if current_node[0] == 'TMethodDefinition':
