@@ -50,7 +50,7 @@ class EcoreToMatrixConverter:
                                     current_subsubpackage = self.get_node(tsubsubpackage.tName, self.NodeLabels.PACKAGE.value)
                                     if current_subsubpackage is None:
                                         self.node_matrix.append([self.NodeLabels.PACKAGE.value, tsubsubpackage.tName])
-                                        self.node_dict[self.node_count] = ['TPackage', tsubsubpackage.tName, 'TPackage', tsubpackage.tame]
+                                        self.node_dict[self.node_count] = ['TPackage', tsubsubpackage.tName, 'TPackage', tsubpackage.tName]
                                         self.node_count += 1
         
         #convert modules and contained objects
