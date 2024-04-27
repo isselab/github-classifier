@@ -170,15 +170,21 @@ class EcoreToMatrixConverter:
     
     #this function sets the existing edges in the adjacency matrix to 1
     def convert_edges(self):
-        #I'm skipping the subpackages for now, cover that case later
         #check for classes in packages later, does not seem to appear?/exist?
         for keys in self.node_dict:
             current_node = self.node_dict[keys]
+
+            #set edges between packages and subpackages
+            if current_node[0] == 'TPackage':
+                if len(current_node) == 4: #there is a subpackage
+                    find_key = self.find_key_of_connected_node('TPackage', current_node) #search for key of the parent package
+                    self.adjacency_matrix[find_key][keys] = 1 
+
             #set edges between Modules and Packages
             if current_node[0] == 'TModule':
                 if current_node[2] == 'TPackage':
                     find_key = self.find_key_of_connected_node('TPackage', current_node)
-                    #in both directions
+                    #edge in both directions
                     self.adjacency_matrix[keys][find_key] = 1
                     self.adjacency_matrix[find_key][keys] = 1
 
@@ -187,7 +193,6 @@ class EcoreToMatrixConverter:
                 if len(current_node) == 4:
                     if current_node[2] == 'TModule':
                         find_key = self.find_key_of_connected_node('TModule', current_node)
-                        #in one direction
                         self.adjacency_matrix[find_key][keys] = 1
                     if current_node[2] == 'TClass':
                         find_key = self.find_key_of_connected_node('TClass', current_node)
