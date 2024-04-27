@@ -70,6 +70,7 @@ class ProjectEcoreGraph:
                         self.call_list.remove(object)
             if module_node is None:
                 module = self.create_ecore_instance(self.Types.MODULE)
+                module.location = called_module
                 method_node = self.create_ecore_instance(self.Types.METHOD_DEFINITION) 
                 self.create_method_signature(method_node, called_method, [])
                 self.module_list.append([module, called_module])
