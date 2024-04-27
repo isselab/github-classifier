@@ -27,7 +27,7 @@ class EcoreToMatrixConverter:
         return self.typegraph_root.tName
     
     #this is the main function, that converts the nodes in the ecore graph into a matrix structure
-    def convert_nodes(self, typegraph): #maybe add the nodes to a dictioary to call on them for edges later?
+    def convert_nodes(self, typegraph): 
         #convert packages and subpackages
         for tpackage in typegraph.packages:
             current_package = None
@@ -101,9 +101,21 @@ class EcoreToMatrixConverter:
                             param_counter = p+1
                             current_param = str(param_counter)
                             param_name = node_name + current_param
-                            self.node_matrix.append([self.NodeLabels.PARAMETER.value, param_name])
-                            self.node_dict[self.node_count] = ['TParameter', param_name, 'TMethodSignature', signature_name] #edges for next maybe later instead of saving them all here?! this gets faulty
-                            self.node_count += 1
+                            
+                            #check for next parameter to save info for edges later
+                            if tparam.next is None:
+                                self.node_matrix.append([self.NodeLabels.PARAMETER.value, param_name])
+                                self.node_dict[self.node_count] = ['TParameter', param_name, 'TMethodSignature', signature_name] 
+                                self.node_count += 1
+
+                            if tparam.next is not None:
+                                #create name of the next parameter
+                                next_param_counter = param_counter+1
+                                next_param = str(next_param_counter)
+                                next_param_name = node_name + next_param
+                                self.node_matrix.append([self.NodeLabels.PARAMETER.value, param_name])
+                                self.node_dict[self.node_count] = ['TParameter', param_name, 'TMethodSignature', signature_name, 'Next', next_param_name] 
+                                self.node_count += 1
         
         #convert classes and contained objects
         for tclass in typegraph.classes:
@@ -170,7 +182,6 @@ class EcoreToMatrixConverter:
     
     #this function sets the existing edges in the adjacency matrix to 1
     def convert_edges(self):
-        #check for classes in packages later, does not seem to appear?/exist?
         for keys in self.node_dict:
             current_node = self.node_dict[keys]
 
@@ -222,7 +233,12 @@ class EcoreToMatrixConverter:
             if current_node[0] == 'TParameter':
                 find_key = self.find_key_of_connected_node('TMethodSignature', current_node)
                 self.adjacency_matrix[find_key][keys] = 1 #edge from TMethodSignature to TParameter
-                #edges between parameters are missig here next/previous
+                if len(current_node) == 6: #function has multiple parameters
+                    next_parameter_name = current_node[5]
+                    find_key = self.find_connected_node('TParameter', next_parameter_name)
+                    #edges between next/previous parameters of one function
+                    self.adjacency_matrix[find_key][keys] = 1 
+                    self.adjacency_matrix[keys][find_key] = 1
 
             #set edges for calls
             if current_node[0] == 'TCall':
