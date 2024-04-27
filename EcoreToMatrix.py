@@ -141,14 +141,3 @@ class EcoreToMatrixConverter:
         METHOD = 6
         PARAMETER = 7
         CALL = 8
-
-    class EdgeLabels(Enum):
-        UNLABELED = 1
-        CONTAINS = 2
-        DEFINES = 3
-        ACCESSING = 4
-        CHILDCLASSES = 5
-        NEXT = 6
-        PREVIOUS = 7
-        TARGET = 8
-        SOURCE = 9
