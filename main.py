@@ -61,9 +61,9 @@ if __name__ == '__main__':
             project_gcn_input = EcoreToMatrixConverter(resource)
             output_name = project_gcn_input.get_graph_name()
             output_node_matrix = project_gcn_input.get_node_matrix()
-            output_adjacency_matrix = project_gcn_input.get_adjacency_matrix()
+            output_adjacency_list = project_gcn_input.get_adjacency_list()
 
-            #save matrices in two text files
+            #save matrices in two csv files
             new_resource_nodes = open(f"{matrix_files}/{output_name}_nxc.csv", "w+") 
             for node in output_node_matrix: #iterate over slices
                 node_counter = 0
@@ -76,7 +76,7 @@ if __name__ == '__main__':
                 new_resource_nodes.write("\n") #write next slice (node) in new line
             new_resource_nodes.close()
             new_resource_edges = open(f"{matrix_files}/{output_name}_adjacency.csv", "w+")
-            for edge in output_adjacency_matrix:
+            for edge in output_adjacency_list:
                 edge_counter = 0
                 for item in edge:
                     if edge_counter<len(edge)-1:
