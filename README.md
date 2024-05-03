@@ -4,6 +4,8 @@
 
 This repository contains a deep-learning based classification tool for Software Repositories. The tool utilizes ecore metamodels and a graph convolutional network. For use run 'main.py' after adding the directory containing the repositories you want to classify.
 
+If you want to train the tool with different labels, you can use GraphLabels.py to encode your labeled repositories for your dataset.
+
 **labels**
 
 Framework, Library, Application, Tutorial, Experiment
