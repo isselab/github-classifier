@@ -55,6 +55,7 @@ if __name__ == '__main__':
     rset.metamodel_registry[mm_root.nsURI] = mm_root
 
     #save matrices in two csv files
+    #dataset is large graph consisting of subgraphs
     new_resource_nodes = open(f"{matrix_files}/{dataset_name}_nodes.csv", "w+") 
     new_resource_edges = open(f"{matrix_files}/{dataset_name}_A.csv", "w+")
     graph_indicator = open(f"{matrix_files}/{dataset_name}_graph_indicator.csv", "w+")
@@ -89,8 +90,7 @@ if __name__ == '__main__':
                         new_resource_edges.write("%s" % item_with_offset)
                 new_resource_edges.write("\n")
             
-            offset = len(output_node_matrix) + 1 #add 1 to leave subgraphs not connected
-            edge_offset += len(output_node_matrix) #add offset to edges to get accurate node_id
+            edge_offset += len(output_node_matrix) #add offset to edges to get accurate node_id for subgraph in large graph
             
         except Exception as e:
             print(e)
