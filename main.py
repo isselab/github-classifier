@@ -8,6 +8,7 @@ from EcoreToMatrix import EcoreToMatrixConverter
 #repository_directory = '../unit_testing'
 repository_directory = '../test_repository' #input repositories
 output_directory = '../test_tool' #output of the entire tool pipeline
+dataset_name = 'repoDataset' #set name for your dataset
 
 if __name__ == '__main__':
     if not os.path.exists(output_directory): 
@@ -52,6 +53,12 @@ if __name__ == '__main__':
     resource = rset.get_resource(URI('Basic.ecore'))
     mm_root = resource.contents[0]
     rset.metamodel_registry[mm_root.nsURI] = mm_root
+
+    #save matrices in two csv files
+    new_resource_nodes = open(f"{matrix_files}/{dataset_name}_nodes.csv", "w+") 
+    new_resource_edges = open(f"{matrix_files}/{dataset_name}_A.csv", "w+")
+    graph_indicator = open(f"{matrix_files}/{dataset_name}_graph_indicator.csv", "w+")
+
     for x, xmi_file in enumerate(list_xmi_files):
         print(f"Progress: {x}/{len(list_xmi_files)}")
         current_xmi_file = os.path.join(ecore_files, xmi_file)
@@ -63,13 +70,13 @@ if __name__ == '__main__':
             output_node_matrix = project_gcn_input.get_encoded_node_matrix()
             output_adjacency_list = project_gcn_input.get_adjacency_list()
 
-            #save matrices in two csv files
-            new_resource_nodes = open(f"{matrix_files}/{output_name}_nxc.csv", "w+") 
             for node in output_node_matrix:
                 new_resource_nodes.write("%s" % node)
                 new_resource_nodes.write("\n") #write next slice (node) in new line
-            new_resource_nodes.close()
-            new_resource_edges = open(f"{matrix_files}/{output_name}_adjacency.csv", "w+")
+                graph_id = x + 1 #start indexing of graphs at 1
+                graph_indicator.write("%s" % graph_id) #save for each node in the dataset which graph it belongs to
+                graph_indicator.write("\n")
+            
             for edge in output_adjacency_list:
                 edge_counter = 0
                 for item in edge:
@@ -79,10 +86,14 @@ if __name__ == '__main__':
                     else:
                         new_resource_edges.write("%s " % item)
                 new_resource_edges.write("\n")
-            new_resource_edges.close()
+            
         except Exception as e:
             print(e)
             print(f"Problem with xmi file {xmi_file}. Skipping")
             skip_xmi += 1
+
+    new_resource_nodes.close()
+    new_resource_edges.close()
+    graph_indicator.close()
     print("-----------------------------------")
     print(f"Skipped {skip_xmi} of {len(list_xmi_files)}")
