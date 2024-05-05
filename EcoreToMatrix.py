@@ -1,6 +1,7 @@
 from pyecore.resources import ResourceSet, URI
 from enum import Enum
 from ASTToEcore import ProjectEcoreGraph
+from sklearn.preprocessing import LabelEncoder
 
 class EcoreToMatrixConverter:
     def __init__(self, resource:ResourceSet):
@@ -16,11 +17,17 @@ class EcoreToMatrixConverter:
         
         self.convert_edges()
 
+        node_labels = [self.NodeTypes.PACKAGE.value, self.NodeTypes.MODULE.value, self.NodeTypes.CLASS.value, self.NodeTypes.METHOD_DEFINITION.value, self.NodeTypes.METHOD.value, self.NodeTypes.METHOD_SIGNATURE.value, self.NodeTypes.PARAMETER.value, self.NodeTypes.CALL.value]
+        self.encoded_node_matrix = self.convert_labels(node_labels)
+
     def get_node_matrix(self):
         return self.node_matrix
     
     def get_adjacency_list(self):
         return self.adjacency_list
+    
+    def get_encoded_node_matrix(self):
+        return self.encoded_node_matrix
     
     def get_graph_name(self):
         return self.typegraph_root.tName
@@ -34,21 +41,21 @@ class EcoreToMatrixConverter:
             current_subsubpackage = None
             current_package = self.get_node(tpackage.tName, self.NodeTypes.PACKAGE.value) #check if package is already in node matrix
             if current_package is None:
-                self.node_matrix.append([self.NodeTypes.PACKAGE.value, tpackage.tName])
+                self.node_matrix.append(self.NodeTypes.PACKAGE.value)
                 self.node_dict[self.node_count] = [self.NodeTypes.PACKAGE.value, tpackage.tName]
                 self.node_count += 1
                 if hasattr(tpackage, 'subpackages'): 
                     for tsubpackage in tpackage.subpackages: 
                         current_subpackage = self.get_node(tsubpackage.tName, self.NodeTypes.PACKAGE.value)
                         if current_subpackage is None:
-                            self.node_matrix.append([self.NodeTypes.PACKAGE.value, tsubpackage.tName])
+                            self.node_matrix.append(self.NodeTypes.PACKAGE.value)
                             self.node_dict[self.node_count] = [self.NodeTypes.PACKAGE.value, tsubpackage.tName, self.NodeTypes.PACKAGE.value, tpackage.tName] #save type and name for edge info
                             self.node_count += 1
                             if hasattr(tsubpackage, 'subpackages'):
                                 for tsubsubpackage in tsubpackage.subpackages:
                                     current_subsubpackage = self.get_node(tsubsubpackage.tName, self.NodeTypes.PACKAGE.value)
                                     if current_subsubpackage is None:
-                                        self.node_matrix.append([self.NodeTypes.PACKAGE.value, tsubsubpackage.tName])
+                                        self.node_matrix.append(self.NodeTypes.PACKAGE.value)
                                         self.node_dict[self.node_count] = [self.NodeTypes.PACKAGE.value, tsubsubpackage.tName, self.NodeTypes.PACKAGE.value, tsubpackage.tName]
                                         self.node_count += 1
         
@@ -57,7 +64,7 @@ class EcoreToMatrixConverter:
             current_module = None
             current_module = self.get_node(tmodule.location, self.NodeTypes.MODULE.value)
             if current_module is None:
-                self.node_matrix.append([self.NodeTypes.MODULE.value, tmodule.location]) 
+                self.node_matrix.append(self.NodeTypes.MODULE.value) 
                 if tmodule.namespace is not None:
                     self.node_dict[self.node_count] = [self.NodeTypes.MODULE.value, tmodule.location, self.NodeTypes.PACKAGE.value, tmodule.namespace.tName] #name of TPackage object
                     self.node_count += 1
@@ -71,7 +78,7 @@ class EcoreToMatrixConverter:
                             current_class = None
                             current_class = self.get_node(tobject.tName, self.NodeTypes.CLASS.value)
                             if current_class is None:
-                                self.node_matrix.append([self.NodeTypes.CLASS.value, tobject.tName])
+                                self.node_matrix.append(self.NodeTypes.CLASS.value)
                                 self.node_dict[self.node_count] = [self.NodeTypes.CLASS.value, tobject.tName, self.NodeTypes.MODULE.value, tmodule.location]
                                 self.node_count += 1
                                 if hasattr(tobject, 'childClasses'):
@@ -88,14 +95,14 @@ class EcoreToMatrixConverter:
             current_method = None
             current_method = self.get_node(tmethod.tName, self.NodeTypes.METHOD.value)
             if current_method is None:
-                self.node_matrix.append([self.NodeTypes.METHOD.value, tmethod.tName])
+                self.node_matrix.append(self.NodeTypes.METHOD.value)
                 self.node_dict[self.node_count] = [self.NodeTypes.METHOD.value, tmethod.tName]
                 self.node_count += 1
                 node_name = tmethod.tName
                 for tobject in tmethod.signatures:
                     node_name += '_signature'
                     signature_name = node_name
-                    self.node_matrix.append([self.NodeTypes.METHOD_SIGNATURE.value, node_name])
+                    self.node_matrix.append(self.NodeTypes.METHOD_SIGNATURE.value)
                     self.node_dict[self.node_count] = [self.NodeTypes.METHOD_SIGNATURE.value, node_name, self.NodeTypes.METHOD.value, tmethod.tName] #savig method name helps later on!!
                     self.node_count += 1
                     if hasattr(tobject, 'parameters'):
@@ -107,7 +114,7 @@ class EcoreToMatrixConverter:
                             
                             #check for next parameter to save info for edges later
                             if tparam.next is None:
-                                self.node_matrix.append([self.NodeTypes.PARAMETER.value, param_name])
+                                self.node_matrix.append(self.NodeTypes.PARAMETER.value)
                                 self.node_dict[self.node_count] = [self.NodeTypes.PARAMETER.value, param_name, self.NodeTypes.METHOD_SIGNATURE.value, signature_name] 
                                 self.node_count += 1
 
@@ -116,7 +123,7 @@ class EcoreToMatrixConverter:
                                 next_param_counter = param_counter+1
                                 next_param = str(next_param_counter)
                                 next_param_name = node_name + next_param
-                                self.node_matrix.append([self.NodeTypes.PARAMETER.value, param_name])
+                                self.node_matrix.append(self.NodeTypes.PARAMETER.value)
                                 self.node_dict[self.node_count] = [self.NodeTypes.PARAMETER.value, param_name, self.NodeTypes.METHOD_SIGNATURE.value, signature_name, 'Next', next_param_name] 
                                 self.node_count += 1
         
@@ -125,7 +132,7 @@ class EcoreToMatrixConverter:
             current_class = None
             current_class = self.get_node(tclass.tName, self.NodeTypes.CLASS.value)
             if current_class is None:
-                self.node_matrix.append([self.NodeTypes.CLASS.value, tclass.tName])
+                self.node_matrix.append(self.NodeTypes.CLASS.value)
                 self.node_dict[self.node_count] = [self.NodeTypes.CLASS.value, tclass.tName] #does not have package in namespace
                 self.node_count += 1
                 if hasattr(tclass, 'childClasses'):
@@ -135,7 +142,7 @@ class EcoreToMatrixConverter:
 
     def convert_childClasses(self, tclass):
         for child in tclass.childClasses:
-            self.node_matrix.append([self.NodeTypes.CLASS.value, child.tName])
+            self.node_matrix.append(self.NodeTypes.CLASS.value)
             self.node_dict[self.node_count] = [self.NodeTypes.CLASS.value, child.tName, self.NodeTypes.CLASS.value, tclass.tName]
             self.node_count += 1
             if hasattr(child, 'defines'):
@@ -154,7 +161,7 @@ class EcoreToMatrixConverter:
         tobject_name += '_definition'
         current_method_def = self.get_node(tobject_name, self.NodeTypes.METHOD_DEFINITION.value)
         if current_method_def is None:
-            self.node_matrix.append([self.NodeTypes.METHOD_DEFINITION.value, tobject_name])
+            self.node_matrix.append(self.NodeTypes.METHOD_DEFINITION.value)
             self.node_dict[self.node_count] = [self.NodeTypes.METHOD_DEFINITION.value, tobject_name, container_type, tcontainer_name] 
             self.node_count += 1
             if hasattr(t_meth_def, 'accessing'):
@@ -171,15 +178,16 @@ class EcoreToMatrixConverter:
             call_counter = c+1
             calls = str(call_counter)
             current_call = tmethod_def_name + calls
-            self.node_matrix.append([self.NodeTypes.CALL.value, current_call])
+            self.node_matrix.append(self.NodeTypes.CALL.value)
             self.node_dict[self.node_count] = [self.NodeTypes.CALL.value, current_call, 'Source', call_source, 'Target', target_name]
             self.node_count += 1
 
-    #this function checks if a node already exists by comparing both features
+    #this function checks if a node already exists by comparing node type and name
     def get_node(self, node_name, type):
-        for current_node in self.node_matrix:
-            if node_name == current_node[1]:
-                if type == current_node[0]:
+        for current_node in self.node_dict:
+            node = self.node_dict[current_node]
+            if node[0] == type:
+                if node[1] == node_name:
                     return current_node
         return None
     
@@ -270,13 +278,19 @@ class EcoreToMatrixConverter:
             if find_node[0] == type_string:
                 if find_node[1] == node_name:
                     return find_key
+                
+    def convert_labels(self, labels):
+        label_encoder = LabelEncoder()
+        label_encoder.fit(labels)
+        encoded_nodes = label_encoder.transform(self.node_matrix)
+        return encoded_nodes
 
     class NodeTypes(Enum):
-        PACKAGE = 'TPackage'
-        MODULE = 'TModule'
-        CLASS = 'TClass'
-        METHOD_DEFINITION = 'TMethodDefinition'
-        METHOD_SIGNATURE = 'TMethodSignature'
-        METHOD = 'TMethod'
-        PARAMETER = 'TParameter'
-        CALL = 'TCall'
+        PACKAGE = "TPackage"
+        MODULE = "TModule"
+        CLASS = "TClass"
+        METHOD_DEFINITION = "TMethodDefinition"
+        METHOD_SIGNATURE = "TMethodSignature"
+        METHOD = "TMethod"
+        PARAMETER = "TParameter"
+        CALL = "TCall"
