@@ -77,14 +77,14 @@ if __name__ == '__main__':
                 graph_indicator.write("%s" % graph_id) #save for each node in the dataset which graph it belongs to
                 graph_indicator.write("\n")
             
-            for edge in output_adjacency_list:
+            for edge in output_adjacency_list: #edge is array with two entries [node_id, node_id]
                 edge_counter = 0
                 for item in edge:
                     if edge_counter<len(edge)-1:
                         new_resource_edges.write("%s, " % item)
                         edge_counter += 1
                     else:
-                        new_resource_edges.write("%s " % item)
+                        new_resource_edges.write("%s" % item)
                 new_resource_edges.write("\n")
             
         except Exception as e:

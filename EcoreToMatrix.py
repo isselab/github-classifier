@@ -12,8 +12,7 @@ class EcoreToMatrixConverter:
 
         self.convert_nodes(self.typegraph_root)
 
-        number_of_nodes = len(self.get_node_matrix())
-        self.adjacency_list = [[] for i in range(number_of_nodes)] #empty list for every node, list will cotain edge info
+        self.adjacency_list = [] #empty list for edge info
         
         self.convert_edges()
 
@@ -200,7 +199,7 @@ class EcoreToMatrixConverter:
             if current_node[0] == self.NodeTypes.PACKAGE.value:
                 if len(current_node) == 4: #there is a subpackage
                     find_key = self.find_key_of_connected_node(self.NodeTypes.PACKAGE.value, current_node) #search for key of the parent package
-                    self.adjacency_list[find_key].append(keys)
+                    self.adjacency_list.append([find_key, keys])
 
             #set edges between Modules and Packages
             if current_node[0] == self.NodeTypes.MODULE.value:
@@ -208,60 +207,60 @@ class EcoreToMatrixConverter:
                     if current_node[2] == self.NodeTypes.PACKAGE.value:
                         find_key = self.find_key_of_connected_node(self.NodeTypes.PACKAGE.value, current_node)
                         #edge in both directions
-                        self.adjacency_list[find_key].append(keys)
-                        self.adjacency_list[keys].append(find_key)
+                        self.adjacency_list.append([find_key, keys])
+                        self.adjacency_list.append([keys, find_key])
 
             #set edges between classes and modules
             if current_node[0] == self.NodeTypes.CLASS.value:
                 if len(current_node) == 4:
                     if current_node[2] == self.NodeTypes.MODULE.value:
                         find_key = self.find_key_of_connected_node(self.NodeTypes.MODULE.value, current_node)
-                        self.adjacency_list[find_key].append(keys)
+                        self.adjacency_list.append([find_key, keys])
                     if current_node[2] == self.NodeTypes.CLASS.value:
                         find_key = self.find_key_of_connected_node(self.NodeTypes.CLASS.value, current_node)
-                        self.adjacency_list[find_key].append(keys) #edge from TClass to child class
+                        self.adjacency_list.append([find_key, keys]) #edge from TClass to child class
             
             #set edges between classes/modules and method definitions
             if current_node[0] == self.NodeTypes.METHOD_DEFINITION.value:
                 if len(current_node) == 4:
                     if current_node[2] == self.NodeTypes.MODULE.value:
                         find_key = self.find_key_of_connected_node(self.NodeTypes.MODULE.value, current_node)
-                        self.adjacency_list[find_key].append(keys)
+                        self.adjacency_list.append([find_key, keys])
                     if current_node[2] == self.NodeTypes.CLASS.value:
                         find_key = self.find_key_of_connected_node(self.NodeTypes.CLASS.value, current_node)
-                        self.adjacency_list[find_key].append(keys)
+                        self.adjacency_list.append([find_key, keys])
             
             #set edges for TMethod objects
             if current_node[0] == self.NodeTypes.METHOD_SIGNATURE.value:
                 find_key = self.find_key_of_connected_node(self.NodeTypes.METHOD.value, current_node)
-                self.adjacency_list[find_key].append(keys) #edge from TMethod to TMethodSignature object
+                self.adjacency_list.append([find_key, keys]) #edge from TMethod to TMethodSignature object
             if current_node[0] == self.NodeTypes.METHOD.value:
                 method_name = current_node[1]
                 method_name += '_definition'
                 find_key = self.find_connected_node(self.NodeTypes.METHOD_DEFINITION.value, method_name)
-                self.adjacency_list[keys].append(find_key) #edge from TMethod to TMethodDef object!
+                self.adjacency_list.append([keys, find_key]) #edge from TMethod to TMethodDef object!
 
             #set edges for parameters
             if current_node[0] == self.NodeTypes.PARAMETER.value:
                 find_key = self.find_key_of_connected_node(self.NodeTypes.METHOD_SIGNATURE.value, current_node)
-                self.adjacency_list[find_key].append(keys) #edge from TMethodSignature to TParameter
+                self.adjacency_list.append([find_key, keys]) #edge from TMethodSignature to TParameter
                 if len(current_node) == 6: #function has multiple parameters
                     next_parameter_name = current_node[5]
                     find_key = self.find_connected_node(self.NodeTypes.PARAMETER.value, next_parameter_name)
                     #edges between next/previous parameters of one function
-                    self.adjacency_list[find_key].append(keys)
-                    self.adjacency_list[keys].append(find_key)
+                    self.adjacency_list.append([find_key, keys])
+                    self.adjacency_list.append([keys, find_key])
 
             #set edges for calls
             if current_node[0] == self.NodeTypes.CALL.value:
                 find_key = self.find_key_of_connected_node(self.NodeTypes.METHOD_DEFINITION.value, current_node)
-                self.adjacency_list[find_key].append(keys) #edge TMethDef to TCall, 'accessing'
+                self.adjacency_list.append([find_key, keys]) #edge TMethDef to TCall, 'accessing'
                 if len(current_node) == 6:
                     target_name = current_node[5] #method name that's being called
                     target_name += '_definition'
                     find_key = self.find_connected_node(self.NodeTypes.METHOD_DEFINITION.value, target_name)
-                    self.adjacency_list[find_key].append(keys) #edge TMethDef to TCall, 'accessedBy'
-                    self.adjacency_list[keys].append(find_key) #edge TCall to TMethDef, 'target'
+                    self.adjacency_list.append([find_key, keys]) #edge TMethDef to TCall, 'accessedBy'
+                    self.adjacency_list.append([keys, find_key]) #edge TCall to TMethDef, 'target'
 
     #find number of node (key), name explicitly saved in current_node
     def find_key_of_connected_node(self, type_string, current_node):
