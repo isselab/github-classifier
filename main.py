@@ -58,6 +58,7 @@ if __name__ == '__main__':
     new_resource_nodes = open(f"{matrix_files}/{dataset_name}_nodes.csv", "w+") 
     new_resource_edges = open(f"{matrix_files}/{dataset_name}_A.csv", "w+")
     graph_indicator = open(f"{matrix_files}/{dataset_name}_graph_indicator.csv", "w+")
+    edge_offset = 0
 
     for x, xmi_file in enumerate(list_xmi_files):
         print(f"Progress: {x}/{len(list_xmi_files)}")
@@ -75,17 +76,21 @@ if __name__ == '__main__':
                 new_resource_nodes.write("\n") #write next slice (node) in new line
                 graph_id = x + 1 #start indexing of graphs at 1
                 graph_indicator.write("%s" % graph_id) #save for each node in the dataset which graph it belongs to
-                graph_indicator.write("\n")
+                graph_indicator.write("\n")            
             
             for edge in output_adjacency_list: #edge is array with two entries [node_id, node_id]
-                edge_counter = 0
+                edge_counter = 1
                 for item in edge:
-                    if edge_counter<len(edge)-1:
-                        new_resource_edges.write("%s, " % item)
+                    item_with_offset = item + edge_offset
+                    if edge_counter<len(edge):
+                        new_resource_edges.write("%s, " % item_with_offset)
                         edge_counter += 1
                     else:
-                        new_resource_edges.write("%s" % item)
+                        new_resource_edges.write("%s" % item_with_offset)
                 new_resource_edges.write("\n")
+            
+            offset = len(output_node_matrix) + 1 #add 1 to leave subgraphs not connected
+            edge_offset += offset #add offset to edges to get accurate node_id
             
         except Exception as e:
             print(e)
