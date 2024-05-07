@@ -2,6 +2,7 @@ import os
 from ASTToEcore import ProjectEcoreGraph
 from pyecore.resources import ResourceSet, URI
 from EcoreToMatrix import EcoreToMatrixConverter
+from CustomDataset import RepositoryDataset
 
 # repository_directory = '/mnt/volume1/mlexpmining/cloned_repos/'
 # output_directory = '/mnt/volume1/mlexpmining/ecore_graphs/'
@@ -54,12 +55,6 @@ if __name__ == '__main__':
     mm_root = resource.contents[0]
     rset.metamodel_registry[mm_root.nsURI] = mm_root
 
-    #save matrices in two csv files
-    #dataset is large graph consisting of subgraphs
-    
-    graph_indicator = open(f"{matrix_files}/{dataset_name}_graph_indicator.csv", "w+")
-    edge_offset = 0
-
     for x, xmi_file in enumerate(list_xmi_files):
         print(f"Progress: {x}/{len(list_xmi_files)}")
         current_xmi_file = os.path.join(ecore_files, xmi_file)
@@ -70,6 +65,8 @@ if __name__ == '__main__':
             output_name = project_gcn_input.get_graph_name()
             output_node_matrix = project_gcn_input.get_encoded_node_matrix()
             output_adjacency_list = project_gcn_input.get_adjacency_list()
+
+            #save matrices in two csv files
             new_resource_nodes = open(f"{matrix_files}/{output_name}_nodes.csv", "w+") 
             new_resource_edges = open(f"{matrix_files}/{output_name}_A.csv", "w+")
 
@@ -77,21 +74,17 @@ if __name__ == '__main__':
                 new_resource_nodes.write("%s" % node)
                 new_resource_nodes.write("\n") #write next slice (node) in new line
                 graph_id = x + 1 #start indexing of graphs at 1
-                graph_indicator.write("%s" % graph_id) #save for each node in the dataset which graph it belongs to
-                graph_indicator.write("\n")            
-            
+
             for edge in output_adjacency_list: #edge is array with two entries [node_id, node_id]
                 edge_counter = 1
                 for item in edge:
-                    item_with_offset = item + edge_offset
                     if edge_counter<len(edge):
-                        new_resource_edges.write("%s, " % item_with_offset)
+                        new_resource_edges.write("%s, " % item)
                         edge_counter += 1
                     else:
-                        new_resource_edges.write("%s" % item_with_offset)
+                        new_resource_edges.write("%s" % item)
                 new_resource_edges.write("\n")
             
-            edge_offset += len(output_node_matrix) #add offset to edges to get accurate node_id for subgraph in large graph
             new_resource_nodes.close()
             new_resource_edges.close()
             
@@ -100,6 +93,8 @@ if __name__ == '__main__':
             print(f"Problem with xmi file {xmi_file}. Skipping")
             skip_xmi += 1
 
-    graph_indicator.close()
     print("-----------------------------------")
     print(f"Skipped {skip_xmi} of {len(list_xmi_files)}")
+    dataset = RepositoryDataset(matrix_files)
+    print(dataset.__len__())
+    print(dataset[0])
