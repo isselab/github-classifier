@@ -22,11 +22,12 @@ class RepositoryDataset(Dataset):
                 self.edge_name = graph.removesuffix('_A.csv')
             if 'graph_labels' in graph:
                 graph_label = pd.read_csv(f"{directory}/{graph}", header=None)
-                self.graph_labels = torch.LongTensor(np.array(graph_label))
+                self.graph_labels = torch.LongTensor(np.array(graph_label[1]))
             if self.node_name == self.edge_name and self.node_name not in self.graph_names:
                 loaded_graph = (self.node_tensor, self.edge_tensor)
                 self.graph_list.append(loaded_graph)
                 self.graph_names.append(self.node_name)
+
 
     def __len__(self):
         size = len(self.graph_list)
