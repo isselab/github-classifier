@@ -105,3 +105,4 @@ if __name__ == '__main__':
     trainset, testset = random_split(dataset, [0.5, 0.5])
     loader = DataLoader(trainset, shuffle=True, batch_size=1)
     print(loader)
+    print(dataset.get_num_classes())

@@ -29,11 +29,28 @@ class RepositoryDataset(Dataset):
                 self.graph_list.append(loaded_graph)
                 self.graph_names.append(self.node_name)
 
+    #returns number of samples (graphs) in the dataset
     def __len__(self):
         size = len(self.graph_list)
         return size
     
+    #fetches pair (sample, label) from the dataset at index position, indexing starts at 0
     def __getitem__(self, index):
-        graph = self.graph_list[index]
+        graph = self.graph_list[index] 
         label = self.graph_labels[index]
         return graph, label
+    
+    #returns number of labels in the dataset
+    def get_num_classes(self):
+        counter = []
+        for l in self.graph_labels:
+            if l not in counter:
+                counter.append(l)
+        num_labels = len(counter)
+        return num_labels
+    
+    #normalize to avoid bias, dont know if this makes sense for our tool, leave out for now
+    def normalize_matrix(matrix):
+        norm = np.linalg.norm(matrix)
+        normalized_matrix = matrix/norm
+        return normalized_matrix
