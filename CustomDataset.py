@@ -7,6 +7,7 @@ import numpy as np
 #custom dataset
 class RepositoryDataset(Dataset):
     def __init__(self, directory):
+        self.num_node_features = 1 #nodes only have its type as feature
         self.graph_list = []
         self.node_name = 'Test1'
         self.edge_name = 'Test2'

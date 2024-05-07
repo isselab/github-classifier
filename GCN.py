@@ -10,7 +10,7 @@ class GCN(torch.nn.Module):
     def __init__(self, dataset, hidden_channels):
         super(GCN, self).__init__()
         torch.manual_seed(12345)
-        self.conv1 = GCNConv(dataset[1][0][0], hidden_channels) #input: node features of graph 2 right now
+        self.conv1 = GCNConv(dataset.num_node_features, hidden_channels) #input: number of features per node
         self.conv2 = GCNConv(hidden_channels, hidden_channels)
         self.conv3 = GCNConv(hidden_channels, hidden_channels)
         self.lin = Linear(hidden_channels, dataset.get_num_classes())
