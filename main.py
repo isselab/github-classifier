@@ -56,8 +56,7 @@ if __name__ == '__main__':
 
     #save matrices in two csv files
     #dataset is large graph consisting of subgraphs
-    new_resource_nodes = open(f"{matrix_files}/{dataset_name}_nodes.csv", "w+") 
-    new_resource_edges = open(f"{matrix_files}/{dataset_name}_A.csv", "w+")
+    
     graph_indicator = open(f"{matrix_files}/{dataset_name}_graph_indicator.csv", "w+")
     edge_offset = 0
 
@@ -71,6 +70,8 @@ if __name__ == '__main__':
             output_name = project_gcn_input.get_graph_name()
             output_node_matrix = project_gcn_input.get_encoded_node_matrix()
             output_adjacency_list = project_gcn_input.get_adjacency_list()
+            new_resource_nodes = open(f"{matrix_files}/{output_name}_nodes.csv", "w+") 
+            new_resource_edges = open(f"{matrix_files}/{output_name}_A.csv", "w+")
 
             for node in output_node_matrix:
                 new_resource_nodes.write("%s" % node)
@@ -91,14 +92,14 @@ if __name__ == '__main__':
                 new_resource_edges.write("\n")
             
             edge_offset += len(output_node_matrix) #add offset to edges to get accurate node_id for subgraph in large graph
+            new_resource_nodes.close()
+            new_resource_edges.close()
             
         except Exception as e:
             print(e)
             print(f"Problem with xmi file {xmi_file}. Skipping")
             skip_xmi += 1
 
-    new_resource_nodes.close()
-    new_resource_edges.close()
     graph_indicator.close()
     print("-----------------------------------")
     print(f"Skipped {skip_xmi} of {len(list_xmi_files)}")
