@@ -4,6 +4,7 @@ import pandas as pd
 import torch
 import numpy as np
 
+#custom dataset
 class RepositoryDataset(Dataset):
     def __init__(self, directory):
         self.graph_list = []
@@ -27,7 +28,6 @@ class RepositoryDataset(Dataset):
                 loaded_graph = (self.node_tensor, self.edge_tensor)
                 self.graph_list.append(loaded_graph)
                 self.graph_names.append(self.node_name)
-
 
     def __len__(self):
         size = len(self.graph_list)

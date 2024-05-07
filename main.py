@@ -103,5 +103,5 @@ if __name__ == '__main__':
     #print(dataset[0])
     #split into train and testset
     trainset, testset = random_split(dataset, [0.5, 0.5])
-    loader = DataLoader(trainset) #here usually batching and shuffling
+    loader = DataLoader(trainset, shuffle=True, batch_size=1)
     print(loader)
