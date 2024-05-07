@@ -15,6 +15,8 @@ class GCN(torch.nn.Module):
         self.conv3 = GCNConv(hidden_channels, hidden_channels)
         self.lin = Linear(hidden_channels, dataset.get_num_classes())
 
+#add self-loop to edge info? keeps appearing in tutorials
+     #edge info used/input in forward function in every tutorial/example
     def forward(self, x, edge_index, batch): #what edge index??
         # 1. Obtain node embeddings 
         x = self.conv1(x, edge_index) #here somewhere needs to be put adjacency as input
