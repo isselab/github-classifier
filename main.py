@@ -3,6 +3,7 @@ from ASTToEcore import ProjectEcoreGraph
 from pyecore.resources import ResourceSet, URI
 from EcoreToMatrix import EcoreToMatrixConverter
 from CustomDataset import RepositoryDataset
+from torch.utils.data import DataLoader, random_split
 
 # repository_directory = '/mnt/volume1/mlexpmining/cloned_repos/'
 # output_directory = '/mnt/volume1/mlexpmining/ecore_graphs/'
@@ -95,6 +96,12 @@ if __name__ == '__main__':
 
     print("-----------------------------------")
     print(f"Skipped {skip_xmi} of {len(list_xmi_files)}")
+    print("---------------load dataset-----------------")
     dataset = RepositoryDataset(matrix_files)
+    print("Dataset size: ")
     print(dataset.__len__())
-    print(dataset[0])
+    #print(dataset[0])
+    #split into train and testset
+    trainset, testset = random_split(dataset, [0.5, 0.5])
+    loader = DataLoader(trainset) #here usually batching and shuffling
+    print(loader)
