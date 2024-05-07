@@ -4,6 +4,7 @@ from pyecore.resources import ResourceSet, URI
 from EcoreToMatrix import EcoreToMatrixConverter
 from CustomDataset import RepositoryDataset
 from torch.utils.data import DataLoader, random_split
+from GCN import GCN
 
 # repository_directory = '/mnt/volume1/mlexpmining/cloned_repos/'
 # output_directory = '/mnt/volume1/mlexpmining/ecore_graphs/'
@@ -104,5 +105,8 @@ if __name__ == '__main__':
     #split into train and testset
     trainset, testset = random_split(dataset, [0.5, 0.5])
     loader = DataLoader(trainset, shuffle=True, batch_size=1)
-    print(loader)
+    #print(loader)
     print(dataset.get_num_classes())
+    #print(dataset[1][0])#this is only tupel node feature and edges
+    #print(dataset[1][0][0]) #this is node feature tensor
+    model = GCN(dataset, hidden_channels=8)
