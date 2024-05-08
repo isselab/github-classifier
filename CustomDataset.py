@@ -8,6 +8,7 @@ import numpy as np
 class RepositoryDataset(Dataset):
     def __init__(self, directory):
         self.num_node_features = 1 #nodes only have its type as feature
+        self.num_classes = 5 #application, library, framework, tutorial, experiment
         self.graph_list = []
         self.node_name = 'Test1'
         self.edge_name = 'Test2'
@@ -50,6 +51,8 @@ class RepositoryDataset(Dataset):
                 if l not in counter:
                     counter.append(l)
             num_labels = len(counter)
+        else:
+            num_labels = self.num_classes #is this the correct info?
         return num_labels
     
     #normalize to avoid bias, dont know if this makes sense for our tool, leave out for now
