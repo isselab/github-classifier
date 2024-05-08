@@ -44,7 +44,7 @@ class RepositoryDataset(Dataset):
         label = self.graph_labels[index]
         return graph, label
     
-    #returns number of labels in the dataset
+    #returns number of labels in the dataset, im completely leaving this out (at least for now, maybe permanently)
     def get_num_classes(self):
         counter = []
         if hasattr(self, 'graph_labels'):

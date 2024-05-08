@@ -105,7 +105,7 @@ if __name__ == '__main__':
     trainset, testset = random_split(dataset, [0.5, 0.5])
     loader = DataLoader(trainset, shuffle=True, batch_size=1)
     #print(loader)
-    print(dataset.get_num_classes())
+    print(dataset.num_classes)
     #print(dataset[1][0])#this is only tupel node feature and edges
     #print(dataset[1][0][0]) #this is node feature tensor
     #model = GCN(dataset, hidden_channels=8)

@@ -13,7 +13,7 @@ class GCN(torch.nn.Module):
         self.conv1 = GCNConv(dataset.num_node_features, hidden_channels) #input: number of features per node
         self.conv2 = GCNConv(hidden_channels, hidden_channels)
         self.conv3 = GCNConv(hidden_channels, hidden_channels)
-        self.lin = Linear(hidden_channels, dataset.get_num_classes())
+        self.lin = Linear(hidden_channels, dataset.num_classes)
 
 #add self-loop to edge info? keeps appearing in tutorials
      #edge info used/input in forward function in every tutorial/example
