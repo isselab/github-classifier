@@ -1,14 +1,12 @@
 import pandas as pd
-from sklearn.preprocessing import LabelEncoder        
+from sklearn.preprocessing import LabelEncoder  
+from defined_graph_classes import graph_types      
 
 labels = '../test_repositories.ods' #labeled repositories for the dataset
 output_graph_labels = '../csv_files/graph_labels.csv' #for output: label encoded graph labels for the dataset
 
 #load labeled repository from excel/ods file
 resource = pd.read_excel(labels)
-        
-#define graph labels
-graph_types = ['Application', 'Library', 'Framework', 'Experiment', 'Tutorial']
 
 new_resource_nodes = open(f"{output_graph_labels}", "w+")
 graph_labels = []

@@ -3,12 +3,13 @@ import os
 import pandas as pd
 import torch
 import numpy as np
+from defined_graph_classes import graph_types
 
 #custom dataset
 class RepositoryDataset(Dataset):
     def __init__(self, directory):
         self.num_node_features = 1 #nodes only have its type as feature
-        self.num_classes = 5 #application, library, framework, tutorial, experiment
+        self.num_classes = len(graph_types)
         self.graph_list = []
         self.node_name = 'Test1'
         self.edge_name = 'Test2'
@@ -43,7 +44,7 @@ class RepositoryDataset(Dataset):
         label = self.graph_labels[index]
         return graph, label
     
-    #returns number of labels in the dataset, issue when file graph_labels is missing
+    #returns number of labels in the dataset
     def get_num_classes(self):
         counter = []
         if hasattr(self, 'graph_labels'):
