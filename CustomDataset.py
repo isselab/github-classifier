@@ -41,13 +41,14 @@ class RepositoryDataset(Dataset):
         label = self.graph_labels[index]
         return graph, label
     
-    #returns number of labels in the dataset
+    #returns number of labels in the dataset, issue when file graph_labels is missing
     def get_num_classes(self):
         counter = []
-        for l in self.graph_labels:
-            if l not in counter:
-                counter.append(l)
-        num_labels = len(counter)
+        if hasattr(self, 'graph_labels'):
+            for l in self.graph_labels:
+                if l not in counter:
+                    counter.append(l)
+            num_labels = len(counter)
         return num_labels
     
     #normalize to avoid bias, dont know if this makes sense for our tool, leave out for now

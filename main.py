@@ -11,7 +11,6 @@ from GCN import GCN
 #repository_directory = '../unit_testing'
 repository_directory = '../test_repository' #input repositories
 output_directory = '../test_tool' #output of the entire tool pipeline
-dataset_name = 'repoDataset' #set name for your dataset
 
 if __name__ == '__main__':
     if not os.path.exists(output_directory): 
