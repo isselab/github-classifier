@@ -29,6 +29,7 @@ class RepositoryDataset(Dataset):
                 loaded_graph = (self.node_tensor, self.edge_tensor)
                 self.graph_list.append(loaded_graph)
                 self.graph_names.append(self.node_name)
+        #check at the end if hasattr(self, 'graph_labels'):, sonst überleg dir was!! für get_num_classes
 
     #returns number of samples (graphs) in the dataset
     def __len__(self):
