@@ -21,65 +21,53 @@ try:
     trainset, testset = random_split(dataset, [0.5, 0.5])
 
     #uses index to access (sample,label) pairs
-    loader = DataLoader(trainset, shuffle=True, batch_size=1)
-
+    trainloader = DataLoader(trainset, shuffle=True, batch_size=1)
+    testloader = DataLoader(trainset, shuffle=False, batch_size=1)
+    
     #print(dataset[1][0])#this is only tupel node feature and edges
     #print(dataset[1][0][0]) #this is node feature tensor
 
-    #graphs, graph_label = next(iter(loader)) #better than for loop
+    #graphs, graph_label = next(iter(trainloader)) #better than for loop??
+    #print(graphs[0])
+    #for graph, label in trainloader:
+        # print(graph[1])
 
 except Exception as e:
         print(e)
         print("There is a problem with the dataset.") #maybe dataset cant be loaded?
 
-#model = GCN(dataset, hidden_channels=8)
+#model = GCN(trainloader, hidden_channels=8)
 #print(model)
 
 #these parameters are set by us for training
-optimizer = torch.optim.Adam(model.parameters(), lr=0.01, weight_decay=5e-4)
+#optimizer = torch.optim.Adam(model.parameters(), lr=0.01, weight_decay=5e-4)
 criterion = torch.nn.CrossEntropyLoss()
 
-def train(idx): #idx is graph from the batch, or should be?
-    model.train()
-    optimizer.zero_grad()
-    out = model(loader[idx][0][0], loader[idx][0][1]) #(loader.x, loader.edge_index)
-    loss = criterion()
-    loss.backward()
-    optimizer.step()
-    return loss
+def train(): 
+    model.train() 
+    #iterate in batches over the training dataset
+    for graph, label in trainloader: 
+        #perform single forward pass
+        prediction = model(graph[0], graph[1]) #graph[0] is feature vector, graph[1] is edge_index
+        #compute loss from prediction made by model and the actual label from the dataset
+        loss = criterion(prediction, label) 
+        loss.backward() #derive gradients
+        optimizer.step() #update parameters based on gradients
+        optimizer.zero_grad() #clear gradients
 
-def test(): #i dont know whats happening here, example from github load_data
+def test(loader): #i dont know whats happening here, example from github load_data
     model.eval()
-    output = model(features, adj)
-    loss_test = F.nll_loss(output[idx_test], labels[idx_test])
-    acc_test = accuracy(output[idx_test], labels[idx_test])
-    print("Test set results:",
-          "loss= {:.4f}".format(loss_test.item()),
-          "accuracy= {:.4f}".format(acc_test.item()))
-    
-epoch_time = 200
-#for epoch in epoch_time:
-     #train(epoch) #this does not match func above with idx!!
-    
-#example
-#def train():
-   # model.train()
-    #optimizer.zero_grad()
-   # out = model(data.x, data.edge_index) 
-   # loss = criterion(out[data.train_mask], data.y[data.train_mask])
-   # loss.backward()
-    #optimizer.step()
-   # return loss
 
-#def test():
-    #model.eval()
-    #output = model(features, adj)
-    #loss_test = F.nll_loss(output[idx_test], labels[idx_test])
-   # acc_test = accuracy(output[idx_test], labels[idx_test])
-   # print("Test set results:",
-         # "loss= {:.4f}".format(loss_test.item()),
-          #"accuracy= {:.4f}".format(acc_test.item()))
+    for graph, label in loader: #or put entire testset in model withoput for??
+        prediction = model(graph[0], graph[1]) #in example additionally batch is passed here? what batch
+        #loss_test = F.nll_loss(prediction, label) #predict loss with predicted labels from trained model and defined labels of testset
+        #acc_test = accuracy(prediction, label) #missing func to compute accuracy
 
-#for test_graph, test_label in loader:
-        #sample_edges = test_graph[1] #[0] is feature vector
-        #sample_label = test_label[0]
+    
+n_epochs = 200
+#for epoch in range(n_epochs):
+     #train() #in examples training set is not passed as argument, just used inside func
+     #train_accuracy = test(trainloader)
+     #test_accuracy = test(testloader)
+     #print results
+    
