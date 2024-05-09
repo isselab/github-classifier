@@ -1,7 +1,7 @@
 from pyecore.resources import ResourceSet, URI
 from enum import Enum
 from ASTToEcoreConverter import ProjectEcoreGraph
-from sklearn.preprocessing import LabelEncoder
+from LabelEncoder import convert_labels
 
 class EcoreToMatrixConverter:
     def __init__(self, resource:ResourceSet):
@@ -17,7 +17,7 @@ class EcoreToMatrixConverter:
         self.convert_edges()
 
         node_labels = [self.NodeTypes.PACKAGE.value, self.NodeTypes.MODULE.value, self.NodeTypes.CLASS.value, self.NodeTypes.METHOD_DEFINITION.value, self.NodeTypes.METHOD.value, self.NodeTypes.METHOD_SIGNATURE.value, self.NodeTypes.PARAMETER.value, self.NodeTypes.CALL.value]
-        self.encoded_node_matrix = self.convert_labels(node_labels)
+        self.encoded_node_matrix = convert_labels(node_labels, self.node_matrix)
 
     def get_node_matrix(self):
         return self.node_matrix
@@ -277,12 +277,6 @@ class EcoreToMatrixConverter:
             if find_node[0] == type_string:
                 if find_node[1] == node_name:
                     return find_key
-                
-    def convert_labels(self, labels):
-        label_encoder = LabelEncoder()
-        label_encoder.fit(labels)
-        encoded_nodes = label_encoder.transform(self.node_matrix)
-        return encoded_nodes
 
     class NodeTypes(Enum):
         PACKAGE = "TPackage"

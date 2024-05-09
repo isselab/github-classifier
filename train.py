@@ -1,9 +1,12 @@
 from torch.utils.data import DataLoader, random_split
 from CustomDataset import RepositoryDataset
-
+from LabelDatasetGraphs import LabelDatasetGraphs
 
 print("---convert dataset labels for training---")
 #currently done manually by running LabelDatasetGraphs.py
+labels = '../test_repositories.ods' #labeled repositories for the dataset
+output_graph_labels = '../csv_files/graph_labels.csv' #for output: label encoded graph labels for the dataset
+LabelDatasetGraphs(labels, output_graph_labels)
 print("--------------load dataset---------------")
 try:
         matrix_files = '../csv_files'
@@ -23,7 +26,7 @@ try:
     #model = GCN(dataset, hidden_channels=8)
         #print(dataset.graph_names)
         #print(dataset.gr_name)
-        
+
 except Exception as e:
         print(e)
         print("There is a problem with the dataset.") #maybe dataset cant be loaded?
