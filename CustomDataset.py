@@ -16,7 +16,7 @@ class RepositoryDataset(Dataset):
         self.graph_names = []
         graph_dir = os.listdir(directory)
         for g,graph in enumerate(graph_dir):
-            if '_nodes' in graph:
+            if '_nodes' in graph: #maybe rename to nodefeatures?
                 node_features = pd.read_csv(f"{directory}/{graph}", header=None) #load csv file
                 self.node_tensor = torch.LongTensor(np.array(node_features)) #convert DataFrame object
                 self.node_name = graph.removesuffix('_nodes.csv')
@@ -24,14 +24,15 @@ class RepositoryDataset(Dataset):
                 adjacency = pd.read_csv(f"{directory}/{graph}", header=None)
                 self.edge_tensor = torch.LongTensor(np.array(adjacency))
                 self.edge_name = graph.removesuffix('_A.csv')
-            if 'graph_labels' in graph:
+            if 'graph_labels' in graph: #load both columns, but only as arrays to sort later
                 graph_label = pd.read_csv(f"{directory}/{graph}", header=None)
                 self.graph_labels = torch.LongTensor(np.array(graph_label[1]))
             if self.node_name == self.edge_name and self.node_name not in self.graph_names:
                 loaded_graph = (self.node_tensor, self.edge_tensor)
                 self.graph_list.append(loaded_graph)
                 self.graph_names.append(self.node_name)
-        #check at the end if hasattr(self, 'graph_labels'):, sonst überleg dir was!! für get_num_classes
+        #check at the end if hasattr(self, 'graph_labels'): to when training sort labels and graphs
+        #use graph_names for that!
 
     #returns number of samples (graphs) in the dataset
     def __len__(self):
@@ -45,16 +46,16 @@ class RepositoryDataset(Dataset):
         return graph, label
     
     #returns number of labels in the dataset, im completely leaving this out (at least for now, maybe permanently)
-    def get_num_classes(self):
-        counter = []
-        if hasattr(self, 'graph_labels'):
-            for l in self.graph_labels:
-                if l not in counter:
-                    counter.append(l)
-            num_labels = len(counter)
-        else:
-            num_labels = self.num_classes #is this the correct info?
-        return num_labels
+    #def get_num_classes(self): #i think i can delete this!!
+       # counter = []
+        #if hasattr(self, 'graph_labels'):
+            #for l in self.graph_labels:
+               # if l not in counter:
+                    #counter.append(l)
+           # num_labels = len(counter)
+      #  else:
+           # num_labels = self.num_classes #is this the correct info?
+        #return num_labels
     
     #normalize to avoid bias, dont know if this makes sense for our tool, leave out for now
     def normalize_matrix(matrix):

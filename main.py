@@ -74,7 +74,6 @@ if __name__ == '__main__':
             for node in output_node_matrix:
                 new_resource_nodes.write("%s" % node)
                 new_resource_nodes.write("\n") #write next slice (node) in new line
-                graph_id = x + 1 #start indexing of graphs at 1
 
             for edge in output_adjacency_list: #edge is array with two entries [node_id, node_id]
                 edge_counter = 1
@@ -101,7 +100,7 @@ if __name__ == '__main__':
     print("Dataset size: ")
     print(dataset.__len__())
     #print(dataset[0])
-    #split into train and testset
+    #split into train and testset, this is for training the tool, not using finished tool
     trainset, testset = random_split(dataset, [0.5, 0.5])
     loader = DataLoader(trainset, shuffle=True, batch_size=1)
     #print(loader)
@@ -109,3 +108,4 @@ if __name__ == '__main__':
     #print(dataset[1][0])#this is only tupel node feature and edges
     #print(dataset[1][0][0]) #this is node feature tensor
     #model = GCN(dataset, hidden_channels=8)
+    print(dataset.graph_names)
