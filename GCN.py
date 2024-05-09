@@ -33,3 +33,9 @@ class GCN(torch.nn.Module):
         x = self.lin(x)
         
         return x
+    
+    def train():
+        return None#dummy, i think these to functions should be defined here and called in train.py
+    
+    def test():
+        return None #dummy
