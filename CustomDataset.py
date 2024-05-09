@@ -16,23 +16,26 @@ class RepositoryDataset(Dataset):
         self.graph_names = []
         graph_dir = os.listdir(directory)
         for g,graph in enumerate(graph_dir):
-            if '_nodes' in graph: #maybe rename to nodefeatures?
+            if '_nodefeatures' in graph: 
                 node_features = pd.read_csv(f"{directory}/{graph}", header=None) #load csv file
                 self.node_tensor = torch.LongTensor(np.array(node_features)) #convert DataFrame object
-                self.node_name = graph.removesuffix('_nodes.csv')
+                self.node_name = graph.removesuffix('_nodefeatures.csv')
             if '_A' in graph:
                 adjacency = pd.read_csv(f"{directory}/{graph}", header=None)
                 self.edge_tensor = torch.LongTensor(np.array(adjacency))
                 self.edge_name = graph.removesuffix('_A.csv')
-            if 'graph_labels' in graph: #load both columns, but only as arrays to sort later
+            if 'graph_labels' in graph: 
                 graph_label = pd.read_csv(f"{directory}/{graph}", header=None)
-                self.graph_labels = torch.LongTensor(np.array(graph_label[1]))
+                self.gr_name = np.array(graph_label[0])
+                self.gr_label = np.array(graph_label[1])
+            #create graph = tuple of edges and node features
             if self.node_name == self.edge_name and self.node_name not in self.graph_names:
                 loaded_graph = (self.node_tensor, self.edge_tensor)
                 self.graph_list.append(loaded_graph)
                 self.graph_names.append(self.node_name)
-        #check at the end if hasattr(self, 'graph_labels'): to when training sort labels and graphs
-        #use graph_names for that!
+        #load labels for graphs in correct order and return them in tensor
+        if hasattr(self, 'gr_name'):
+            self.graph_labels = self.sort_labels()
 
     #returns number of samples (graphs) in the dataset
     def __len__(self):
@@ -45,6 +48,17 @@ class RepositoryDataset(Dataset):
         label = self.graph_labels[index]
         return graph, label
     
+    def sort_labels(self):
+        sort = []
+        for item in self.graph_names:
+            for i, name in enumerate(self.gr_name):
+                if item == name:
+                    label = self.gr_label[i]
+                    sort.append(label)
+        sorted_labels = torch.LongTensor(np.array(sort))
+        return sorted_labels
+            
+
     #returns number of labels in the dataset, im completely leaving this out (at least for now, maybe permanently)
     #def get_num_classes(self): #i think i can delete this!!
        # counter = []

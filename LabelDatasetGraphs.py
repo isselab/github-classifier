@@ -15,7 +15,7 @@ graph_names = []
 #iterate over loaded file and retrieve labels
 for row in resource.iterrows():
     object = row[1]
-    repo = object.get('Repository Label') 
+    repo = object.get('Repository Label') #maybe add here to skip empty rows else error
     graph_labels.append(repo)
     name = row[1]
     repo_name = name.get('Repository Name')

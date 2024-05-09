@@ -3,7 +3,6 @@ from ASTToEcoreConverter import ProjectEcoreGraph
 from pyecore.resources import ResourceSet, URI
 from EcoreToMatrixConverter import EcoreToMatrixConverter
 from CustomDataset import RepositoryDataset
-from torch.utils.data import DataLoader, random_split
 from GCN import GCN
 
 # repository_directory = '/mnt/volume1/mlexpmining/cloned_repos/'
@@ -40,10 +39,10 @@ if __name__ == '__main__':
         else:
             skip_counter += 1
 
-    print("------------------------------------")
+    print("----------------------------------------------")
     print(f"Skipped {skip_counter} of {len(repositories)}.")
 
-    print("---------convert ecore graphs to matrix structure--------------")
+    print("---convert ecore graphs to matrix structure---")
     #load xmi instance
     skip_xmi = 0
     list_xmi_files = os.listdir(ecore_files) #get output from above
@@ -68,7 +67,7 @@ if __name__ == '__main__':
             output_adjacency_list = project_gcn_input.get_adjacency_list()
 
             #save matrices in two csv files
-            new_resource_nodes = open(f"{matrix_files}/{output_name}_nodes.csv", "w+") 
+            new_resource_nodes = open(f"{matrix_files}/{output_name}_nodefeatures.csv", "w+") 
             new_resource_edges = open(f"{matrix_files}/{output_name}_A.csv", "w+")
 
             for node in output_node_matrix:
@@ -93,19 +92,16 @@ if __name__ == '__main__':
             print(f"Problem with xmi file {xmi_file}. Skipping")
             skip_xmi += 1
 
-    print("-----------------------------------")
+    print("----------------------------------------------")
     print(f"Skipped {skip_xmi} of {len(list_xmi_files)}")
-    print("---------------load dataset-----------------")
-    dataset = RepositoryDataset(matrix_files)
-    print("Dataset size: ")
-    print(dataset.__len__())
-    #print(dataset[0])
-    #split into train and testset, this is for training the tool, not using finished tool
-    trainset, testset = random_split(dataset, [0.5, 0.5])
-    loader = DataLoader(trainset, shuffle=True, batch_size=1)
-    #print(loader)
-    print(dataset.num_classes)
-    #print(dataset[1][0])#this is only tupel node feature and edges
-    #print(dataset[1][0][0]) #this is node feature tensor
-    #model = GCN(dataset, hidden_channels=8)
-    print(dataset.graph_names)
+    print("----------------load dataset------------------")
+    try:
+        dataset = RepositoryDataset(matrix_files)
+        print("Dataset size: ")
+        print(dataset.__len__())
+        print("Number of classes: ")
+        print(dataset.num_classes)
+       #model = GCN(dataset, hidden_channels=8
+    except Exception as e:
+        print(e)
+        print("There is a problem with the dataset.") #maybe dataset cant be loaded?
