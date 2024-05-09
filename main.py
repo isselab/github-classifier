@@ -1,7 +1,7 @@
 import os
-from ASTToEcore import ProjectEcoreGraph
+from ASTToEcoreConverter import ProjectEcoreGraph
 from pyecore.resources import ResourceSet, URI
-from EcoreToMatrix import EcoreToMatrixConverter
+from EcoreToMatrixConverter import EcoreToMatrixConverter
 from CustomDataset import RepositoryDataset
 from torch.utils.data import DataLoader, random_split
 from GCN import GCN

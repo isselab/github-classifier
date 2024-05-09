@@ -1,6 +1,6 @@
 from pyecore.resources import ResourceSet, URI
 from enum import Enum
-from ASTToEcore import ProjectEcoreGraph
+from ASTToEcoreConverter import ProjectEcoreGraph
 from sklearn.preprocessing import LabelEncoder
 
 class EcoreToMatrixConverter:

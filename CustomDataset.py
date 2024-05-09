@@ -3,7 +3,7 @@ import os
 import pandas as pd
 import torch
 import numpy as np
-from defined_graph_classes import graph_types
+from DefinedGraphClasses import graph_types
 
 #custom dataset
 class RepositoryDataset(Dataset):

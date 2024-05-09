@@ -1,6 +1,6 @@
 import pandas as pd
 from sklearn.preprocessing import LabelEncoder  
-from defined_graph_classes import graph_types      
+from DefinedGraphClasses import graph_types      
 
 labels = '../test_repositories.ods' #labeled repositories for the dataset
 output_graph_labels = '../csv_files/graph_labels.csv' #for output: label encoded graph labels for the dataset
