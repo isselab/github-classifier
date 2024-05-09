@@ -13,9 +13,9 @@ class GCN(torch.nn.Module):
         self.conv3 = GCNConv(hidden_channels, hidden_channels)
         self.lin = Linear(hidden_channels, dataset.num_classes) #number of classes we want to predict
 
-#add self-loop to edge info? keeps appearing in tutorials
-     #x=[N, 1] N=number of nodes, x is feature vector
-     #edge_index=[2, M] M=number of edges, edge_index is adjacency list
+    #add self-loop to edge info? keeps appearing in tutorials
+    #x=[N, 1] N=number of nodes, x is feature vector
+    #edge_index=[2, E] E=number of edges, edge_index is adjacency list
     def forward(self, x, edge_index, batch):
         # 1. Obtain node embeddings 
         x = self.conv1(x, edge_index) 
@@ -32,9 +32,3 @@ class GCN(torch.nn.Module):
         x = self.lin(x)
         
         return x
-    
-    def train():
-        return None#dummy, i think these to functions should be defined here and called in train.py
-    
-    def test():
-        return None #dummy

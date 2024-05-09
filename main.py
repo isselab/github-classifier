@@ -101,7 +101,7 @@ if __name__ == '__main__':
         print(dataset.__len__())
         print("Number of classes: ")
         print(dataset.num_classes)
-       #model = GCN(dataset, hidden_channels=8
+        #model = GCN(dataset, hidden_channels=8)
     except Exception as e:
         print(e)
-        print("There is a problem with the dataset.") #maybe dataset cant be loaded?
+        print("The dataset cannot be loaded.")
