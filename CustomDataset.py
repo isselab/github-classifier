@@ -57,21 +57,8 @@ class RepositoryDataset(Dataset):
                     sort.append(label)
         sorted_labels = torch.LongTensor(np.array(sort))
         return sorted_labels
-            
-
-    #returns number of labels in the dataset, im completely leaving this out (at least for now, maybe permanently)
-    #def get_num_classes(self): #i think i can delete this!!
-       # counter = []
-        #if hasattr(self, 'graph_labels'):
-            #for l in self.graph_labels:
-               # if l not in counter:
-                    #counter.append(l)
-           # num_labels = len(counter)
-      #  else:
-           # num_labels = self.num_classes #is this the correct info?
-        #return num_labels
     
-    #normalize to avoid bias, dont know if this makes sense for our tool, leave out for now
+    #normalize to avoid bias, leave out for now
     def normalize_matrix(matrix):
         norm = np.linalg.norm(matrix)
         normalized_matrix = matrix/norm
