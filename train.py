@@ -25,23 +25,31 @@ try:
     testloader = DataLoader(trainset, shuffle=False, batch_size=1)
     
     #print(dataset[1][0])#this is only tupel node feature and edges
-    #print(dataset[1][0][0]) #this is node feature tensor
+    #print(dataset[1][0][0]) #this is node feature tensor, both of graph with index 1
 
-    #graphs, graph_label = next(iter(trainloader)) #better than for loop??
-    #print(graphs[0])
-    #for graph, label in trainloader:
-        # print(graph[1])
+    for graph, label in trainloader:
+         print(graph[1]) #print tensor with edges
+
+    #model = GCN(trainloader, hidden_channels=8)
+    #print(model)
+
+    #these parameters are set by us for training
+    optimizer = torch.optim.Adam(model.parameters(), lr=0.01)
+    criterion = torch.nn.CrossEntropyLoss()
+
+    #train model
+    n_epochs = 10 #max is 200 i think
+    for epoch in range(n_epochs):
+       #train() #in examples training set is not passed as argument, just used inside func
+       #train_accuracy = test(trainloader)
+       #test_accuracy = test(testloader)
+       #print results...
+        print("Test..?")
 
 except Exception as e:
         print(e)
         print("There is a problem with the dataset.") #maybe dataset cant be loaded?
 
-#model = GCN(trainloader, hidden_channels=8)
-#print(model)
-
-#these parameters are set by us for training
-#optimizer = torch.optim.Adam(model.parameters(), lr=0.01, weight_decay=5e-4)
-criterion = torch.nn.CrossEntropyLoss()
 
 def train(): 
     model.train() 
@@ -55,19 +63,11 @@ def train():
         optimizer.step() #update parameters based on gradients
         optimizer.zero_grad() #clear gradients
 
-def test(loader): #i dont know whats happening here, example from github load_data
+def test(loader):
     model.eval()
 
-    for graph, label in loader: #or put entire testset in model withoput for??
+    for graph, label in loader: 
         prediction = model(graph[0], graph[1]) #in example additionally batch is passed here? what batch
-        #loss_test = F.nll_loss(prediction, label) #predict loss with predicted labels from trained model and defined labels of testset
-        #acc_test = accuracy(prediction, label) #missing func to compute accuracy
-
-    
-n_epochs = 200
-#for epoch in range(n_epochs):
-     #train() #in examples training set is not passed as argument, just used inside func
-     #train_accuracy = test(trainloader)
-     #test_accuracy = test(testloader)
-     #print results
+        loss_test = F.nll_loss(prediction, label) #predict loss with predicted labels from trained model and defined labels of testset
+        acc_test = accuracy(prediction, label) #missing func to compute accuracy
     
