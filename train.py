@@ -37,12 +37,13 @@ def train():
 
 def test(loader):
     model.eval()
-
+    acc_test = 0
     for graph, label in loader: 
+        #check if output is only prediction, check what it looks like for access
         prediction = model(graph[0], graph[1]) #in example additionally batch is passed here? what batch
-        loss_test = F.nll_loss(prediction, label) #predict loss with predicted labels from trained model and defined labels of testset
+        #a lot of examples don't compute loss in test, some do
         if prediction == label: acc_test += 1 #count correctly predicted labels
-    #this func is not complete
+    return acc_test/len(loader) 
 
 #split into train and testset, this is for training the tool, not using finished tool
 trainset, testset = random_split(dataset, [0.5, 0.5])
@@ -56,7 +57,8 @@ testloader = DataLoader(trainset, shuffle=False, batch_size=1)
 
 for graph, label in trainloader:
     print(graph[1]) #print tensor with edges
-
+print("Size of test dataset: ")
+print(len(testloader))
 #model = GCN(trainloader, hidden_channels=8)
 #print(model)
 
@@ -70,6 +72,7 @@ for epoch in range(n_epochs):
     #train() #in examples training set is not passed as argument, just used inside func
     #train_accuracy = test(trainloader)
     #test_accuracy = test(testloader)
-    #print results...
+    #print results
+    #print(f"Train accuracy: {train_accuracy}, Test accuracy: {test_accuracy}, epoch: {epoch}")
     print("Test..?")
     
