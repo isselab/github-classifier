@@ -3,6 +3,7 @@ from CustomDataset import RepositoryDataset
 from LabelDatasetGraphs import LabelDatasetGraphs
 from GCN import GCN
 import torch
+import torch.nn.functional as F
 
 print("---convert dataset labels for training---")
 
@@ -16,35 +17,6 @@ print("--------------load dataset---------------")
 try:
     matrix_files = '../csv_files' #folder with csv_files
     dataset = RepositoryDataset(matrix_files)
-
-    #split into train and testset, this is for training the tool, not using finished tool
-    trainset, testset = random_split(dataset, [0.5, 0.5])
-
-    #uses index to access (sample,label) pairs
-    trainloader = DataLoader(trainset, shuffle=True, batch_size=1)
-    testloader = DataLoader(trainset, shuffle=False, batch_size=1)
-    
-    #print(dataset[1][0])#this is only tupel node feature and edges
-    #print(dataset[1][0][0]) #this is node feature tensor, both of graph with index 1
-
-    for graph, label in trainloader:
-         print(graph[1]) #print tensor with edges
-
-    #model = GCN(trainloader, hidden_channels=8)
-    #print(model)
-
-    #these parameters are set by us for training
-    optimizer = torch.optim.Adam(model.parameters(), lr=0.01)
-    criterion = torch.nn.CrossEntropyLoss()
-
-    #train model
-    n_epochs = 10 #max is 200 i think
-    for epoch in range(n_epochs):
-       #train() #in examples training set is not passed as argument, just used inside func
-       #train_accuracy = test(trainloader)
-       #test_accuracy = test(testloader)
-       #print results...
-        print("Test..?")
 
 except Exception as e:
         print(e)
@@ -69,5 +41,35 @@ def test(loader):
     for graph, label in loader: 
         prediction = model(graph[0], graph[1]) #in example additionally batch is passed here? what batch
         loss_test = F.nll_loss(prediction, label) #predict loss with predicted labels from trained model and defined labels of testset
-        acc_test = accuracy(prediction, label) #missing func to compute accuracy
+        if prediction == label: acc_test += 1 #count correctly predicted labels
+    #this func is not complete
+
+#split into train and testset, this is for training the tool, not using finished tool
+trainset, testset = random_split(dataset, [0.5, 0.5])
+
+#uses index to access (sample,label) pairs
+trainloader = DataLoader(trainset, shuffle=True, batch_size=1)
+testloader = DataLoader(trainset, shuffle=False, batch_size=1)
+    
+#print(dataset[1][0])#this is only tupel node feature and edges
+#print(dataset[1][0][0]) #this is node feature tensor, both of graph with index 1
+
+for graph, label in trainloader:
+    print(graph[1]) #print tensor with edges
+
+#model = GCN(trainloader, hidden_channels=8)
+#print(model)
+
+#initialize functions for training
+#optimizer = torch.optim.Adam(model.parameters(), lr=0.01)
+criterion = torch.nn.CrossEntropyLoss()
+
+#train model
+n_epochs = 10
+for epoch in range(n_epochs):
+    #train() #in examples training set is not passed as argument, just used inside func
+    #train_accuracy = test(trainloader)
+    #test_accuracy = test(testloader)
+    #print results...
+    print("Test..?")
     

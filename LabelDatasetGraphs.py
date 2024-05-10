@@ -26,7 +26,6 @@ class LabelDatasetGraphs:
 
         #write encoded labels into a file for the dataset
         for item in list(file):
-            print(item)
             name = item[0]
             new_resource_nodes.write("%s, " % name)
             label = item[1]
