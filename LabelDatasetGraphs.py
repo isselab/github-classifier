@@ -5,7 +5,7 @@ from LabelEncoder import convert_labels
 class LabelDatasetGraphs:
     def __init__(self, labels, output_graph_labels):
         #load labeled repository from excel/ods file
-        resource = pd.read_excel(labels) #add requirements for format like no empty rows in between and header names for columns
+        resource = pd.read_excel(labels) #requirements for format: no empty rows in between and header names for columns
 
         new_resource_nodes = open(f"{output_graph_labels}", "w+")
         graph_labels = []
