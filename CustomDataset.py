@@ -17,6 +17,7 @@ class RepositoryDataset(Dataset):
         graph_dir = os.listdir(directory)
         for g,graph in enumerate(graph_dir):
             if '_nodefeatures' in graph: 
+                #it may be necessary to use FloatTensor for different shape for x?? dont know
                 node_features = pd.read_csv(f"{directory}/{graph}", header=None) #load csv file
                 self.node_tensor = torch.LongTensor(np.array(node_features)) #convert DataFrame object
                 self.node_name = graph.removesuffix('_nodefeatures.csv')

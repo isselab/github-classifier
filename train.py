@@ -22,9 +22,9 @@ except Exception as e:
         print(e)
         print("There is a problem with the dataset.") #maybe dataset cant be loaded?
 
-
+#.train and .eval functions switch on or off certain layers of the model for us when needed
 def train(): 
-    model.train() 
+    model.train() #tells model we are training
     #iterate in batches over the training dataset
     for graph, label in trainloader: 
         #perform single forward pass
@@ -36,7 +36,9 @@ def train():
         optimizer.zero_grad() #clear gradients
 
 def test(loader):
-    model.eval()
+    model.eval() #tells model we are evaluating
+    #where to put no_grad? in articles always coupled with eval
+    #torch.no_grad() #turns off parameters set in training for faster computation during inference
     acc_test = 0
     for graph, label in loader: 
         #check if output is only prediction, check what it looks like for access
