@@ -4,7 +4,7 @@ from ASTToEcoreConverter import ProjectEcoreGraph
 from LabelEncoder import convert_labels
 
 class EcoreToMatrixConverter:
-    def __init__(self, resource:ResourceSet):
+    def __init__(self, resource:ResourceSet, output_folder):
         self.typegraph_root = resource.contents[0] #we have the entire typegraph object here
         self.node_matrix = [] #nxc feature matrix with n nodes and c features for each node: node type and identifier (e.g. name or location)
         self.node_dict = {} #internal structure to set edges later, node_id as key, value is list with type, name, object name, that's connected by edge
@@ -18,6 +18,8 @@ class EcoreToMatrixConverter:
 
         node_labels = [self.NodeTypes.PACKAGE.value, self.NodeTypes.MODULE.value, self.NodeTypes.CLASS.value, self.NodeTypes.METHOD_DEFINITION.value, self.NodeTypes.METHOD.value, self.NodeTypes.METHOD_SIGNATURE.value, self.NodeTypes.PARAMETER.value, self.NodeTypes.CALL.value]
         self.encoded_node_matrix = convert_labels(node_labels, self.node_matrix)
+        output_name = self.get_graph_name()
+        self.write_csv(output_folder, output_name)
 
     def get_node_matrix(self):
         return self.node_matrix
@@ -277,6 +279,28 @@ class EcoreToMatrixConverter:
             if find_node[0] == type_string:
                 if find_node[1] == node_name:
                     return find_key
+                
+    #write graph in two csv files            
+    def write_csv(self, output_folder, output_name):
+        new_resource_nodes = open(f"{output_folder}/{output_name}_nodefeatures.csv", "w+") 
+        new_resource_edges = open(f"{output_folder}/{output_name}_A.csv", "w+")
+
+        for node in self.encoded_node_matrix:
+            new_resource_nodes.write("%s" % node)
+            new_resource_nodes.write("\n") #write next slice (node) in new line
+
+        for edge in self.adjacency_list: #edge is array with two entries [node_id, node_id]
+            edge_counter = 1
+            for item in edge:
+                if edge_counter<len(edge):
+                    new_resource_edges.write("%s, " % item)
+                    edge_counter += 1
+                else:
+                    new_resource_edges.write("%s" % item)
+            new_resource_edges.write("\n")
+            
+        new_resource_nodes.close()
+        new_resource_edges.close()
 
     class NodeTypes(Enum):
         PACKAGE = "TPackage"

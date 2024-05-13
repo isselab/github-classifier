@@ -61,32 +61,7 @@ if __name__ == '__main__':
         print(current_xmi_file)
         resource = rset.get_resource(URI(f"{ecore_files}/{xmi_file}"))
         try:
-            project_gcn_input = EcoreToMatrixConverter(resource)
-            output_name = project_gcn_input.get_graph_name()
-            output_node_matrix = project_gcn_input.get_encoded_node_matrix()
-            output_adjacency_list = project_gcn_input.get_adjacency_list()
-
-            #save matrices in two csv files
-            new_resource_nodes = open(f"{matrix_files}/{output_name}_nodefeatures.csv", "w+") 
-            new_resource_edges = open(f"{matrix_files}/{output_name}_A.csv", "w+")
-
-            for node in output_node_matrix:
-                new_resource_nodes.write("%s" % node)
-                new_resource_nodes.write("\n") #write next slice (node) in new line
-
-            for edge in output_adjacency_list: #edge is array with two entries [node_id, node_id]
-                edge_counter = 1
-                for item in edge:
-                    if edge_counter<len(edge):
-                        new_resource_edges.write("%s, " % item)
-                        edge_counter += 1
-                    else:
-                        new_resource_edges.write("%s" % item)
-                new_resource_edges.write("\n")
-            
-            new_resource_nodes.close()
-            new_resource_edges.close()
-            
+            EcoreToMatrixConverter(resource, matrix_files)
         except Exception as e:
             print(e)
             print(f"Problem with xmi file {xmi_file}. Skipping")
