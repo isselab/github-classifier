@@ -5,22 +5,26 @@ import torch
 import torch.nn.functional as F
 
 matrix_files = '../csv_files' #folder with csv_files
+labels = '../test_repositories.ods' #input: labeled repositories for the dataset
 
 print("---convert dataset labels for training---")
 
-#labeled repositories should have column headers 'Repository Names' and 'Repository Labels', and no empty lines in the columns
-labels = '../test_repositories.ods' #input: labeled repositories for the dataset
-RepositoryDataset.convert_labeled_graphs(labels, matrix_files)
+try:
+    #labeled repositories should have column headers 'Repository Names' and 'Repository Labels', and no empty lines in the columns
+    RepositoryDataset.convert_labeled_graphs(labels, matrix_files)
+except Exception as e:
+    print(e)
+    print('There is a problem with the labeled dataset. Check format in excel file. Labeled repositories should have column headers Repository Names and Repository Labels, and no empty lines in the columns!')
 
 print("--------------load dataset---------------")
 
 try:
     dataset = RepositoryDataset(matrix_files)
-
 except Exception as e:
         print(e)
-        print("There is a problem with the dataset.") #maybe dataset cant be loaded?
+        print("Dataset cannot be loaded.")
 
+#cant i put these funtions in gcn file to its class?
 #.train and .eval functions switch on or off certain layers of the model for us when needed
 def train(): 
     model.train() #tells model we are training
