@@ -1,21 +1,20 @@
 from torch.utils.data import DataLoader, random_split
 from CustomDataset import RepositoryDataset
-from LabelDatasetGraphs import LabelDatasetGraphs
 from GCN import GCN
 import torch
 import torch.nn.functional as F
+
+matrix_files = '../csv_files' #folder with csv_files
 
 print("---convert dataset labels for training---")
 
 #labeled repositories should have column headers 'Repository Names' and 'Repository Labels', and no empty lines in the columns
 labels = '../test_repositories.ods' #input: labeled repositories for the dataset
-output_graph_labels = '../csv_files/graph_labels.csv' #for output
-LabelDatasetGraphs(labels, output_graph_labels)
+RepositoryDataset.convert_labeled_graphs(labels, matrix_files)
 
 print("--------------load dataset---------------")
 
 try:
-    matrix_files = '../csv_files' #folder with csv_files
     dataset = RepositoryDataset(matrix_files)
 
 except Exception as e:
