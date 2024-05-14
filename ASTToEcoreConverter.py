@@ -3,9 +3,8 @@ import os
 from enum import Enum
 from pyecore.resources import ResourceSet, URI
 
-
 class ProjectEcoreGraph:
-    def __init__(self, directory, resource_set: ResourceSet):
+    def __init__(self, directory, resource_set: ResourceSet, output_directory, repository):
         if directory is None or directory == '':
             raise ValueError('Directory is required')
 
@@ -35,6 +34,7 @@ class ProjectEcoreGraph:
 
         self.check_missing_calls()
         self.sort_modules() #resort modules to resolve reference errors
+        self.write_xmi(resource_set, output_directory, repository) 
     
     def sort_modules(self):
         for module in self.module_list:
@@ -297,6 +297,11 @@ class ProjectEcoreGraph:
         #for interal structure
         module_node = self.get_current_module()
         self.method_list.append([method_node, name, module_node])
+
+    def write_xmi(self, resource_set, output_directory, repository):
+        resource = resource_set.create_resource(URI(f'{output_directory}/xmi_files/{repository}.xmi'), use_uuid=True)
+        resource.append(self.graph)
+        resource.save()
     
     #programm entities in metamodel
     class Types(Enum):

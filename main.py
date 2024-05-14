@@ -4,6 +4,7 @@ from pyecore.resources import ResourceSet, URI
 from EcoreToMatrixConverter import EcoreToMatrixConverter
 from CustomDataset import RepositoryDataset
 from GCN import GCN
+from utils import create_output_folders
 
 # repository_directory = '/mnt/volume1/mlexpmining/cloned_repos/'
 # output_directory = '/mnt/volume1/mlexpmining/ecore_graphs/'
@@ -13,15 +14,7 @@ output_directory = '../test_tool' #output for the entire tool pipeline
 
 if __name__ == '__main__':
     #create output directory
-    if not os.path.exists(output_directory): 
-        os.makedirs(output_directory)
-    #create sub folders for converter output and dataset
-    if not os.path.exists(f'{output_directory}/xmi_files'):
-        os.makedirs(f'{output_directory}/xmi_files')
-    if not os.path.exists(f'{output_directory}/csv_files'):
-        os.makedirs(f'{output_directory}/csv_files')   
-    if not os.path.exists(f'{output_directory}/labeled_repositories'):
-        os.makedirs(f'{output_directory}/labeled_repositories') 
+    create_output_folders(output_directory)
     repositories = os.listdir(repository_directory)
     skip_counter = 0
     resource_set = ResourceSet()
@@ -31,11 +24,7 @@ if __name__ == '__main__':
         print(current_directory)
         if os.path.isdir(current_directory):
             try:
-                project_graph = ProjectEcoreGraph(current_directory, resource_set)
-                #resource to serialize the metamodels
-                resource = resource_set.create_resource(URI(f'{output_directory}/xmi_files/{repository}.xmi'), use_uuid=True)
-                resource.append(project_graph.get_graph())
-                resource.save()
+                ProjectEcoreGraph(current_directory, resource_set, output_directory, repository)
             except Exception as e:
                 print(e)
                 print(f'Problem with repository {repository}. Skipping.')
