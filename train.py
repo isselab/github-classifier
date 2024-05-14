@@ -4,10 +4,11 @@ from GCN import GCN
 import torch
 import torch.nn.functional as F
 
-matrix_files = '../csv_files' #folder with csv_files
+#add first part of pipeline from main to create dataset here
+matrix_files = '../test_tool/csv_files' #folder with csv_files
 labels = '../test_repositories.ods' #input: labeled repositories for the dataset
 
-print("---convert dataset labels for training---")
+print('---convert dataset labels for training---')
 
 try:
     #labeled repositories should have column headers 'Repository Names' and 'Repository Labels', and no empty lines in the columns
@@ -16,13 +17,13 @@ except Exception as e:
     print(e)
     print('There is a problem with the labeled dataset. Check format in excel file. Labeled repositories should have column headers Repository Names and Repository Labels, and no empty lines in the columns!')
 
-print("--------------load dataset---------------")
+print('--------------load dataset---------------')
 
 try:
     dataset = RepositoryDataset(matrix_files)
 except Exception as e:
         print(e)
-        print("Dataset cannot be loaded.")
+        print('Dataset cannot be loaded.')
 
 #cant i put these funtions in gcn file to its class?
 #.train and .eval functions switch on or off certain layers of the model for us when needed
@@ -62,7 +63,7 @@ testloader = DataLoader(trainset, shuffle=False, batch_size=1)
 
 for graph, label in trainloader:
     print(graph[1]) #print tensor with edges
-print("Size of test dataset: ")
+print('Size of test dataset: ')
 print(len(testloader))
 #model = GCN(trainloader, hidden_channels=8)
 #print(model)
@@ -78,6 +79,6 @@ for epoch in range(n_epochs):
     #train_accuracy = test(trainloader)
     #test_accuracy = test(testloader)
     #print results
-    #print(f"Train accuracy: {train_accuracy}, Test accuracy: {test_accuracy}, epoch: {epoch}")
-    print("Test..?")
+    #print(f'Train accuracy: {train_accuracy}, Test accuracy: {test_accuracy}, epoch: {epoch}')
+    print('Test..?')
     
