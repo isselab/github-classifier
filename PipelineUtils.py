@@ -3,6 +3,8 @@ from pyecore.resources import ResourceSet, URI
 from ASTToEcoreConverter import ProjectEcoreGraph
 from EcoreToMatrixConverter import EcoreToMatrixConverter
 
+#in this file are the pipeline components put into reusable functions
+
 def create_output_folders(directory):
     if not os.path.exists(directory): 
         os.makedirs(directory)
