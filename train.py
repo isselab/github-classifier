@@ -3,11 +3,12 @@ from CustomDataset import RepositoryDataset
 from GCN import GCN
 import torch
 import torch.nn.functional as F
+from PipelineUtils import create_output_folders, create_ecore_graphs, create_matrix_structure
 
 #add first part of pipeline from main to create dataset here
 matrix_files = '../test_tool/csv_files' #folder with csv_files
 labels = '../test_repositories.ods' #input: labeled repositories for the dataset
-
+#add creation of dataset here like in main with pipeline utils
 print('---convert dataset labels for training---')
 
 try:
