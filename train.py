@@ -5,15 +5,27 @@ import torch
 import torch.nn.functional as F
 from PipelineUtils import create_output_folders, create_ecore_graphs, create_matrix_structure
 
-#add first part of pipeline from main to create dataset here
-matrix_files = '../test_tool/csv_files' #folder with csv_files
-labels = '../test_repositories.ods' #input: labeled repositories for the dataset
-#add creation of dataset here like in main with pipeline utils
-print('---convert dataset labels for training---')
 
+repository_directory = '../test_repository' #input repositories
+output_directory = '../test_tool' #output for the entire tool pipeline
+
+labels = '../test_repositories.ods' #input: labeled repositories for the dataset
+
+#create output directory
+create_output_folders(output_directory)
+    
+print('--convert repositories into ecore metamodels--')
+#convert repositories into ecore metamodels
+create_ecore_graphs(repository_directory, output_directory)
+
+print('---convert ecore graphs to matrix structure---')
+#load xmi instance and convert them to a matrix structure for the gcn
+create_matrix_structure(output_directory)
+
+print('---convert dataset labels for training---')
 try:
     #labeled repositories should have column headers 'Repository Names' and 'Repository Labels', and no empty lines in the columns
-    RepositoryDataset.convert_labeled_graphs(labels, matrix_files)
+    RepositoryDataset.convert_labeled_graphs(labels, f'{output_directory}/csv_files')
 except Exception as e:
     print(e)
     print('There is a problem with the labeled dataset. Check format in excel file. Labeled repositories should have column headers Repository Names and Repository Labels, and no empty lines in the columns!')
@@ -21,7 +33,7 @@ except Exception as e:
 print('--------------load dataset---------------')
 
 try:
-    dataset = RepositoryDataset(matrix_files)
+    dataset = RepositoryDataset(f'{output_directory}/csv_files')
 except Exception as e:
         print(e)
         print('Dataset cannot be loaded.')
