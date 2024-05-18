@@ -19,6 +19,7 @@ class EcoreToMatrixConverter:
         node_labels = [self.NodeTypes.PACKAGE.value, self.NodeTypes.MODULE.value, self.NodeTypes.CLASS.value, self.NodeTypes.METHOD_DEFINITION.value, self.NodeTypes.METHOD.value, self.NodeTypes.METHOD_SIGNATURE.value, self.NodeTypes.PARAMETER.value, self.NodeTypes.CALL.value]
         self.encoded_node_matrix = convert_labels(node_labels, self.node_matrix)
         output_name = self.get_graph_name()
+        #print(self.node_dict) #added this to find reason for none issue
         self.write_csv(output_folder, output_name)
 
     def get_node_matrix(self):
@@ -208,6 +209,8 @@ class EcoreToMatrixConverter:
                 if len(current_node) == 4:
                     if current_node[2] == self.NodeTypes.PACKAGE.value:
                         find_key = self.find_key_of_connected_node(self.NodeTypes.PACKAGE.value, current_node)
+                        if find_key is None: #here is problem none!!
+                            print(current_node)
                         #edge in both directions
                         self.adjacency_list.append([find_key, keys])
                         self.adjacency_list.append([keys, find_key])
@@ -217,9 +220,13 @@ class EcoreToMatrixConverter:
                 if len(current_node) == 4:
                     if current_node[2] == self.NodeTypes.MODULE.value:
                         find_key = self.find_key_of_connected_node(self.NodeTypes.MODULE.value, current_node)
+                       # if find_key is None: #added this to find problem, no issues here
+                           # print(current_node)
                         self.adjacency_list.append([find_key, keys])
                     if current_node[2] == self.NodeTypes.CLASS.value:
                         find_key = self.find_key_of_connected_node(self.NodeTypes.CLASS.value, current_node)
+                       # if find_key is None: #added this to find problem
+                            #print(current_node)
                         self.adjacency_list.append([find_key, keys]) #edge from TClass to child class
             
             #set edges between classes/modules and method definitions
@@ -227,9 +234,13 @@ class EcoreToMatrixConverter:
                 if len(current_node) == 4:
                     if current_node[2] == self.NodeTypes.MODULE.value:
                         find_key = self.find_key_of_connected_node(self.NodeTypes.MODULE.value, current_node)
+                        #if find_key is None: #added this to find problem, no issues here
+                            #print(current_node)
                         self.adjacency_list.append([find_key, keys])
                     if current_node[2] == self.NodeTypes.CLASS.value:
                         find_key = self.find_key_of_connected_node(self.NodeTypes.CLASS.value, current_node)
+                       # if find_key is None: #added this to find problem
+                            #print(current_node)
                         self.adjacency_list.append([find_key, keys])
             
             #set edges for TMethod objects
