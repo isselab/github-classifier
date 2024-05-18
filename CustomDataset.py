@@ -24,6 +24,8 @@ class RepositoryDataset(Dataset):
                 self.node_name = graph.removesuffix('_nodefeatures.csv')
             if '_A' in graph:
                 adjacency = pd.read_csv(f"{directory}/{graph}", header=None)
+                #print(graph)
+                #print(adjacency)
                 self.edge_tensor = torch.LongTensor(np.array(adjacency))
                 self.edge_name = graph.removesuffix('_A.csv')
             if 'graph_labels' in graph: 
@@ -72,10 +74,10 @@ class RepositoryDataset(Dataset):
         #iterate over loaded file and retrieve labels
         for row in resource.iterrows():
             object = row[1]
-            repo = object.get('Repository Label') 
+            repo = object.get('Repository Label') #change to html_url
             graph_labels.append(repo)
-            name = row[1]
-            repo_name = name.get('Repository Name')
+            name = row[1] #adjust this to retrieve name from url
+            repo_name = name.get('Repository Name') #change to type
             graph_names.append(repo_name)
 
         #encode labels numerically

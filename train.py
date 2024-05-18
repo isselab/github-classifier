@@ -3,7 +3,7 @@ from CustomDataset import RepositoryDataset
 from GCN import GCN
 import torch
 import torch.nn.functional as F
-from PipelineUtils import create_output_folders, create_ecore_graphs, create_matrix_structure
+from PipelineUtils import prepare_dataset
 
 
 repository_directory = '../test_repository' #input repositories
@@ -11,16 +11,8 @@ output_directory = '../test_tool' #output for the entire tool pipeline
 
 labels = '../test_repositories.ods' #input: labeled repositories for the dataset
 
-#create output directory
-create_output_folders(output_directory)
-    
-print('--convert repositories into ecore metamodels--')
-#convert repositories into ecore metamodels
-create_ecore_graphs(repository_directory, output_directory)
-
-print('---convert ecore graphs to matrix structure---')
-#load xmi instance and convert them to a matrix structure for the gcn
-create_matrix_structure(output_directory)
+#create the graph dataset of the repositories
+prepare_dataset(repository_directory, output_directory)
 
 print('---convert dataset labels for training---')
 try:
