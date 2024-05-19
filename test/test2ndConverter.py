@@ -28,20 +28,15 @@ for x, xmi_file in enumerate(list_xmi_files):
                 count_package += 1
                 if hasattr(tpackage, 'subpackages'):
                         count_package = count_packages(tpackage, count_package)
-        #print(count_package)
 
         #count number of classes
+        '''has only one attribute childclasses checking recursively will result 
+        in potential endless loop, without these child classes existing in the xmi file'''
         for tclass in typegraph_root.classes:
                 count_class += 1
-                if hasattr(tclass, 'childClasses'): #cannot check this recursively without exceeding max number of recursion
+                if hasattr(tclass, 'childClasses'): 
                     for child in tclass.childClasses:
                         count_class += 1
-                        #if hasattr(child, 'childClasses'):
-                           # for kid in child.childClasses:
-                               # count_class += 1
-                               # if hasattr(kid, 'childClasses'):
-                                    #print('there are more child classes')
-        #print(count_class)
 
         for tmeth in typegraph_root.methods:
              count_meth += 1
@@ -63,9 +58,7 @@ for x, xmi_file in enumerate(list_xmi_files):
                 count_cl += 1
             if obj == 2:
                  count_methods += 1
-        print(count_cl)
-        print(count_class)
-        print(count_methods, count_meth)
+
         #compare xmi files with csv files
         if count_pack == count_package:
             print('Number of packages correct, test passed')
