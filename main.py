@@ -7,8 +7,8 @@ from PipelineUtils import prepare_dataset
 #repository_directory = '../unit_testing'
 #repository_directory = '../test_repository' #input repositories
 #output_directory = '../test_tool' #output for the entire tool pipeline
-#repository_directory = 'D:/dataset_repos'
-repository_directory = 'D:/none_problem'
+repository_directory = 'D:/dataset_repos'
+#repository_directory = 'D:/none_problem'
 output_directory = 'D:/tool_output'
 
 if __name__ == '__main__':
@@ -21,13 +21,13 @@ if __name__ == '__main__':
         print('There is a problem with the input directory.')
 
     print('----------------load dataset------------------')
-    #try:
-       # dataset = RepositoryDataset(f'{output_directory}/csv_files')
-       # print('Dataset size: ')
-       # print(dataset.__len__())
-       # print('Number of classes: ')
-        #print(dataset.num_classes)
+    try:
+        dataset = RepositoryDataset(f'{output_directory}/csv_files')
+        print('Dataset size: ')
+        print(dataset.__len__())
+        print('Number of classes: ')
+        print(dataset.num_classes)
         #model = GCN(dataset, hidden_channels=8)
-   # except Exception as e:
-       # print(e)
-       # print('The dataset cannot be loaded.')
+    except Exception as e:
+        print(e)
+        print('The dataset cannot be loaded.')

@@ -17,26 +17,28 @@ class RepositoryDataset(Dataset):
         self.graph_names = []
         graph_dir = os.listdir(directory)
         for g,graph in enumerate(graph_dir):
-            if '_nodefeatures' in graph: 
-                #it may be necessary to use FloatTensor for different shape for x?? dont know
-                node_features = pd.read_csv(f"{directory}/{graph}", header=None) #load csv file
-                self.node_tensor = torch.LongTensor(np.array(node_features)) #convert DataFrame object
-                self.node_name = graph.removesuffix('_nodefeatures.csv')
-            if '_A' in graph:
-                adjacency = pd.read_csv(f"{directory}/{graph}", header=None)
-                #print(graph)
-                #print(adjacency)
-                self.edge_tensor = torch.LongTensor(np.array(adjacency))
-                self.edge_name = graph.removesuffix('_A.csv')
-            if 'graph_labels' in graph: 
-                graph_label = pd.read_csv(f"{directory}/{graph}", header=None)
-                self.gr_name = np.array(graph_label[0])
-                self.gr_label = np.array(graph_label[1])
-            #create graph = tuple of edges and node features
-            if self.node_name == self.edge_name and self.node_name not in self.graph_names:
-                loaded_graph = (self.node_tensor, self.edge_tensor)
-                self.graph_list.append(loaded_graph)
-                self.graph_names.append(self.node_name)
+            try:
+                if '_nodefeatures' in graph: 
+                    #it may be necessary to use FloatTensor for different shape for x?? dont know
+                    node_features = pd.read_csv(f'{directory}/{graph}', header=None) #load csv file
+                    self.node_tensor = torch.LongTensor(np.array(node_features)) #convert DataFrame object
+                    self.node_name = graph.removesuffix('_nodefeatures.csv')
+                if '_A' in graph:
+                    adjacency = pd.read_csv(f'{directory}/{graph}', header=None)
+                    self.edge_tensor = torch.LongTensor(np.array(adjacency))
+                    self.edge_name = graph.removesuffix('_A.csv')
+                if 'graph_labels' in graph: 
+                    graph_label = pd.read_csv(f'{directory}/{graph}', header=None)
+                    self.gr_name = np.array(graph_label[0])
+                    self.gr_label = np.array(graph_label[1])
+                #create graph = tuple of edges and node features
+                if self.node_name == self.edge_name and self.node_name not in self.graph_names:
+                    loaded_graph = (self.node_tensor, self.edge_tensor)
+                    self.graph_list.append(loaded_graph)
+                    self.graph_names.append(self.node_name)
+            except Exception as e:
+                print(e)
+                print(f'There is a problem loading {graph}')
         #load labels for graphs in correct order and return them in tensor
         if hasattr(self, 'gr_name'):
             self.graph_labels = self.sort_labels()
