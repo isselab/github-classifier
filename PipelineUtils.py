@@ -3,6 +3,8 @@ from pyecore.resources import ResourceSet, URI
 from ASTToEcoreConverter import ProjectEcoreGraph
 from EcoreToMatrixConverter import EcoreToMatrixConverter
 
+#in this file are the pipeline components put into reusable functions
+
 def create_output_folders(directory):
     if not os.path.exists(directory): 
         os.makedirs(directory)
@@ -55,3 +57,15 @@ def create_matrix_structure(output_directory):
             skip_xmi += 1
     print('----------------------------------------------')
     print(f'Skipped {skip_xmi} of {len(list_xmi_files)}')
+
+def prepare_dataset(repository_directory, output_directory):
+    #create output directory
+    create_output_folders(output_directory)
+    
+    print('--convert repositories into ecore metamodels--')
+    #convert repositories into ecore metamodels
+    create_ecore_graphs(repository_directory, output_directory)
+
+    print('---convert ecore graphs to matrix structure---')
+    #load xmi instance and convert them to a matrix structure for the gcn
+    create_matrix_structure(output_directory)

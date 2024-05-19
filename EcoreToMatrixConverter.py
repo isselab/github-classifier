@@ -38,27 +38,13 @@ class EcoreToMatrixConverter:
         #convert packages and subpackages
         for tpackage in typegraph.packages:
             current_package = None
-            current_subpackage = None
-            current_subsubpackage = None
             current_package = self.get_node(tpackage.tName, self.NodeTypes.PACKAGE.value) #check if package is already in node matrix
             if current_package is None:
                 self.node_matrix.append(self.NodeTypes.PACKAGE.value)
                 self.node_dict[self.node_count] = [self.NodeTypes.PACKAGE.value, tpackage.tName]
                 self.node_count += 1
                 if hasattr(tpackage, 'subpackages'): 
-                    for tsubpackage in tpackage.subpackages: 
-                        current_subpackage = self.get_node(tsubpackage.tName, self.NodeTypes.PACKAGE.value)
-                        if current_subpackage is None:
-                            self.node_matrix.append(self.NodeTypes.PACKAGE.value)
-                            self.node_dict[self.node_count] = [self.NodeTypes.PACKAGE.value, tsubpackage.tName, self.NodeTypes.PACKAGE.value, tpackage.tName] #save type and name for edge info
-                            self.node_count += 1
-                            if hasattr(tsubpackage, 'subpackages'):
-                                for tsubsubpackage in tsubpackage.subpackages:
-                                    current_subsubpackage = self.get_node(tsubsubpackage.tName, self.NodeTypes.PACKAGE.value)
-                                    if current_subsubpackage is None:
-                                        self.node_matrix.append(self.NodeTypes.PACKAGE.value)
-                                        self.node_dict[self.node_count] = [self.NodeTypes.PACKAGE.value, tsubsubpackage.tName, self.NodeTypes.PACKAGE.value, tsubpackage.tName]
-                                        self.node_count += 1
+                    self.convert_subpackages_recursive(tpackage) 
         
         #convert modules and contained objects
         for tmodule in typegraph.modules:
@@ -141,11 +127,30 @@ class EcoreToMatrixConverter:
                 if hasattr(tclass, 'defines'):
                     self.convert_defined_methods(tclass)
 
+    def convert_subpackages_recursive(self, tpackage):
+        for tsubpackage in tpackage.subpackages: 
+            current_subpackage = self.get_node_in_container(tsubpackage.tName, self.NodeTypes.PACKAGE.value, tpackage.tName, self.NodeTypes.PACKAGE.value)
+            if current_subpackage is None:
+                self.node_matrix.append(self.NodeTypes.PACKAGE.value)
+                self.node_dict[self.node_count] = [self.NodeTypes.PACKAGE.value, tsubpackage.tName, self.NodeTypes.PACKAGE.value, tpackage.tName] #save type and name for edge info
+                self.node_count += 1
+                if hasattr(tsubpackage, 'subpackages'): 
+                    self.convert_subpackages_recursive(tsubpackage)        
+
     def convert_childClasses(self, tclass):
         for child in tclass.childClasses:
             self.node_matrix.append(self.NodeTypes.CLASS.value)
             self.node_dict[self.node_count] = [self.NodeTypes.CLASS.value, child.tName, self.NodeTypes.CLASS.value, tclass.tName]
             self.node_count += 1
+            #check if child has childclasses itself recursively
+           # if hasattr(child, 'childClasses'):
+                #self.convert_childClasses(child)
+                #print(child.childClasses)
+               # for tcl in child.childClasses: #max recursion depth exceeded, cannot call iteratively same function
+                    #if hasattr(tcl, 'childClasses'):
+                       # for cl in tcl.childClasses:
+                           # print(cl.tName)
+                    #print(tcl.tName)
             if hasattr(child, 'defines'):
                     self.convert_defined_methods(child)
 
@@ -190,7 +195,16 @@ class EcoreToMatrixConverter:
             if node[0] == type:
                 if node[1] == node_name:
                     return current_node
-        return None
+    
+    #necessary for objects with the same name but different parents/container objects
+    def get_node_in_container(self, node_name, type, parent_name, parent_type):
+        for current_node in self.node_dict:
+            node = self.node_dict[current_node]
+            if node[0] == type:
+                if node[1] == node_name:
+                    if node[2] == parent_type:
+                        if node[3] == parent_name:
+                            return current_node
     
     #this function sets the existing edges in the adjacency matrix to 1
     def convert_edges(self):
@@ -201,6 +215,8 @@ class EcoreToMatrixConverter:
             if current_node[0] == self.NodeTypes.PACKAGE.value:
                 if len(current_node) == 4: #there is a subpackage
                     find_key = self.find_key_of_connected_node(self.NodeTypes.PACKAGE.value, current_node) #search for key of the parent package
+                    #if find_key is None:
+                       # print(current_node)
                     self.adjacency_list.append([find_key, keys])
 
             #set edges between Modules and Packages
@@ -212,7 +228,7 @@ class EcoreToMatrixConverter:
                         self.adjacency_list.append([find_key, keys])
                         self.adjacency_list.append([keys, find_key])
 
-            #set edges between classes and modules
+            #set edges between classes and modules/child classes
             if current_node[0] == self.NodeTypes.CLASS.value:
                 if len(current_node) == 4:
                     if current_node[2] == self.NodeTypes.MODULE.value:
