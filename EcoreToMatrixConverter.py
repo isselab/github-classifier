@@ -62,7 +62,7 @@ class EcoreToMatrixConverter:
                     for tobject in tmodule.contains: #can contain TContainableElements (TAbstractType and TMember)
                     #check TAbstractTypes
                         if tobject.eClass.name == ProjectEcoreGraph.Types.CLASS.value:
-                            current_class = None
+                            #current_class = None
                             #current_class = self.get_node(tobject.tName, self.NodeTypes.CLASS.value)
                             #if current_class is None:
                             self.node_matrix.append(self.NodeTypes.CLASS.value)
@@ -72,7 +72,7 @@ class EcoreToMatrixConverter:
                                 self.convert_childClasses(tobject)
                             if hasattr(tobject, 'defines'):
                                 self.convert_defined_methods(tobject)
-                        if tobject.eClass.name == ProjectEcoreGraph.Types.METHOD_DEFINITION.value:
+                        if tobject.eClass.name == ProjectEcoreGraph.Types.METHOD_DEFINITION.value: #kinda stupid like this, unnecessarily complicated
                             #here are the TMember objects checked
                             self.convert_method_definitions(tobject, self.NodeTypes.MODULE.value, tmodule.location)
             
@@ -114,11 +114,12 @@ class EcoreToMatrixConverter:
                                 self.node_dict[self.node_count] = [self.NodeTypes.PARAMETER.value, param_name, self.NodeTypes.METHOD_SIGNATURE.value, signature_name, 'Next', next_param_name] 
                                 self.node_count += 1
         
+        #is this necessary at all? can there be classes without module in other project that makes this necessary??
         #convert classes and contained objects
         for tclass in typegraph.classes:
-            #current_class = None
-            #current_class = self.get_node(tclass.tName, self.NodeTypes.CLASS.value)
-            #if current_class is None:
+            current_class = None
+            current_class = self.get_node(tclass.tName, self.NodeTypes.CLASS.value) #can i use get node in container here? but test passed probab not necess
+            if current_class is None:
                 self.node_matrix.append(self.NodeTypes.CLASS.value)
                 self.node_dict[self.node_count] = [self.NodeTypes.CLASS.value, tclass.tName] #does not have package in namespace
                 self.node_count += 1
