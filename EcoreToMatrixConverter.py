@@ -207,6 +207,8 @@ class EcoreToMatrixConverter:
             if current_node[0] == self.NodeTypes.PACKAGE.value:
                 if len(current_node) == 4: #there is a subpackage
                     find_key = self.find_key_of_connected_node(self.NodeTypes.PACKAGE.value, current_node) #search for key of the parent package
+                    #if find_key is None:
+                       # print(current_node)
                     self.adjacency_list.append([find_key, keys])
 
             #set edges between Modules and Packages
@@ -214,12 +216,12 @@ class EcoreToMatrixConverter:
                 if len(current_node) == 4:
                     if current_node[2] == self.NodeTypes.PACKAGE.value:
                         find_key = self.find_key_of_connected_node(self.NodeTypes.PACKAGE.value, current_node)
-                        #if find_key is None: #here is problem none!!
+                        if find_key is None: #here is problem none!!
                             #print(current_node)
-                            #for key in self.node_dict: #added this to search for matching packages
-                                #node = self.node_dict[key]
-                                #if current_node[3]==node[1]: #types of subsubpackages wrong!!
-                                   # print(node)
+                            for key in self.node_dict: #added this to search for matching
+                                node = self.node_dict[key]
+                                if current_node[3]==node[1]: #types wrong!!??
+                                    print(node)
                         #edge in both directions
                         self.adjacency_list.append([find_key, keys])
                         self.adjacency_list.append([keys, find_key])
@@ -260,6 +262,8 @@ class EcoreToMatrixConverter:
                 method_name = current_node[1]
                 method_name += '_definition'
                 find_key = self.find_connected_node(self.NodeTypes.METHOD_DEFINITION.value, method_name)
+                #if find_key is None: #added this to find more issues, none found
+                   # print(current_node)
                 self.adjacency_list.append([keys, find_key]) #edge from TMethod to TMethodDef object!
 
             #set edges for parameters
@@ -269,6 +273,8 @@ class EcoreToMatrixConverter:
                 if len(current_node) == 6: #function has multiple parameters
                     next_parameter_name = current_node[5]
                     find_key = self.find_connected_node(self.NodeTypes.PARAMETER.value, next_parameter_name)
+                    #if find_key is None: #not this either
+                        #print(current_node)
                     #edges between next/previous parameters of one function
                     self.adjacency_list.append([find_key, keys])
                     self.adjacency_list.append([keys, find_key])
@@ -281,6 +287,8 @@ class EcoreToMatrixConverter:
                     target_name = current_node[5] #method name that's being called
                     target_name += '_definition'
                     find_key = self.find_connected_node(self.NodeTypes.METHOD_DEFINITION.value, target_name)
+                    #if find_key is None: not the problem
+                        #print(current_node)
                     self.adjacency_list.append([find_key, keys]) #edge TMethDef to TCall, 'accessedBy'
                     self.adjacency_list.append([keys, find_key]) #edge TCall to TMethDef, 'target'
 
