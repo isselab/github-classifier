@@ -62,26 +62,20 @@ class EcoreToMatrixConverter:
                     for tobject in tmodule.contains: #can contain TContainableElements (TAbstractType and TMember)
                     #check TAbstractTypes
                         if tobject.eClass.name == ProjectEcoreGraph.Types.CLASS.value:
-                            current_class = None
-                            current_class = self.get_node(tobject.tName, self.NodeTypes.CLASS.value)
-                            if current_class is None:
-                                self.node_matrix.append(self.NodeTypes.CLASS.value)
-                                self.node_dict[self.node_count] = [self.NodeTypes.CLASS.value, tobject.tName, self.NodeTypes.MODULE.value, tmodule.location]
-                                self.node_count += 1
-                                if hasattr(tobject, 'childClasses'):
-                                    self.convert_childClasses(tobject)
-                                if hasattr(tobject, 'defines'):
-                                    self.convert_defined_methods(tobject)
-                        if tobject.eClass.name == ProjectEcoreGraph.Types.METHOD_DEFINITION.value:
+                            self.node_matrix.append(self.NodeTypes.CLASS.value)
+                            self.node_dict[self.node_count] = [self.NodeTypes.CLASS.value, tobject.tName, self.NodeTypes.MODULE.value, tmodule.location]
+                            self.node_count += 1
+                            if hasattr(tobject, 'childClasses'):
+                                self.convert_childClasses(tobject)
+                            if hasattr(tobject, 'defines'):
+                                self.convert_defined_methods(tobject)
+                        if tobject.eClass.name == ProjectEcoreGraph.Types.METHOD_DEFINITION.value: #kinda stupid like this, unnecessarily complicated
                             #here are the TMember objects checked
                             self.convert_method_definitions(tobject, self.NodeTypes.MODULE.value, tmodule.location)
             
         
         #convert methods and contained objects
         for tmethod in typegraph.methods:
-            current_method = None
-            current_method = self.get_node(tmethod.tName, self.NodeTypes.METHOD.value)
-            if current_method is None:
                 self.node_matrix.append(self.NodeTypes.METHOD.value)
                 self.node_dict[self.node_count] = [self.NodeTypes.METHOD.value, tmethod.tName]
                 self.node_count += 1
@@ -117,7 +111,7 @@ class EcoreToMatrixConverter:
         #convert classes and contained objects
         for tclass in typegraph.classes:
             current_class = None
-            current_class = self.get_node(tclass.tName, self.NodeTypes.CLASS.value)
+            current_class = self.get_node(tclass.tName, self.NodeTypes.CLASS.value) #can i use get node in container here? but test passed probab not necess
             if current_class is None:
                 self.node_matrix.append(self.NodeTypes.CLASS.value)
                 self.node_dict[self.node_count] = [self.NodeTypes.CLASS.value, tclass.tName] #does not have package in namespace
@@ -137,20 +131,13 @@ class EcoreToMatrixConverter:
                 if hasattr(tsubpackage, 'subpackages'): 
                     self.convert_subpackages_recursive(tsubpackage)        
 
+    '''has only one attribute childclasses checking recursively will result 
+        in potential endless loop, without these child classes existing in the xmi file'''
     def convert_childClasses(self, tclass):
         for child in tclass.childClasses:
             self.node_matrix.append(self.NodeTypes.CLASS.value)
             self.node_dict[self.node_count] = [self.NodeTypes.CLASS.value, child.tName, self.NodeTypes.CLASS.value, tclass.tName]
             self.node_count += 1
-            #check if child has childclasses itself recursively
-           # if hasattr(child, 'childClasses'):
-                #self.convert_childClasses(child)
-                #print(child.childClasses)
-               # for tcl in child.childClasses: #max recursion depth exceeded, cannot call iteratively same function
-                    #if hasattr(tcl, 'childClasses'):
-                       # for cl in tcl.childClasses:
-                           # print(cl.tName)
-                    #print(tcl.tName)
             if hasattr(child, 'defines'):
                     self.convert_defined_methods(child)
 
@@ -162,16 +149,13 @@ class EcoreToMatrixConverter:
 
     #convert TMethodDefinition objects and contained call objects
     def convert_method_definitions(self, t_meth_def, container_type, tcontainer_name): 
-        current_method_def = None
         tobject_name = t_meth_def.signature.method.tName
         tobject_name += '_definition'
-        current_method_def = self.get_node(tobject_name, self.NodeTypes.METHOD_DEFINITION.value)
-        if current_method_def is None:
-            self.node_matrix.append(self.NodeTypes.METHOD_DEFINITION.value)
-            self.node_dict[self.node_count] = [self.NodeTypes.METHOD_DEFINITION.value, tobject_name, container_type, tcontainer_name] 
-            self.node_count += 1
-            if hasattr(t_meth_def, 'accessing'):
-                self.convert_call(t_meth_def, tobject_name)
+        self.node_matrix.append(self.NodeTypes.METHOD_DEFINITION.value)
+        self.node_dict[self.node_count] = [self.NodeTypes.METHOD_DEFINITION.value, tobject_name, container_type, tcontainer_name] 
+        self.node_count += 1
+        if hasattr(t_meth_def, 'accessing'):
+            self.convert_call(t_meth_def, tobject_name)
 
     #convert call objects, are only contained in TMethodDefinition objects
     def convert_call(self, tmethod_def, tmethod_def_name):

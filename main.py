@@ -1,6 +1,6 @@
 from CustomDataset import RepositoryDataset
 from GCN import GCN
-from PipelineUtils import prepare_dataset
+from PipelineUtils import prepare_dataset, create_matrix_structure
 
 # repository_directory = '/mnt/volume1/mlexpmining/cloned_repos/'
 # output_directory = '/mnt/volume1/mlexpmining/ecore_graphs/'
