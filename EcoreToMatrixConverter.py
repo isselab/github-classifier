@@ -63,15 +63,15 @@ class EcoreToMatrixConverter:
                     #check TAbstractTypes
                         if tobject.eClass.name == ProjectEcoreGraph.Types.CLASS.value:
                             current_class = None
-                            current_class = self.get_node(tobject.tName, self.NodeTypes.CLASS.value)
-                            if current_class is None:
-                                self.node_matrix.append(self.NodeTypes.CLASS.value)
-                                self.node_dict[self.node_count] = [self.NodeTypes.CLASS.value, tobject.tName, self.NodeTypes.MODULE.value, tmodule.location]
-                                self.node_count += 1
-                                if hasattr(tobject, 'childClasses'):
-                                    self.convert_childClasses(tobject)
-                                if hasattr(tobject, 'defines'):
-                                    self.convert_defined_methods(tobject)
+                            #current_class = self.get_node(tobject.tName, self.NodeTypes.CLASS.value)
+                            #if current_class is None:
+                            self.node_matrix.append(self.NodeTypes.CLASS.value)
+                            self.node_dict[self.node_count] = [self.NodeTypes.CLASS.value, tobject.tName, self.NodeTypes.MODULE.value, tmodule.location]
+                            self.node_count += 1
+                            if hasattr(tobject, 'childClasses'):
+                                self.convert_childClasses(tobject)
+                            if hasattr(tobject, 'defines'):
+                                self.convert_defined_methods(tobject)
                         if tobject.eClass.name == ProjectEcoreGraph.Types.METHOD_DEFINITION.value:
                             #here are the TMember objects checked
                             self.convert_method_definitions(tobject, self.NodeTypes.MODULE.value, tmodule.location)
@@ -79,9 +79,9 @@ class EcoreToMatrixConverter:
         
         #convert methods and contained objects
         for tmethod in typegraph.methods:
-            current_method = None
-            current_method = self.get_node(tmethod.tName, self.NodeTypes.METHOD.value)
-            if current_method is None:
+            #current_method = None
+        #current_method = self.get_node(tmethod.tName, self.NodeTypes.METHOD.value)
+        #if current_method is None:
                 self.node_matrix.append(self.NodeTypes.METHOD.value)
                 self.node_dict[self.node_count] = [self.NodeTypes.METHOD.value, tmethod.tName]
                 self.node_count += 1
@@ -116,9 +116,9 @@ class EcoreToMatrixConverter:
         
         #convert classes and contained objects
         for tclass in typegraph.classes:
-            current_class = None
-            current_class = self.get_node(tclass.tName, self.NodeTypes.CLASS.value)
-            if current_class is None:
+            #current_class = None
+            #current_class = self.get_node(tclass.tName, self.NodeTypes.CLASS.value)
+            #if current_class is None:
                 self.node_matrix.append(self.NodeTypes.CLASS.value)
                 self.node_dict[self.node_count] = [self.NodeTypes.CLASS.value, tclass.tName] #does not have package in namespace
                 self.node_count += 1
@@ -165,13 +165,13 @@ class EcoreToMatrixConverter:
         current_method_def = None
         tobject_name = t_meth_def.signature.method.tName
         tobject_name += '_definition'
-        current_method_def = self.get_node(tobject_name, self.NodeTypes.METHOD_DEFINITION.value)
-        if current_method_def is None:
-            self.node_matrix.append(self.NodeTypes.METHOD_DEFINITION.value)
-            self.node_dict[self.node_count] = [self.NodeTypes.METHOD_DEFINITION.value, tobject_name, container_type, tcontainer_name] 
-            self.node_count += 1
-            if hasattr(t_meth_def, 'accessing'):
-                self.convert_call(t_meth_def, tobject_name)
+        #current_method_def = self.get_node(tobject_name, self.NodeTypes.METHOD_DEFINITION.value)
+        #if current_method_def is None:
+        self.node_matrix.append(self.NodeTypes.METHOD_DEFINITION.value)
+        self.node_dict[self.node_count] = [self.NodeTypes.METHOD_DEFINITION.value, tobject_name, container_type, tcontainer_name] 
+        self.node_count += 1
+        if hasattr(t_meth_def, 'accessing'):
+            self.convert_call(t_meth_def, tobject_name)
 
     #convert call objects, are only contained in TMethodDefinition objects
     def convert_call(self, tmethod_def, tmethod_def_name):
