@@ -4,12 +4,12 @@ from PipelineUtils import prepare_dataset, create_matrix_structure
 
 # repository_directory = '/mnt/volume1/mlexpmining/cloned_repos/'
 # output_directory = '/mnt/volume1/mlexpmining/ecore_graphs/'
-#repository_directory = '../unit_testing'
-#repository_directory = '../test_repository' #input repositories
-#output_directory = '../test_tool' #output for the entire tool pipeline
-repository_directory = 'D:/dataset_repos'
-#repository_directory = 'D:/none_problem'
-output_directory = 'D:/tool_output'
+
+#repository_directory = 'D:/dataset_repos'
+#output_directory = 'D:/tool_output'
+
+repository_directory = 'test/unit_tests'
+output_directory = '../output_tests'
 
 if __name__ == '__main__':
 
