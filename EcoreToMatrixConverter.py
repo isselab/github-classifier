@@ -82,7 +82,7 @@ class EcoreToMatrixConverter:
                 node_name = tmethod.tName
                 for tobject in tmethod.signatures:
                     node_name += '_signature'
-                    signature_name = node_name
+                    signature_name = node_name 
                     self.node_matrix.append(self.NodeTypes.METHOD_SIGNATURE.value)
                     self.node_dict[self.node_count] = [self.NodeTypes.METHOD_SIGNATURE.value, node_name, self.NodeTypes.METHOD.value, tmethod.tName] #savig method name helps later on!!
                     self.node_count += 1
