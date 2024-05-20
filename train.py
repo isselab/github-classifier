@@ -16,11 +16,11 @@ prepare_dataset(repository_directory, output_directory)
 
 print('---convert dataset labels for training---')
 try:
-    #labeled repositories should have column headers 'Repository Names' and 'Repository Labels', and no empty lines in the columns
+    #labeled repositories should have column headers 'html_url' and 'type', and no empty lines in the columns
     RepositoryDataset.convert_labeled_graphs(labels, f'{output_directory}/csv_files')
 except Exception as e:
     print(e)
-    print('There is a problem with the labeled dataset. Check format in excel file. Labeled repositories should have column headers Repository Names and Repository Labels, and no empty lines in the columns!')
+    print('There is a problem with the labeled dataset. Check format in excel file. Labeled repositories should have column headers html_url and type, and no empty lines in the columns!')
 
 print('--------------load dataset---------------')
 

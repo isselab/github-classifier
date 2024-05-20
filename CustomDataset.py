@@ -76,11 +76,11 @@ class RepositoryDataset(Dataset):
         #iterate over loaded file and retrieve labels
         for row in resource.iterrows():
             object = row[1]
-            repo = object.get('Repository Label') #change to html_url
-            graph_labels.append(repo)
-            name = row[1] #adjust this to retrieve name from url
-            repo_name = name.get('Repository Name') #change to type
+            url = object.get('html_url') 
+            repo_name = url.split('/')[-1] #last element is repository name
             graph_names.append(repo_name)
+            type_label = object.get('type') 
+            graph_labels.append(type_label)
 
         #encode labels numerically
         encoded_nodes = convert_labels(graph_types, graph_labels)
