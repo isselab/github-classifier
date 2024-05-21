@@ -18,7 +18,7 @@ mm_root = resource.contents[0]
 rset.metamodel_registry[mm_root.nsURI] = mm_root
 
 #adjust this!!! to match repo
-for x, xmi_file in enumerate(list_xmi_files):
+for x, xmi_file in enumerate(list_xmi_files): #i dont need this
         count_package = 0
         count_class = 0
         count_method = 0
