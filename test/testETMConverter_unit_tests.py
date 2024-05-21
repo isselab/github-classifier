@@ -4,15 +4,20 @@ import pandas as pd
 import numpy as np
 from testUtils import count_packages, Types, count_calls
 
-output_directory = 'D:/tool_output'
+'''This test checks for the small unit test repository in the test folder if the number of converted node types 
+matches in the xmi and csv files, meaning it tests whether all nodes were converted by counting the types. 
+It also checks if the edges were converted correctly. Use the tool by running main.py to create the files first.'''
+
+output_directory = '../output_tests' #path to the folder containing the xmi and csv files
 
 list_csv_files = os.listdir(f'{output_directory}/csv_files')
-list_xmi_files = os.listdir(f'{output_directory}/xmi_files') #get output from above
+list_xmi_files = os.listdir(f'{output_directory}/xmi_files') 
 rset = ResourceSet()
 resource = rset.get_resource(URI('../Basic.ecore'))
 mm_root = resource.contents[0]
 rset.metamodel_registry[mm_root.nsURI] = mm_root
 
+#adjust this!!! to match repo
 for x, xmi_file in enumerate(list_xmi_files):
         count_package = 0
         count_class = 0
@@ -90,7 +95,7 @@ for x, xmi_file in enumerate(list_xmi_files):
         count_param = 0
         count_mod = 0
 
-        #count packages
+        #count node types
         for obj in node_array:
             if obj == 6:
                 count_pack += 1

@@ -1,6 +1,7 @@
 from CustomDataset import RepositoryDataset
 
-'''this file can be executed when it's moved to the folder containing the file CustomDataset.py'''
+'''This file can be executed when it's moved to the folder containing the file CustomDataset.py
+It tests whether the dataset can be loaded and sample pairs can be retrieved from the dataset.'''
 
 output_directory = 'D:/tool_output'
 
