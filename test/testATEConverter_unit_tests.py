@@ -21,20 +21,37 @@ for p, pack in enumerate(typegraph.packages):
     if p == 0:
         if pack.tName == 'my_package':
             check = True
+        else:
+            check = False
+            print('Package name not correct.')
     if p > 0:
         check = False 
+        print('Number of packages not correct.')
 
 #check number of modules and their names
-for m, mod in enumerate(typegraph.modules):
-    if m <= 2: #3 modules in repo
+for mo, mod in enumerate(typegraph.modules):
+    if mo <= 2: #3 modules in repo
         mod_name = mod.location.split('/')[-1] #get name
         if mod_name == 'callFunc' or mod_name == 'testClass' or mod_name == 'testCall':
             check = True
         else:
             check == False 
+            print('Module names not correct.')
     else:
         check == False 
+        print('Number of modules not correct.')
     
+#check methods
+for me, meth in enumerate(typegraph.methods):
+    if me <= 2:
+        if meth.tName == 'greet_friend' or meth.tName == 'my_hello' or meth.tName == 'call_name':
+            check == True
+        else:
+            check = False
+            print('Method names not correct.')
+    else:
+        check = False
+        print('Number of methods not correct.')
 
 
 #print result
