@@ -4,10 +4,14 @@ import pandas as pd
 import numpy as np
 from testUtils import count_packages, Types, count_calls
 
-output_directory = 'D:/tool_output'
+'''This test checks for arbitrary repositories if the number of converted node types matches in the xmi and csv files,
+meaning it tests whether all nodes were converted by counting the types.
+Use the tool by running main.py to create the files first.'''
+
+output_directory = 'D:/tool_output' #path to the folder containing the xmi and csv files
 
 list_csv_files = os.listdir(f'{output_directory}/csv_files')
-list_xmi_files = os.listdir(f'{output_directory}/xmi_files') #get output from above
+list_xmi_files = os.listdir(f'{output_directory}/xmi_files') 
 rset = ResourceSet()
 resource = rset.get_resource(URI('../Basic.ecore'))
 mm_root = resource.contents[0]
@@ -89,8 +93,9 @@ for x, xmi_file in enumerate(list_xmi_files):
         count_ca = 0
         count_param = 0
         count_mod = 0
+        check = True
 
-        #count packages
+        #count node types
         for obj in node_array:
             if obj == 6:
                 count_pack += 1
@@ -108,6 +113,12 @@ for x, xmi_file in enumerate(list_xmi_files):
                 count_ca += 1
             if obj == 5:
                 count_mod += 1
+
+        #check if all edges are set to a node_id/not None
+        for item in edge_array:
+            for id in item:
+                if id is None:
+                    check = False
 
         #compare xmi files with csv files
         if count_pack == count_package:
@@ -149,3 +160,8 @@ for x, xmi_file in enumerate(list_xmi_files):
             print('Number of modules correct, test passed')
         else:
             print('Number of modules not correct, test failed')
+
+        if check == True:
+            print('All edges set, test passed')
+        else:
+            print('Edge is not set! test failed')            

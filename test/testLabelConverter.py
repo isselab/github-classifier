@@ -1,6 +1,7 @@
 from CustomDataset import RepositoryDataset
 
-'''this file can be executed when it's moved to the folder containing the file CustomDataset.py'''
+'''This file can be executed when it's moved to the folder containing the file CustomDataset.py
+It tests whether the labeled repositories used for training can be converted.'''
 
 labels = '../random_sample_icse_CO.xls'
 output_directory = 'D:/tool_output'
