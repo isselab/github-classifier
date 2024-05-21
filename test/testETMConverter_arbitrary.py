@@ -93,6 +93,7 @@ for x, xmi_file in enumerate(list_xmi_files):
         count_ca = 0
         count_param = 0
         count_mod = 0
+        check = True
 
         #count node types
         for obj in node_array:
@@ -112,6 +113,12 @@ for x, xmi_file in enumerate(list_xmi_files):
                 count_ca += 1
             if obj == 5:
                 count_mod += 1
+
+        #check if all edges are set to a node_id/not None
+        for item in edge_array:
+            for id in item:
+                if id is None:
+                    check = False
 
         #compare xmi files with csv files
         if count_pack == count_package:
@@ -153,3 +160,8 @@ for x, xmi_file in enumerate(list_xmi_files):
             print('Number of modules correct, test passed')
         else:
             print('Number of modules not correct, test failed')
+
+        if check == True:
+            print('All edges set, test passed')
+        else:
+            print('Edge is not set! test failed')            
