@@ -199,8 +199,6 @@ class EcoreToMatrixConverter:
             if current_node[0] == self.NodeTypes.PACKAGE.value:
                 if len(current_node) == 4: #there is a subpackage
                     find_key = self.find_key_of_connected_node(self.NodeTypes.PACKAGE.value, current_node) #search for key of the parent package
-                    #if find_key is None:
-                       # print(current_node)
                     self.adjacency_list.append([find_key, keys])
 
             #set edges between Modules and Packages
