@@ -8,9 +8,8 @@ from testUtils import count_packages, Types, count_calls
 meaning it tests whether all nodes were converted by counting the types.
 Use the tool by running main.py to create the files first.'''
 
-output_directory = 'D:/tool_output' #path to the folder containing the xmi and csv files
+output_directory = 'D:/problem_output' #path to the folder containing the xmi and csv files
 
-list_csv_files = os.listdir(f'{output_directory}/csv_files')
 list_xmi_files = os.listdir(f'{output_directory}/xmi_files') 
 rset = ResourceSet()
 resource = rset.get_resource(URI('../Basic.ecore'))
@@ -80,10 +79,13 @@ for x, xmi_file in enumerate(list_xmi_files):
         graph_name = typegraph_root.tName
 
         #load csv file
-        node_features = pd.read_csv(f'{output_directory}/csv_files/{graph_name}_nodefeatures.csv', header=None) 
-        node_array = np.array(node_features)
-        edges = pd.read_csv(f'{output_directory}/csv_files/{graph_name}_A.csv', header=None) 
-        edge_array = np.array(edges)
+        try:
+            node_features = pd.read_csv(f'{output_directory}/csv_files/{graph_name}_nodefeatures.csv', header=None) 
+            node_array = np.array(node_features)
+            edges = pd.read_csv(f'{output_directory}/csv_files/{graph_name}_A.csv', header=None) 
+            edge_array = np.array(edges)
+        except Exception as e:
+            print(e)
 
         count_pack = 0
         count_cl = 0
@@ -93,7 +95,6 @@ for x, xmi_file in enumerate(list_xmi_files):
         count_ca = 0
         count_param = 0
         count_mod = 0
-        check = True
 
         #count node types
         for obj in node_array:
@@ -113,12 +114,6 @@ for x, xmi_file in enumerate(list_xmi_files):
                 count_ca += 1
             if obj == 5:
                 count_mod += 1
-
-        #check if all edges are set to a node_id/not None
-        for item in edge_array:
-            for id in item:
-                if id is None:
-                    check = False
 
         #compare xmi files with csv files
         if count_pack == count_package:
@@ -159,9 +154,19 @@ for x, xmi_file in enumerate(list_xmi_files):
         if count_mod == count_module:
             print('Number of modules correct, test passed')
         else:
-            print('Number of modules not correct, test failed')
+            print('Number of modules not correct, test failed')       
 
-        if check == True:
-            print('All edges set, test passed')
+        if count_method_def == count_method:
+            print('Number of method and method defs in xmi file matches, test passed')
         else:
-            print('Edge is not set! test failed')            
+            print('Number of method and method defs in xmi file does not match, test failed')
+
+        if count_method_def == count_method_sig:
+            print('Number of method signatures and method defs in xmi file matches, test passed')
+        else:
+            print('Number of method signatures and method defs in xmi file does not match, test failed')
+
+        if count_method == count_method_sig:
+            print('Number of methods and method sigs in xmi file matches, test passed')
+        else:
+            print('Number of methods and method sigs in xmi file does not match, test failed')

@@ -1,6 +1,5 @@
 from pyecore.resources import ResourceSet, URI
 from enum import Enum
-from ASTToEcoreConverter import ProjectEcoreGraph
 from LabelEncoder import convert_labels
 
 class EcoreToMatrixConverter:
@@ -61,7 +60,7 @@ class EcoreToMatrixConverter:
                 if hasattr(tmodule, 'contains'):
                     for tobject in tmodule.contains: #can contain TContainableElements (TAbstractType and TMember)
                     #check TAbstractTypes
-                        if tobject.eClass.name == ProjectEcoreGraph.Types.CLASS.value:
+                        if tobject.eClass.name == self.NodeTypes.CLASS.value:
                             self.node_matrix.append(self.NodeTypes.CLASS.value)
                             self.node_dict[self.node_count] = [self.NodeTypes.CLASS.value, tobject.tName, self.NodeTypes.MODULE.value, tmodule.location]
                             self.node_count += 1
@@ -69,7 +68,7 @@ class EcoreToMatrixConverter:
                                 self.convert_childClasses(tobject)
                             if hasattr(tobject, 'defines'):
                                 self.convert_defined_methods(tobject)
-                        if tobject.eClass.name == ProjectEcoreGraph.Types.METHOD_DEFINITION.value: #kinda stupid like this, unnecessarily complicated
+                        if tobject.eClass.name == self.NodeTypes.METHOD_DEFINITION.value: 
                             #here are the TMember objects checked
                             self.convert_method_definitions(tobject, self.NodeTypes.MODULE.value, tmodule.location)
             
@@ -111,7 +110,7 @@ class EcoreToMatrixConverter:
         #convert classes and contained objects
         for tclass in typegraph.classes:
             current_class = None
-            current_class = self.get_node(tclass.tName, self.NodeTypes.CLASS.value) #can i use get node in container here? but test passed probab not necess
+            current_class = self.get_node(tclass.tName, self.NodeTypes.CLASS.value) 
             if current_class is None:
                 self.node_matrix.append(self.NodeTypes.CLASS.value)
                 self.node_dict[self.node_count] = [self.NodeTypes.CLASS.value, tclass.tName] #does not have package in namespace
@@ -144,7 +143,7 @@ class EcoreToMatrixConverter:
     #convert TMethod objects that are defined within a class
     def convert_defined_methods(self, tclass):
         for tobject in tclass.defines:
-                if tobject.eClass.name == ProjectEcoreGraph.Types.METHOD_DEFINITION.value:
+                if tobject.eClass.name == self.NodeTypes.METHOD_DEFINITION.value:
                     self.convert_method_definitions(tobject, self.NodeTypes.CLASS.value, tclass.tName)
 
     #convert TMethodDefinition objects and contained call objects
@@ -230,6 +229,8 @@ class EcoreToMatrixConverter:
                         find_key = self.find_key_of_connected_node(self.NodeTypes.CLASS.value, current_node)
                         self.adjacency_list.append([find_key, keys])
             
+            '''problem is in xmi file..method definition does not exist for some methods, i dont know why'''
+
             #set edges for TMethod objects
             if current_node[0] == self.NodeTypes.METHOD_SIGNATURE.value:
                 find_key = self.find_key_of_connected_node(self.NodeTypes.METHOD.value, current_node)
@@ -238,16 +239,27 @@ class EcoreToMatrixConverter:
                 method_name = current_node[1]
                 method_name += '_definition'
                 find_key = self.find_connected_node(self.NodeTypes.METHOD_DEFINITION.value, method_name)
+                #if find_key is None: #added this probolem find
+                    #print(method_name)
+                    #print(current_node)
+                    #for id in self.node_dict:
+                        #node = self.node_dict[id]
+                        #if node[1] == method_name:
+                            #print(node)
                 self.adjacency_list.append([keys, find_key]) #edge from TMethod to TMethodDef object!
 
             #set edges for parameters
             if current_node[0] == self.NodeTypes.PARAMETER.value:
                 find_key = self.find_key_of_connected_node(self.NodeTypes.METHOD_SIGNATURE.value, current_node)
                 self.adjacency_list.append([find_key, keys]) #edge from TMethodSignature to TParameter
+                #if find_key is None: #added this probolem find
+                   # print(current_node)
                 if len(current_node) == 6: #function has multiple parameters
                     next_parameter_name = current_node[5]
                     find_key = self.find_connected_node(self.NodeTypes.PARAMETER.value, next_parameter_name)
                     #edges between next/previous parameters of one function
+                    #if find_key is None: #added this because of errors
+                       # print(current_node)
                     self.adjacency_list.append([find_key, keys])
                     self.adjacency_list.append([keys, find_key])
 
