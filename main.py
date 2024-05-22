@@ -28,7 +28,7 @@ if __name__ == '__main__':
         print(dataset.__len__())
         print('Number of classes: ')
         print(dataset.num_classes)
-        #print(dataset.__getitem__(4))
+        #print(dataset.__getitem__(1)) #only works with sample pairs (graph, label)
         #model = GCN(dataset, hidden_channels=8)
     except Exception as e:
         print(e)

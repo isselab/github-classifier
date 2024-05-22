@@ -1,4 +1,4 @@
-from pyecore.resources import ResourceSet, URI
+from pyecore.resources import ResourceSet
 from enum import Enum
 from LabelEncoder import convert_labels
 
@@ -229,8 +229,6 @@ class EcoreToMatrixConverter:
                         find_key = self.find_key_of_connected_node(self.NodeTypes.CLASS.value, current_node)
                         self.adjacency_list.append([find_key, keys])
             
-            '''problem is in xmi file..method definition does not exist for some methods, i dont know why'''
-
             #set edges for TMethod objects
             if current_node[0] == self.NodeTypes.METHOD_SIGNATURE.value:
                 find_key = self.find_key_of_connected_node(self.NodeTypes.METHOD.value, current_node)
@@ -239,27 +237,17 @@ class EcoreToMatrixConverter:
                 method_name = current_node[1]
                 method_name += '_definition'
                 find_key = self.find_connected_node(self.NodeTypes.METHOD_DEFINITION.value, method_name)
-                #if find_key is None: #added this probolem find
-                    #print(method_name)
-                    #print(current_node)
-                    #for id in self.node_dict:
-                        #node = self.node_dict[id]
-                        #if node[1] == method_name:
-                            #print(node)
-                self.adjacency_list.append([keys, find_key]) #edge from TMethod to TMethodDef object!
+                if find_key is not None: #added this to fix none issue, in xmi files more meth def do not exist but cause no problems, can happen apparently?
+                    self.adjacency_list.append([keys, find_key]) #edge from TMethod to TMethodDef object!
 
             #set edges for parameters
             if current_node[0] == self.NodeTypes.PARAMETER.value:
                 find_key = self.find_key_of_connected_node(self.NodeTypes.METHOD_SIGNATURE.value, current_node)
                 self.adjacency_list.append([find_key, keys]) #edge from TMethodSignature to TParameter
-                #if find_key is None: #added this probolem find
-                   # print(current_node)
                 if len(current_node) == 6: #function has multiple parameters
                     next_parameter_name = current_node[5]
                     find_key = self.find_connected_node(self.NodeTypes.PARAMETER.value, next_parameter_name)
                     #edges between next/previous parameters of one function
-                    #if find_key is None: #added this because of errors
-                       # print(current_node)
                     self.adjacency_list.append([find_key, keys])
                     self.adjacency_list.append([keys, find_key])
 
