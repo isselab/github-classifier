@@ -2,6 +2,7 @@ import ast
 import os
 from enum import Enum
 from pyecore.resources import ResourceSet, URI
+#import autopep8
 
 class ProjectEcoreGraph:
     def __init__(self, directory, resource_set: ResourceSet, output_directory, repository):
@@ -132,15 +133,20 @@ class ProjectEcoreGraph:
             for index, path_part in enumerate(path_split):
                 if class_object.tName == path_part:
                     if index == len(path_split) - 1:
-                        for child in class_object.childClasses:
-                            self.current_module.contains.append(child) 
-                    self.classes_without_module.remove(class_object)
-                    class_object.delete()
+                        for child in class_object.childClasses: #why are child classes appended and not the class?
+                            self.current_module.contains.append(child)
+                    #check necessary! otherwise x not in list error 
+                    if class_object in self.classes_without_module:
+                        self.classes_without_module.remove(class_object) 
+                        class_object.delete() 
         self.current_module.namespace = self.get_package_by_path(path)
         self.module_list.append([self.current_module, self.current_module_name])
-        #added errors='ignore' to fix encoding issues in some repositories
+        #added errors='ignore' to fix encoding issues in some repositories ('charmap cannot decode byte..)
         with open(path, 'r', errors='ignore') as file:
             code = file.read()
+        #added following to try fix the invalid character and syntax errors, does not work!! too many
+        #code = code.replace("“", '"').replace("”", '"').replace("‘", "'").replace("’", "'").replace("»", ">>").replace("—", "-").replace("¿", " ")
+        #code = code.encode().decode('utf-8', errors='ignore') #cannot decode string thats already decoded
         tree = ast.parse(code)
         visitor = ASTVisitor(self)
         visitor.visit(tree)
@@ -246,8 +252,6 @@ class ProjectEcoreGraph:
             if package_name == package[1]:
                 if parent is None and package[2] is None:
                     return package[0]
-                #if package[2] is None: #found issueeee!!!
-                    #print(package)
                 if parent.tName == package[2].tName:
                     return package[0]
         return None
