@@ -38,7 +38,8 @@ class EcoreToMatrixConverter:
         for tpackage in typegraph.packages:
             current_package = None
             current_package = self.get_node(tpackage.tName, self.NodeTypes.PACKAGE.value) #check if package is already in node matrix
-            if current_package is None:
+            #if package exists but has length 4 it was a subpackage --> different package, same name
+            if current_package is None or len(current_package) == 4:
                 self.node_matrix.append(self.NodeTypes.PACKAGE.value)
                 self.node_dict[self.node_count] = [self.NodeTypes.PACKAGE.value, tpackage.tName]
                 self.node_count += 1
@@ -163,7 +164,7 @@ class EcoreToMatrixConverter:
         for c,call in enumerate(tmethod_def.accessing):
             methoddef_target = call.target
             #used continue to fix issue in one xmi file, where target is not set even though it existed!?
-            if methoddef_target is None: 
+            if methoddef_target is None:
                 continue
             target_name = methoddef_target.signature.method.tName #name of the TMethod object that's being called
             #create a ame for the call object
@@ -180,7 +181,7 @@ class EcoreToMatrixConverter:
             node = self.node_dict[current_node]
             if node[0] == type:
                 if node[1] == node_name:
-                    return current_node
+                    return node
     
     #necessary for objects with the same name but different parents/container objects
     def get_node_in_container(self, node_name, type, parent_name, parent_type):
@@ -191,7 +192,7 @@ class EcoreToMatrixConverter:
                     if node[1] == node_name:
                         if node[2] == parent_type:
                             if node[3] == parent_name:
-                                return current_node
+                                return node
     
     #this function sets the existing edges in the adjacency matrix to 1
     def convert_edges(self):
@@ -241,7 +242,7 @@ class EcoreToMatrixConverter:
                 method_name = current_node[1]
                 method_name += '_definition'
                 find_key = self.find_connected_node(self.NodeTypes.METHOD_DEFINITION.value, method_name)
-                if find_key is not None: #added this to fix none issue, in xmi files more meth def do not exist but cause no problems, can happen apparently?
+                if find_key is not None: #there can be less meth def than method objects, due to imports
                     self.adjacency_list.append([keys, find_key]) #edge from TMethod to TMethodDef object!
 
             #set edges for parameters

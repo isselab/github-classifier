@@ -18,6 +18,8 @@ def create_output_folders(directory):
         os.makedirs(f'{directory}/labeled_repositories') 
 
 def download_repositories(repository_directory, repository_list):
+    working_directory = os.getcwd()
+    
     #load labeled repository from excel/ods file
     resource = pd.read_excel(repository_list) #requirements for format: no empty rows in between and header name html_url
 
@@ -31,6 +33,9 @@ def download_repositories(repository_directory, repository_list):
         object = row[1]
         url = object.get('html_url') 
         os.system(f'git clone {url}')
+
+    #change working directory back to github-classifier, otherwise cannot load resources from there
+    os.chdir(working_directory)
 
 def create_ecore_graphs(repository_directory, output_directory):
     repositories = os.listdir(repository_directory)
