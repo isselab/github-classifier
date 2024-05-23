@@ -138,7 +138,8 @@ class ProjectEcoreGraph:
                     class_object.delete()
         self.current_module.namespace = self.get_package_by_path(path)
         self.module_list.append([self.current_module, self.current_module_name])
-        with open(path, 'r') as file:
+        #added errors='ignore' to fix encoding issues in some repositories
+        with open(path, 'r', errors='ignore') as file:
             code = file.read()
         tree = ast.parse(code)
         visitor = ASTVisitor(self)
@@ -232,8 +233,9 @@ class ProjectEcoreGraph:
             return my_package
         package_node = self.create_ecore_instance(self.Types.PACKAGE) #only here is a TPackage instance created
         package_node.tName = name
-        package_node.parent = parent
-        self.package_list.append([package_node, name, parent]) #parent is also tpackage
+        if parent is not None: 
+            package_node.parent = parent
+            self.package_list.append([package_node, name, parent]) #parent is also tpackage
         if parent is None:
             self.graph.packages.append(package_node)
         return package_node
@@ -244,6 +246,8 @@ class ProjectEcoreGraph:
             if package_name == package[1]:
                 if parent is None and package[2] is None:
                     return package[0]
+                #if package[2] is None: #found issueeee!!!
+                    #print(package)
                 if parent.tName == package[2].tName:
                     return package[0]
         return None
@@ -349,11 +353,11 @@ class ASTVisitor(ast.NodeVisitor):
                 import_parent = None
                 for import_class in base_node.split('.'):
                     import_node = self.graph_class.get_class_by_name(import_class)
-                    if import_parent is not None:
+                    if import_parent is not None: #if import_node does not have parent, it becomes parent itself
                         import_parent.childClasses.append(import_node)
                     import_parent = import_node
-                    base_node = import_node
-            base_node.childClasses.append(child)
+                    base_node = import_node 
+                    base_node.childClasses.append(child)
         elif isinstance(node, ast.Attribute):
             base_node = self.graph_class.get_class_by_name(node.attr)
             base_node.childClasses.append(child)
