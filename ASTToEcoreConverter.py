@@ -63,6 +63,7 @@ class ProjectEcoreGraph:
                         if call_check is False:
                             self.create_calls(caller_node, method_node)
                             self.call_list.remove(object)
+                    
                     if method_node is None and call_check is False:
                         method_node = self.create_ecore_instance(self.Types.METHOD_DEFINITION) 
                         self.create_method_signature(method_node, called_method, [])
@@ -86,6 +87,8 @@ class ProjectEcoreGraph:
                 return True
         return False
     
+    '''problem is with one single target in one xmi file out of like 50, 
+    target not set but method def exists--> how???'''
     #create call object
     def create_calls(self, caller_node, called_node):
         call = self.create_ecore_instance(self.Types.CALL)

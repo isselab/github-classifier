@@ -162,6 +162,9 @@ class EcoreToMatrixConverter:
         tmethod_def_name += '_call'
         for c,call in enumerate(tmethod_def.accessing):
             methoddef_target = call.target
+            if methoddef_target is None: #issue  here, but in xmi file!!!!!!
+                print('whhhhyyyyy')
+                print(call.source.signature.method.tName)
             target_name = methoddef_target.signature.method.tName #name of the TMethod object that's being called
             #create a ame for the call object
             call_counter = c+1
