@@ -18,7 +18,8 @@ if __name__ == '__main__':
     try:
         #download_repositories(repository_directory, repository_list)
         #create the graph dataset of the repositories
-        prepare_dataset(repository_directory, output_directory)
+        '''repository list is optional parameter, if you want to download the repositories automatically'''
+        prepare_dataset(repository_directory, output_directory, repository_list) 
         #create_matrix_structure(output_directory)
     except Exception as e:
         print(e)
