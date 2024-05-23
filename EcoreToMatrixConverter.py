@@ -1,6 +1,5 @@
-from pyecore.resources import ResourceSet, URI
+from pyecore.resources import ResourceSet
 from enum import Enum
-from ASTToEcoreConverter import ProjectEcoreGraph
 from LabelEncoder import convert_labels
 
 class EcoreToMatrixConverter:
@@ -61,7 +60,7 @@ class EcoreToMatrixConverter:
                 if hasattr(tmodule, 'contains'):
                     for tobject in tmodule.contains: #can contain TContainableElements (TAbstractType and TMember)
                     #check TAbstractTypes
-                        if tobject.eClass.name == ProjectEcoreGraph.Types.CLASS.value:
+                        if tobject.eClass.name == self.NodeTypes.CLASS.value:
                             self.node_matrix.append(self.NodeTypes.CLASS.value)
                             self.node_dict[self.node_count] = [self.NodeTypes.CLASS.value, tobject.tName, self.NodeTypes.MODULE.value, tmodule.location]
                             self.node_count += 1
@@ -69,7 +68,7 @@ class EcoreToMatrixConverter:
                                 self.convert_childClasses(tobject)
                             if hasattr(tobject, 'defines'):
                                 self.convert_defined_methods(tobject)
-                        if tobject.eClass.name == ProjectEcoreGraph.Types.METHOD_DEFINITION.value: #kinda stupid like this, unnecessarily complicated
+                        if tobject.eClass.name == self.NodeTypes.METHOD_DEFINITION.value: 
                             #here are the TMember objects checked
                             self.convert_method_definitions(tobject, self.NodeTypes.MODULE.value, tmodule.location)
             
@@ -111,7 +110,7 @@ class EcoreToMatrixConverter:
         #convert classes and contained objects
         for tclass in typegraph.classes:
             current_class = None
-            current_class = self.get_node(tclass.tName, self.NodeTypes.CLASS.value) #can i use get node in container here? but test passed probab not necess
+            current_class = self.get_node(tclass.tName, self.NodeTypes.CLASS.value) 
             if current_class is None:
                 self.node_matrix.append(self.NodeTypes.CLASS.value)
                 self.node_dict[self.node_count] = [self.NodeTypes.CLASS.value, tclass.tName] #does not have package in namespace
@@ -144,7 +143,7 @@ class EcoreToMatrixConverter:
     #convert TMethod objects that are defined within a class
     def convert_defined_methods(self, tclass):
         for tobject in tclass.defines:
-                if tobject.eClass.name == ProjectEcoreGraph.Types.METHOD_DEFINITION.value:
+                if tobject.eClass.name == self.NodeTypes.METHOD_DEFINITION.value:
                     self.convert_method_definitions(tobject, self.NodeTypes.CLASS.value, tclass.tName)
 
     #convert TMethodDefinition objects and contained call objects
@@ -163,6 +162,9 @@ class EcoreToMatrixConverter:
         tmethod_def_name += '_call'
         for c,call in enumerate(tmethod_def.accessing):
             methoddef_target = call.target
+            #used continue to fix issue in one xmi file, where target is not set even though it existed!?
+            if methoddef_target is None: 
+                continue
             target_name = methoddef_target.signature.method.tName #name of the TMethod object that's being called
             #create a ame for the call object
             call_counter = c+1
@@ -184,11 +186,12 @@ class EcoreToMatrixConverter:
     def get_node_in_container(self, node_name, type, parent_name, parent_type):
         for current_node in self.node_dict:
             node = self.node_dict[current_node]
-            if node[0] == type:
-                if node[1] == node_name:
-                    if node[2] == parent_type:
-                        if node[3] == parent_name:
-                            return current_node
+            if len(node)>=4:
+                if node[0] == type:
+                    if node[1] == node_name:
+                        if node[2] == parent_type:
+                            if node[3] == parent_name:
+                                return current_node
     
     #this function sets the existing edges in the adjacency matrix to 1
     def convert_edges(self):
@@ -238,7 +241,8 @@ class EcoreToMatrixConverter:
                 method_name = current_node[1]
                 method_name += '_definition'
                 find_key = self.find_connected_node(self.NodeTypes.METHOD_DEFINITION.value, method_name)
-                self.adjacency_list.append([keys, find_key]) #edge from TMethod to TMethodDef object!
+                if find_key is not None: #added this to fix none issue, in xmi files more meth def do not exist but cause no problems, can happen apparently?
+                    self.adjacency_list.append([keys, find_key]) #edge from TMethod to TMethodDef object!
 
             #set edges for parameters
             if current_node[0] == self.NodeTypes.PARAMETER.value:

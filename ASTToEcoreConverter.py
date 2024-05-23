@@ -2,6 +2,7 @@ import ast
 import os
 from enum import Enum
 from pyecore.resources import ResourceSet, URI
+#import autopep8
 
 class ProjectEcoreGraph:
     def __init__(self, directory, resource_set: ResourceSet, output_directory, repository):
@@ -62,6 +63,7 @@ class ProjectEcoreGraph:
                         if call_check is False:
                             self.create_calls(caller_node, method_node)
                             self.call_list.remove(object)
+                    
                     if method_node is None and call_check is False:
                         method_node = self.create_ecore_instance(self.Types.METHOD_DEFINITION) 
                         self.create_method_signature(method_node, called_method, [])
@@ -85,6 +87,8 @@ class ProjectEcoreGraph:
                 return True
         return False
     
+    '''problem is with one single target in one xmi file out of like 50, 
+    target not set but method def exists--> how???'''
     #create call object
     def create_calls(self, caller_node, called_node):
         call = self.create_ecore_instance(self.Types.CALL)
@@ -132,14 +136,20 @@ class ProjectEcoreGraph:
             for index, path_part in enumerate(path_split):
                 if class_object.tName == path_part:
                     if index == len(path_split) - 1:
-                        for child in class_object.childClasses:
-                            self.current_module.contains.append(child) 
-                    self.classes_without_module.remove(class_object)
-                    class_object.delete()
+                        for child in class_object.childClasses: #why are child classes appended and not the class?
+                            self.current_module.contains.append(child)
+                    #check necessary! otherwise x not in list error for some repos
+                    if class_object in self.classes_without_module:
+                        self.classes_without_module.remove(class_object) 
+                        class_object.delete() 
         self.current_module.namespace = self.get_package_by_path(path)
         self.module_list.append([self.current_module, self.current_module_name])
-        with open(path, 'r') as file:
+        #added errors='ignore' to fix encoding issues in some repositories ('charmap cannot decode byte..)
+        with open(path, 'r', errors='ignore') as file:
             code = file.read()
+        #added following to try fix the invalid character and syntax errors, does not work!! too many
+        #code = code.replace("“", '"').replace("”", '"').replace("‘", "'").replace("’", "'").replace("»", ">>").replace("—", "-").replace("¿", " ")
+        #code = code.encode().decode('utf-8', errors='ignore') #cannot decode string thats already decoded
         tree = ast.parse(code)
         visitor = ASTVisitor(self)
         visitor.visit(tree)
@@ -232,8 +242,9 @@ class ProjectEcoreGraph:
             return my_package
         package_node = self.create_ecore_instance(self.Types.PACKAGE) #only here is a TPackage instance created
         package_node.tName = name
-        package_node.parent = parent
-        self.package_list.append([package_node, name, parent]) #parent is also tpackage
+        if parent is not None: 
+            package_node.parent = parent
+            self.package_list.append([package_node, name, parent]) #parent is also tpackage
         if parent is None:
             self.graph.packages.append(package_node)
         return package_node
@@ -244,8 +255,9 @@ class ProjectEcoreGraph:
             if package_name == package[1]:
                 if parent is None and package[2] is None:
                     return package[0]
-                if parent.tName == package[2].tName:
-                    return package[0]
+                if parent is not None and package[2] is not None:
+                    if parent.tName == package[2].tName:
+                        return package[0]
         return None
 
     def get_package_recursive(self, package_node, name, parent):
@@ -349,11 +361,11 @@ class ASTVisitor(ast.NodeVisitor):
                 import_parent = None
                 for import_class in base_node.split('.'):
                     import_node = self.graph_class.get_class_by_name(import_class)
-                    if import_parent is not None:
+                    if import_parent is not None: #if import_node does not have parent, it becomes parent itself
                         import_parent.childClasses.append(import_node)
                     import_parent = import_node
-                    base_node = import_node
-            base_node.childClasses.append(child)
+                    base_node = import_node 
+                    base_node.childClasses.append(child)
         elif isinstance(node, ast.Attribute):
             base_node = self.graph_class.get_class_by_name(node.attr)
             base_node.childClasses.append(child)

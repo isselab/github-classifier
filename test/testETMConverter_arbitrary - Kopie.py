@@ -8,7 +8,7 @@ from testUtils import count_packages, Types, count_calls
 meaning it tests whether all nodes were converted by counting the types.
 Use the tool by running main.py to create the files first.'''
 
-output_directory = 'D:/problem_output' #path to the folder containing the xmi and csv files
+output_directory = 'D:/nocompile_output' #path to the folder containing the xmi and csv files
 
 list_xmi_files = os.listdir(f'{output_directory}/xmi_files') 
 rset = ResourceSet()
@@ -96,24 +96,27 @@ for x, xmi_file in enumerate(list_xmi_files):
         count_param = 0
         count_mod = 0
 
-        #count node types
-        for obj in node_array:
-            if obj == 6:
-                count_pack += 1
-            if obj == 1:
-                count_cl += 1
-            if obj == 2:
-                count_meth += 1
-            if obj == 3:
-                count_meth_def += 1
-            if obj == 4:
-                count_meth_sig += 1
-            if obj == 7:
-                count_param += 1
-            if obj == 0:
-                count_ca += 1
-            if obj == 5:
-                count_mod += 1
+        try:
+            #count node types
+            for obj in node_array:
+                if obj == 6:
+                    count_pack += 1
+                if obj == 1:
+                    count_cl += 1
+                if obj == 2:
+                    count_meth += 1
+                if obj == 3:
+                    count_meth_def += 1
+                if obj == 4:
+                    count_meth_sig += 1
+                if obj == 7:
+                    count_param += 1
+                if obj == 0:
+                    count_ca += 1
+                if obj == 5:
+                    count_mod += 1
+        except Exception as e:
+            print(e)
 
         #compare xmi files with csv files
         if count_pack == count_package:
@@ -160,4 +163,10 @@ for x, xmi_file in enumerate(list_xmi_files):
             print('Number of method and method defs in xmi file matches, test passed')
         else:
             print('Number of method and method defs in xmi file does not match, test failed')
+
+        if count_method == count_method_sig:
+            print('Number of methods and method sigs in xmi file matches, test passed')
+        else:
+            print('Number of methods and method sigs in xmi file does not match, test failed')
+
 
