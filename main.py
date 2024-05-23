@@ -10,8 +10,11 @@ import inspect
 #repository_directory = 'D:/repo_no_compile'
 #output_directory = 'D:/nocompile_output'
 
-repository_directory = 'D:/str_issue'
-output_directory = 'D:/str_output'
+repository_directory = 'D:/dataset_repos'
+output_directory = 'D:/tool_output'
+
+#repository_directory = 'D:/str_issue'
+#output_directory = 'D:/str_output'
 
 #repository_directory = 'test/unit_tests'
 #output_directory = '../output_tests'
