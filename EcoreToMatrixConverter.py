@@ -183,11 +183,12 @@ class EcoreToMatrixConverter:
     def get_node_in_container(self, node_name, type, parent_name, parent_type):
         for current_node in self.node_dict:
             node = self.node_dict[current_node]
-            if node[0] == type:
-                if node[1] == node_name:
-                    if node[2] == parent_type:
-                        if node[3] == parent_name:
-                            return current_node
+            if len(node)>=4:
+                if node[0] == type:
+                    if node[1] == node_name:
+                        if node[2] == parent_type:
+                            if node[3] == parent_name:
+                                return current_node
     
     #this function sets the existing edges in the adjacency matrix to 1
     def convert_edges(self):

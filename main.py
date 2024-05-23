@@ -13,8 +13,8 @@ import inspect
 #repository_directory = 'D:/dataset_repos'
 #output_directory = 'D:/tool_output'
 
-repository_directory = 'D:/checked_repos'
-output_directory = 'D:/checked_output'
+#repository_directory = 'D:/checked_repos'
+output_directory = 'D:/issue_2nd_converter'
 
 #repository_directory = 'test/unit_tests'
 #output_directory = '../output_tests'
@@ -23,8 +23,8 @@ if __name__ == '__main__':
 
     try:
         #create the graph dataset of the repositories
-        prepare_dataset(repository_directory, output_directory)
-        #create_matrix_structure(output_directory)
+        #prepare_dataset(repository_directory, output_directory)
+        create_matrix_structure(output_directory)
     except Exception as e:
         print(e)
         #print(type(e).__name__)

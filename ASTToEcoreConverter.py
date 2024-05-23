@@ -135,7 +135,7 @@ class ProjectEcoreGraph:
                     if index == len(path_split) - 1:
                         for child in class_object.childClasses: #why are child classes appended and not the class?
                             self.current_module.contains.append(child)
-                    #check necessary! otherwise x not in list error 
+                    #check necessary! otherwise x not in list error for some repos
                     if class_object in self.classes_without_module:
                         self.classes_without_module.remove(class_object) 
                         class_object.delete() 
@@ -252,8 +252,9 @@ class ProjectEcoreGraph:
             if package_name == package[1]:
                 if parent is None and package[2] is None:
                     return package[0]
-                if parent.tName == package[2].tName:
-                    return package[0]
+                if parent is not None and package[2] is not None:
+                    if parent.tName == package[2].tName:
+                        return package[0]
         return None
 
     def get_package_recursive(self, package_node, name, parent):
