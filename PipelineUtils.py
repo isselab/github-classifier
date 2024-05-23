@@ -2,6 +2,7 @@ import os
 from pyecore.resources import ResourceSet, URI
 from ASTToEcoreConverter import ProjectEcoreGraph
 from EcoreToMatrixConverter import EcoreToMatrixConverter
+import pandas as pd
 
 #in this file are the pipeline components put into reusable functions
 
@@ -69,3 +70,18 @@ def prepare_dataset(repository_directory, output_directory):
     print('---convert ecore graphs to matrix structure---')
     #load xmi instance and convert them to a matrix structure for the gcn
     create_matrix_structure(output_directory)
+
+def download_repositories(repository_directory, repository_list):
+    #load labeled repository from excel/ods file
+    resource = pd.read_excel(repository_list) #requirements for format: no empty rows in between and header name html_url
+
+    #create directory for cloning if it does not exist and set it as current working directory
+    if not os.path.exists(repository_directory): 
+        os.makedirs(repository_directory)
+    os.chdir(repository_directory)
+
+    #retrieve urls and clone repositories
+    for row in resource.iterrows():
+        object = row[1]
+        url = object.get('html_url') 
+        os.system(f'git clone {url}')
