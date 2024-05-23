@@ -17,6 +17,26 @@ def create_output_folders(directory):
     if not os.path.exists(f'{directory}/labeled_repositories'):
         os.makedirs(f'{directory}/labeled_repositories') 
 
+def download_repositories(repository_directory, repository_list):
+    working_directory = os.getcwd()
+    
+    #load labeled repository from excel/ods file
+    resource = pd.read_excel(repository_list) #requirements for format: no empty rows in between and header name html_url
+
+    #create directory for cloning if it does not exist and set it as current working directory
+    if not os.path.exists(repository_directory): 
+        os.makedirs(repository_directory)
+    os.chdir(repository_directory)
+
+    #retrieve urls and clone repositories
+    for row in resource.iterrows():
+        object = row[1]
+        url = object.get('html_url') 
+        os.system(f'git clone {url}')
+
+    #change working directory back to github-classifier, otherwise cannot load resources from there
+    os.chdir(working_directory)
+
 def create_ecore_graphs(repository_directory, output_directory):
     repositories = os.listdir(repository_directory)
     skip_counter = 0
@@ -59,7 +79,11 @@ def create_matrix_structure(output_directory):
     print('----------------------------------------------')
     print(f'Skipped {skip_xmi} of {len(list_xmi_files)}')
 
-def prepare_dataset(repository_directory, output_directory):
+def prepare_dataset(repository_directory, output_directory, repository_list=None):
+    #clone repositories for the dataset
+    if repository_list is not None:
+        download_repositories(repository_directory, repository_list)
+
     #create output directory
     create_output_folders(output_directory)
     
@@ -71,17 +95,3 @@ def prepare_dataset(repository_directory, output_directory):
     #load xmi instance and convert them to a matrix structure for the gcn
     create_matrix_structure(output_directory)
 
-def download_repositories(repository_directory, repository_list):
-    #load labeled repository from excel/ods file
-    resource = pd.read_excel(repository_list) #requirements for format: no empty rows in between and header name html_url
-
-    #create directory for cloning if it does not exist and set it as current working directory
-    if not os.path.exists(repository_directory): 
-        os.makedirs(repository_directory)
-    os.chdir(repository_directory)
-
-    #retrieve urls and clone repositories
-    for row in resource.iterrows():
-        object = row[1]
-        url = object.get('html_url') 
-        os.system(f'git clone {url}')
