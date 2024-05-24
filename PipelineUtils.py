@@ -55,8 +55,22 @@ def create_ecore_graphs(repository_directory, output_directory):
                                   output_directory, repository)
             except Exception as e:
                 print(e)
-                print(f'Problem with repository {repository}. Skipping.')
-                skip_counter += 1
+                if 'inconsistent use of tabs and spaces in indentation' in str(e):
+                    # format repository files using autopep8
+                    python_files = [os.path.join(root, file) for root, _, files in os.walk(
+                                    current_directory) for file in files if file.endswith('.py')]
+                    for file_path in python_files:
+                        os.system(f'autopep8 --in-place {file_path}')
+                    try:
+                        ProjectEcoreGraph(current_directory, resource_set,
+                                          output_directory, repository)
+                    except Exception as e:
+                        print(e)
+                        print(f'Problem with repository {repository}. Skipping.')
+                        skip_counter += 1
+                else:
+                    print(f'Problem with repository {repository}. Skipping.')
+                    skip_counter += 1
         else:
             skip_counter += 1
     print('----------------------------------------------')

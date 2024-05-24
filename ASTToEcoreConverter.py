@@ -2,7 +2,6 @@ import ast
 import os
 from enum import Enum
 from pyecore.resources import ResourceSet, URI
-# import autopep8
 
 
 class ProjectEcoreGraph:
