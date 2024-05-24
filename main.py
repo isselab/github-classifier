@@ -1,6 +1,6 @@
 from CustomDataset import RepositoryDataset
 from GCN import GCN
-from PipelineUtils import prepare_dataset
+from PipelineUtils import prepare_dataset, create_matrix_structure
 
 repository_list = '../random_sample_icse_CO.xls'
 repository_directory = 'D:/dataset_repos'
@@ -11,7 +11,8 @@ if __name__ == '__main__':
     try:
         #create the graph dataset of the repositories
         '''repository list is optional parameter, if you want to download the repositories automatically'''
-        prepare_dataset(repository_directory, output_directory, repository_list) 
+        #prepare_dataset(repository_directory, output_directory) 
+        create_matrix_structure(output_directory)
     except Exception as e:
         print(e)
         print('There is a problem with the input directory.')
