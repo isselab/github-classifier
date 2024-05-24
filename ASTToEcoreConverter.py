@@ -154,12 +154,11 @@ class ProjectEcoreGraph:
         self.current_module.namespace = self.get_package_by_path(path)
         self.module_list.append(
             [self.current_module, self.current_module_name])
-        # added errors='ignore' to fix encoding issues in some repositories ('charmap cannot decode byte..)
+        # added errors='ignore' to fix encoding issues in some repositories ('charmap cannot decode byte..')
         with open(path, 'r', errors='ignore') as file:
             code = file.read()
-        # added following to try fix the invalid character and syntax errors, does not work!! too many
-        # code = code.replace("“", '"').replace("”", '"').replace("‘", "'").replace("’", "'").replace("»", ">>").replace("—", "-").replace("¿", " ")
-        # code = code.encode().decode('utf-8', errors='ignore') #cannot decode string thats already decoded
+        # added following to fix some invalid character and syntax errors
+        code = code.replace('“', '"').replace('”', '"').replace("‘", "'").replace("’", "'").replace("»", ">>").replace("—", "-").replace("¿", "_")
         tree = ast.parse(code)
         visitor = ASTVisitor(self)
         visitor.visit(tree)
