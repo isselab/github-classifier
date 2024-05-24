@@ -192,8 +192,8 @@ class EcoreToMatrixConverter:
         for c, call in enumerate(tmethod_def.accessing):
             methoddef_target = call.target
             # used continue to fix issue in one xmi file, where target is not set even though it existed!?
-            if methoddef_target is None:
-                continue
+            #if methoddef_target is None: this was quick fix!!!!!!
+                #continue
             # name of the TMethod object that's being called
             target_name = methoddef_target.signature.method.tName
             # create a ame for the call object
