@@ -16,8 +16,13 @@ class ProjectEcoreGraph:
         self.graph = self.epackage.getEClassifier('TypeGraph')(tName=self.root_directory.split('/')[-1])
 
         #initialize internal structures
-        self.package_list = [] # entry structure [package_node, name, parent]
-        self.module_list = [] # entry structure [module_node, module_name]
+        self.package_list = [] # entries [package_node, name, parent]
+        self.module_list = [] # entries [module_node, module_name]
+        self.current_module = None
+        self.instances = []  # entries [instance_name, class_name]
+        self.imports = []  # entries [module, alias]
+        self.class_list = []  # entry structure [class_node, name, module], module can be None
+        self.classes_without_module = []
 
         python_files = [os.path.join(root, file) for root, _, files in os.walk(
             self.root_directory) for file in files if file.endswith('.py')]
@@ -34,6 +39,9 @@ class ProjectEcoreGraph:
 
     def get_graph(self):
         return self.graph
+    
+    def get_current_module(self):
+        return self.current_module
     
     def create_ecore_instance(self, type):
         return self.epackage.getEClassifier(type.value)()
@@ -57,6 +65,18 @@ class ProjectEcoreGraph:
         path_split = self.current_module.location.replace(f"{self.root_directory}/", '').split('/')
         self.current_module_name = path_split[-1]
         self.module_list.append([self.current_module, self.current_module_name])
+
+        # necessary to create inheritance structure for classes
+        for class_object in self.classes_without_module:
+            for index, path_part in enumerate(path_split):
+                if class_object.tName == path_part:
+                    if index == len(path_split) - 1:
+                        for child in class_object.childClasses: 
+                            self.current_module.contains.append(child)
+                    # check necessary! otherwise x not in list error for some repos
+                    if class_object in self.classes_without_module:
+                        self.classes_without_module.remove(class_object)
+                        class_object.delete()
 
         # added errors='ignore' to fix encoding issues in some repositories ('charmap cannot decode byte..')
         with open(path, 'r', errors='ignore') as file:
@@ -114,6 +134,63 @@ class ProjectEcoreGraph:
                         return package[0]
         return None
 
+    def get_class_by_name(self, name, structure=None, create_if_not_found=True, module=None, move_to_module=True):
+        if structure is None:
+            structure = self.graph.classes
+        for class_object in structure:
+            if class_object.tName == name:
+                return class_object
+        for class_object in self.classes_without_module:
+            if class_object.tName == name:
+                if move_to_module and module is not None:
+                    module.contains.append(class_object)
+                    self.classes_without_module.remove(class_object)
+                return class_object
+        if create_if_not_found:
+            class_node = self.create_ecore_instance(self.Types.CLASS)
+            class_node.tName = name
+            if module is not None:
+                module.contains.append(class_node)
+                self.class_list.append([class_node, name, module])
+            else:
+                self.classes_without_module.append(class_node)
+                self.class_list.append([class_node, name, None])
+            structure.append(class_node)  # class appended to typegraph
+            return class_node
+        return None
+
+    '''this function checks imported modules and classes and assigned instances'''
+    def get_reference_by_name(self, name):
+        first_name = name.split('.')[0]
+        for import_reference in self.imports:
+            if import_reference[1] == first_name:
+                # return module of the alias and 0 for type
+                return import_reference[0], 0
+        for instance in self.instances:
+            if instance[0] == name:
+                for import_reference in self.imports:
+                    if import_reference[1] == instance[1]:
+                        return import_reference[0], 0
+                # return class_name of instance and 1 for type
+                return instance[1], 1
+        return None, None
+
+    def add_import(self, module, alias):
+        self.imports.append([module, alias])
+
+    def add_instance(self, instance_name, class_name):
+        reference, type = self.get_reference_by_name(class_name)
+        if reference is not None and type == 0:
+            classes = class_name.split('.')[1:]
+            classes.insert(0, reference)
+            class_name = ".".join(classes)
+        self.instances.append([instance_name, class_name])
+
+    def remove_instance(self, class_name):
+        for instance in self.instances:
+            if instance[1] == class_name:
+                self.instances.remove(instance)
+
     def write_xmi(self, resource_set, output_directory, repository):
         resource = resource_set.create_resource(URI(f'{output_directory}/xmi_files/{repository}.xmi'), use_uuid=True)
         resource.append(self.graph)
@@ -141,3 +218,83 @@ class ASTVisitor(ast.NodeVisitor):
         self.current_method = None
         self.current_class = None
         self.current_indentation = 0
+
+    def visit_Import(self, node):
+        for name in node.names:
+            if name.asname is None:
+                self.graph_class.add_import(name.name, name.name)
+            else:
+                self.graph_class.add_import(name.name, name.asname)
+
+    def visit_ImportFrom(self, node):
+        for name in node.names:
+            if name.asname is None:
+                self.graph_class.add_import(f"{node.module}.{name.name}", name.name)
+            else:
+                self.graph_class.add_import(f"{node.module}.{name.name}", name.asname)
+
+    def create_inheritance_structure(self, node, child):
+        base_node = None
+        if isinstance(node, ast.Name):
+            base_node, type = self.graph_class.get_reference_by_name(node.id)
+            if base_node is None:
+                base_node = self.graph_class.get_class_by_name(node.id, module=self.graph_class.get_current_module())
+            elif isinstance(base_node, str) and type == 0:
+                import_parent = None
+                for import_class in base_node.split('.'):
+                    import_node = self.graph_class.get_class_by_name(import_class)
+                    if import_parent is not None:  # if import_node does not have parent, it becomes parent itself
+                        import_parent.childClasses.append(import_node)
+                    import_parent = import_node
+                    base_node = import_node
+                    base_node.childClasses.append(child)
+        elif isinstance(node, ast.Attribute):
+            base_node = self.graph_class.get_class_by_name(node.attr)
+            base_node.childClasses.append(child)
+            self.create_inheritance_structure(node.value, base_node)
+        return base_node
+
+    def visit_ClassDef(self, node):
+        class_name = node.name
+        class_node = self.graph_class.get_class_by_name(class_name, module=self.graph_class.get_current_module())
+        self.current_class = class_node
+
+        for base in node.bases:
+            self.create_inheritance_structure(base, class_node)
+
+        #for item in node.body:
+           # if isinstance(item, ast.FunctionDef):
+               # self.current_indentation = item.col_offset
+               # method_name = item.name
+               # method_node = self.graph_class.get_method_in_class(
+                   # method_name, class_node)
+              #  if method_node is None:
+                    #method_node = self.graph_class.create_ecore_instance(
+                       # self.graph_class.Types.METHOD_DEFINITION)
+                  #  self.graph_class.create_method_signature(
+                       # method_node, method_name, item.args.args)
+                   # class_node.defines.append(method_node)
+       # self.generic_visit(node)
+
+    def visit_Assign(self, node):
+        if node.col_offset <= self.current_indentation:
+            self.current_method = None
+            self.current_indentation = node.col_offset
+        if isinstance(node.value, ast.Call):
+            current_node = node.value.func
+            instance = ""
+            while isinstance(current_node, ast.Attribute):
+                instance = f"{current_node.attr}.{instance}"
+                current_node = current_node.value
+            if isinstance(current_node, ast.Name):
+                instance = f"{current_node.id}.{instance}"
+                for target in node.targets:
+                    current_target = target
+                    target_name = ""
+                    while isinstance(current_target, ast.Attribute):
+                        target_name = f"{current_target.attr}.{target_name}"
+                        current_target = current_target.value
+                    if isinstance(current_target, ast.Name):
+                        target_name = f"{current_target.id}.{target_name}"
+                        self.graph_class.add_instance(target_name[:-1], instance[:-1])
+        self.generic_visit(node)
