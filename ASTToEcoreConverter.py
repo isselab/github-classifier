@@ -17,6 +17,7 @@ class ProjectEcoreGraph:
 
         #initialize internal structures
         self.package_list = [] # entry structure [package_node, name, parent]
+        self.module_list = [] # entry structure [module_node, module_name]
 
         python_files = [os.path.join(root, file) for root, _, files in os.walk(
             self.root_directory) for file in files if file.endswith('.py')]
@@ -24,6 +25,7 @@ class ProjectEcoreGraph:
         for file_path in python_files:
             self.process_file(file_path)
 
+        self.append_modules()
         self.write_xmi(resource_set, output_directory, repository)
 
 
@@ -35,14 +37,26 @@ class ProjectEcoreGraph:
     
     def create_ecore_instance(self, type):
         return self.epackage.getEClassifier(type.value)()
+    
+    #appends modules at the end of the typegraph/xmi file
+    def append_modules(self):
+        for module in self.module_list:
+            self.graph.modules.append(module[0])
 
     '''this function parses the code of one source file into an ast and traverses it for conversion into a metamodel, 
-    the modules are created here and associated with a package'''
+    the modules are created here and connected to a package, one module per file'''
     def process_file(self, path):
         path = path.replace('\\', '/')
-
-        current_module_location = path.removesuffix('.py')
+        
         current_package = self.get_package_by_path(path)
+
+        #create module
+        self.current_module = self.create_ecore_instance(self.Types.MODULE)
+        self.current_module.location = path.removesuffix('.py')
+        self.current_module.namespace = current_package
+        path_split = self.current_module.location.replace(f"{self.root_directory}/", '').split('/')
+        self.current_module_name = path_split[-1]
+        self.module_list.append([self.current_module, self.current_module_name])
 
         # added errors='ignore' to fix encoding issues in some repositories ('charmap cannot decode byte..')
         with open(path, 'r', errors='ignore') as file:
