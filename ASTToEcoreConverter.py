@@ -24,10 +24,10 @@ class ProjectEcoreGraph:
         self.class_list = []  # entries [class_node, name, module/None]
         self.classes_without_module = []
         self.method_list = []  # entries [method_node, name, module_node]
+        self.call_list = []
 
-        #to search for missing meth defs in classes
-        self.count_meth_defs = 0
-        self.check_list = [] # entries [class_node, method_def_node, method_name]
+        #to search for missing meth defs in classes, that are not appended to a module for some reason
+        self.check_list = [] # entries [class_node, method_def_node, method_name] #right now only need class node
 
         python_files = [os.path.join(root, file) for root, _, files in os.walk(
             self.root_directory) for file in files if file.endswith('.py')]
@@ -36,38 +36,85 @@ class ProjectEcoreGraph:
             self.process_file(file_path)
 
         self.append_modules()
+        
         self.search_meth_defs()
+        #self.check_missing_calls()
         self.write_xmi(resource_set, output_directory, repository)
 
-    #apparently they are all here
+    def check_missing_calls(self):
+        for object in self.call_list:
+            called_instance = object[0]
+            caller_node = object[1]
+            call_check = False
+            called_module = called_instance.split('.')[0]
+            called_method = called_instance.split('.')[-1]
+            module_node = self.get_module_by_name(called_module)
+            if module_node is not None:
+                method_node = self.get_method_def_in_module(called_method, module_node)
+                if method_node is not None:
+                    call_check = self.get_calls(caller_node, method_node)
+                    if call_check is False:
+                        self.create_calls(caller_node, method_node)
+                        self.call_list.remove(object)
+                if method_node is None:
+                    method_node = self.get_method_def_from_internal_structure(called_method, module_node)
+                    if method_node is not None:
+                        call_check = self.get_calls(caller_node, method_node)
+                        if call_check is False:
+                            self.create_calls(caller_node, method_node)
+                            self.call_list.remove(object)
+
+                    if method_node is None and call_check is False:
+                        method_node = self.create_ecore_instance(self.Types.METHOD_DEFINITION)
+                        self.create_method_signature(method_node, called_method, [])
+                        module_node.contains.append(method_node)
+                        self.create_calls(caller_node, method_node)
+                        self.call_list.remove(object)
+            if module_node is None:
+                module = self.create_ecore_instance(self.Types.MODULE)
+                module.location = called_module
+                method_node = self.create_ecore_instance(self.Types.METHOD_DEFINITION)
+                self.create_method_signature(method_node, called_method, [])
+                self.module_list.append([module, called_module])
+                module.contains.append(method_node)
+                self.create_calls(caller_node, method_node)
+                self.call_list.remove(object)
+
+    # check if call already exists
+    def get_calls(self, caller_node, called_node):
+        for call_object in caller_node.accessing:
+            if call_object.target == called_node:
+                return True
+        return False
+
+    def create_calls(self, caller_node, called_node):
+        call = self.create_ecore_instance(self.Types.CALL)
+        call.source = caller_node
+        call.target = called_node
+
+    '''check_list at start contains all classes with method defs that are created in typegraph,
+    then they are compared to the classes with meth defs found in modules at the end,
+    those not found need to be appended to a module, otherwise the meth defs are missing'''
+
+    #this works for already existing modules and packages, check again after creating imported modules for calls?
     def search_meth_defs(self):
-        #count = 0
-        class_in_mod = 0
         classes_found = []
         for item in self.check_list:
             class_node = item[0]
             for mod in self.graph.modules:
                 if hasattr(mod, 'contains'):
                     for obj in mod.contains:
-                        if obj.eClass.name == self.Types.CLASS.value: #also check childclasses here?!
+                        if obj.eClass.name == self.Types.CLASS.value: 
                             if obj.tName == class_node.tName:
-                                class_in_mod += 1
                                 classes_found.append(item)
-                                #if hasattr(obj, 'defines'):
-                                    ##for met in obj.defines:
-                                       # if met == item[1]:
-                                          #  count += 1
-                                #else:
-                                   # print('found class, no meth def')
-        print(class_in_mod)
 
+        # remove already appended classes from check_list
         for cl in classes_found:
             cl_name = cl[0].tName
             for i in self.check_list:
                 name = i[0].tName
                 if cl_name == name:
                     self.check_list.remove(i)
-        print(len(self.check_list))
 
         if len(self.check_list) > 0:
             module_node = self.create_ecore_instance(self.Types.MODULE) #maybe i need a package for this also
@@ -75,10 +122,22 @@ class ProjectEcoreGraph:
             self.graph.modules.append(module_node)
             for obj in self.check_list:
                 module_node.contains.append(obj[0])
-
-                
-
-
+                ref, ty = self.get_reference_by_name(obj[0].tName)
+                if ref is not None:
+                    imported = ref.split('.')
+                    del imported[-1] #delete name of the class
+                    for im in reversed(imported):
+                        for pack in self.package_list:
+                            if pack[1] == im:
+                                for m in self.module_list:
+                                    if m[1]== imported[-1]:
+                                        m[0].contains.append(obj[0])
+                if ref is None:
+                    if hasattr(obj[0], 'parentClasses'):
+                        for parent in obj[0].parentClasses:
+                            parent_module =self.get_module_of_class(parent.tName, obj[0].tName)
+                            if parent_module is not None:
+                                parent_module.contains.append(obj[0])
 
     def get_epackage(self):
         return self.epackage
@@ -86,13 +145,26 @@ class ProjectEcoreGraph:
     def get_graph(self):
         return self.graph
     
-    def get_current_module(self):
-        return self.current_module
-    
     def create_ecore_instance(self, type):
         return self.epackage.getEClassifier(type.value)()
     
-    #appends modules at the end of the typegraph/xmi file
+    def get_current_module(self):
+        return self.current_module
+    
+    def get_module_by_name(self, name):
+        for module in self.module_list:
+            if name == module[1]:
+                return module[0]
+        return None
+    
+    def get_module_by_location(self, location):
+        for list_object in self.module_list:
+            module = list_object[0]
+            if module.location == location:
+                return module
+        return None
+    
+        #appends modules at the end of the typegraph/xmi file
     def append_modules(self):
         for module in self.module_list:
             self.graph.modules.append(module[0])
@@ -189,6 +261,15 @@ class ProjectEcoreGraph:
                     if module.location == current_class[2].location:
                         return current_class[0]
         return None
+    
+    def get_module_of_class(self, class_name, child_name):
+        for current_class in self.class_list:
+            if class_name == current_class[1]:
+                if hasattr(current_class[0], 'childClasses'):
+                    for child in current_class[0].childClasses:
+                        if child.tName == child_name:
+                            return current_class[2] #return module of parent class
+        return None
 
     def get_class_by_name(self, name, structure=None, create_if_not_found=True, module=None, move_to_module=True):
         if structure is None:
@@ -253,6 +334,27 @@ class ProjectEcoreGraph:
         for method_def in class_node.defines:
             if method_def.signature.method.tName == name:
                 return method_def
+        return None
+    
+    def get_method_def_in_module(self, method_name, module):
+        for object in module.contains:
+            if object.eClass.name == self.Types.METHOD_DEFINITION.value:
+                if object.signature.method.tName == method_name:
+                    return object
+            if object.eClass.name == self.Types.CLASS.value:
+                for meth in object.defines:
+                    if meth.signature.method.tName == method_name:
+                        return meth
+        return None
+    
+    def get_method_def_from_internal_structure(self, method_name, module):
+        for current_method in self.method_list:
+            if method_name == current_method[1]:
+                if module is None and current_method[2] is None:
+                    return current_method[0]
+                if hasattr(module, 'location') and hasattr(current_method[2], 'location'):
+                    if module.location == current_method[2].location:
+                        return current_method[0]
         return None
     
     def create_method_signature(self, method_node, name, arguments):
@@ -325,6 +427,7 @@ class ASTVisitor(ast.NodeVisitor):
             base_node, type = self.graph_class.get_reference_by_name(node.id)
             if base_node is None:
                 base_node = self.graph_class.get_class_by_name(node.id, module=self.graph_class.get_current_module())
+                base_node.childClasses.append(child) #i added this because of missing classes...noticed inheritance was a bit off for some kauldron checkpoints
             elif isinstance(base_node, str) and type == 0:
                 import_parent = None
                 for import_class in base_node.split('.'):
@@ -355,7 +458,6 @@ class ASTVisitor(ast.NodeVisitor):
                 method_node = self.graph_class.get_method_def_in_class(method_name, class_node)
                 if method_node is None:
                     method_node = self.graph_class.create_ecore_instance(self.graph_class.Types.METHOD_DEFINITION)
-                    self.graph_class.count_meth_defs += 1
                     self.graph_class.create_method_signature(method_node, method_name, item.args.args)
                     class_node.defines.append(method_node)
                     #to search for missing meth defs later
@@ -369,7 +471,6 @@ class ASTVisitor(ast.NodeVisitor):
         if self.current_method is None:
             self.current_class = None
             self.current_method = self.graph_class.create_ecore_instance(self.graph_class.Types.METHOD_DEFINITION)
-            self.graph_class.count_meth_defs += 1 #all meth defs are appended to xmi file :) ok
             self.graph_class.create_method_signature(self.current_method, node.name, node.args.args)
             module_node = self.graph_class.get_current_module()
             module_node.contains.append(self.current_method)
@@ -397,4 +498,93 @@ class ASTVisitor(ast.NodeVisitor):
                     if isinstance(current_target, ast.Name):
                         target_name = f"{current_target.id}.{target_name}"
                         self.graph_class.add_instance(target_name[:-1], instance[:-1])
+        self.generic_visit(node)
+
+    def visit_Call(self, node):
+        if node.col_offset <= self.current_indentation:
+            self.current_method = None
+            self.current_indentation = node.col_offset
+        instance = ""
+        instance_node = node.func
+
+        # Call node can contain different node types
+        while isinstance(instance_node, ast.Attribute):
+            instance = f"{instance_node.attr}.{instance}"
+            instance_node = instance_node.value
+        if not isinstance(instance_node, ast.Name):
+            self.generic_visit(node)
+            return
+        instance = f"{instance_node.id}.{instance}"
+        if instance.endswith('.'):
+            instance = instance[:-1]
+        instance_from_graph, type = self.graph_class.get_reference_by_name(instance.replace(f".{instance.split('.')[-1]}", ''))
+        if instance_from_graph is None:
+            self.generic_visit(node)
+            return
+        instances = instance.split('.')
+        instances[0] = instance_from_graph
+        instance_name = ".".join(instances)
+        method_name = instance_name.split('.')[-1]
+        self.called_node = None
+        self.instance_missing = None
+        self.call_check = False
+
+        # set called_node
+        if type == 1:  # instance from class being called
+            self.graph_class.remove_instance(instance_name)
+            instance_node = self.graph_class.get_class_from_internal_structure(instance_name, None)
+            if instance_node is not None:
+                self.called_node = self.graph_class.get_method_def_in_class(method_name, instance_node)
+                if self.called_node is None:
+                    self.called_node = self.graph_class.get_method_def_from_internal_structure(method_name, instance_node)
+                    if self.called_node is None and instance_node is not None:
+                        self.called_node = self.graph_class.create_ecore_instance(self.graph_class.Types.METHOD_DEFINITION)
+                        self.graph_class.create_method_signature(self.called_node, method_name, [])
+                        #self.graph_class.add_method_without_signature(self.called_node)
+                        instance_node.defines.append(self.called_node)
+            if instance_node is None:
+                self.instance_missing = instance_name
+
+        if type == 0:  # instance from module being called
+            module = instance_name.split('.')[0]
+            instance_node = self.graph_class.get_module_by_name(module)
+            if instance_node is not None:
+                self.called_node = self.graph_class.get_method_def_in_module(method_name, instance_node)
+                if self.called_node is None:
+                    self.called_node = self.graph_class.get_method_def_from_internal_structure(method_name, instance_node)
+                    if self.called_node is None and instance_node is not None:
+                        called_node = self.graph_class.create_ecore_instance(self.graph_class.Types.METHOD_DEFINITION)
+                        self.graph_class.create_method_signature(called_node, method_name, [])
+                        #self.graph_class.add_method_without_signature(called_node)
+                        instance_node.contains.append(called_node)
+                        self.called_node = called_node
+            if instance_node is None:
+                self.instance_missing = instance_name
+
+        # set caller_node
+        if self.current_method is not None:
+            caller_node = self.current_method
+        else:
+            module_node = self.graph_class.get_module_by_location(self.graph_class.get_current_module().location)
+            method_location = self.graph_class.get_current_module().location
+            method_name = method_location.split('/')[-1]
+            caller_node = self.graph_class.get_method_def_in_module(method_name, module_node)
+            if caller_node is None:
+                caller_node = self.graph_class.get_method_def_from_internal_structure(method_name, module_node)
+                if caller_node is None:
+                    caller_node = self.graph_class.create_ecore_instance(self.graph_class.Types.METHOD_DEFINITION)
+                    self.graph_class.create_method_signature(caller_node, method_name, [])
+                    #self.graph_class.add_method_without_signature(caller_node)
+                    module_node.contains.append(caller_node)
+
+        # check after all the files are processed if modules and methods called exist then
+        if self.instance_missing is not None:
+            self.graph_class.call_list.append([self.instance_missing, caller_node])
+
+        if self.called_node is not None:
+            # check if identical call object already exists
+            self.call_check = self.graph_class.get_calls(caller_node, self.called_node)
+            if self.call_check is False:
+                self.graph_class.create_calls(caller_node, self.called_node)
+
         self.generic_visit(node)
