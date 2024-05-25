@@ -164,4 +164,9 @@ for x, xmi_file in enumerate(list_xmi_files):
         else:
             print('Number of methods and method sigs in xmi file does not match, test failed')
 
+        if count_method == count_method_def: #this does not work for some reason, by loading the xmi files i can see that the number matches!!
+            print('Number of methods and method defs in xmi file matches, test passed')
+        else:
+            print('Number of methods and method defs in xmi file does not match, test failed')
+
 
