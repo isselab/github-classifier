@@ -4,6 +4,10 @@ from torch_geometric.nn import GCNConv
 from torch_geometric.nn import global_mean_pool
 import torch
 
+#class GCNConv(torch.nn.Module):
+    #def __init__(self, *args, **kwargs) -> None:
+        #super(GCNConv, self).__init__(*args, **kwargs)
+
 class GCN(torch.nn.Module):
     def __init__(self, dataset, hidden_channels):
         super(GCN, self).__init__()
