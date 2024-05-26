@@ -6,14 +6,14 @@ import torch.nn.functional as F
 from PipelineUtils import prepare_dataset
 
 
-repository_directory = '../test_repository'  # input repositories
-output_directory = '../test_tool'  # output for the entire tool pipeline
+repository_directory = 'D:/dataset_repos'  # input repositories
+output_directory = 'D:/tool_output'  # output for the entire tool pipeline
 
 # input: labeled repositories for the dataset
-labels = '../test_repositories.ods'
+labels = '../random_sample_icse_CO.xls'
 
 # create the graph dataset of the repositories
-prepare_dataset(repository_directory, output_directory)
+#prepare_dataset(repository_directory, output_directory)
 
 print('---convert dataset labels for training---')
 try:
@@ -66,12 +66,12 @@ def test(loader):
 
 
 # split into train and testset, this is for training the tool, not using finished tool
-trainset, testset = random_split(dataset, [0.5, 0.5])
+trainset, testset = random_split(dataset, [0.7, 0.3])
 
 # uses index to access (sample,label) pairs
-trainloader = DataLoader(trainset, shuffle=True, batch_size=1)
-testloader = DataLoader(trainset, shuffle=False, batch_size=1)
-
+trainloader = DataLoader(trainset, shuffle=True, batch_size=8)
+testloader = DataLoader(trainset, shuffle=False, batch_size=8)
+'''apparently all graphs in one btach have to be equal in size??!!--> have to have same number of nodes'''
 # print(dataset[1][0])#this is only tupel node feature and edges
 # print(dataset[1][0][0]) #this is node feature tensor, both of graph with index 1
 
@@ -79,6 +79,7 @@ for graph, label in trainloader:
     print(graph[1])  # print tensor with edges
 print('Size of test dataset: ')
 print(len(testloader))
+print(len(trainloader))
 # model = GCN(trainloader, hidden_channels=8)
 # print(model)
 
