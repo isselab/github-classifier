@@ -6,9 +6,6 @@ import numpy as np
 from DefinedGraphClasses import graph_types
 from LabelEncoder import convert_labels
 
-# custom dataset
-
-
 class RepositoryDataset(Dataset):
     def __init__(self, directory):
         self.num_node_features = 1  # nodes only have its type as feature
@@ -21,20 +18,15 @@ class RepositoryDataset(Dataset):
         for g, graph in enumerate(graph_dir):
             try:
                 if '_nodefeatures' in graph:
-                    # it may be necessary to use FloatTensor for different shape for x?? dont know
-                    node_features = pd.read_csv(
-                        f'{directory}/{graph}', header=None)  # load csv file
-                    self.node_tensor = torch.LongTensor(
-                        np.array(node_features))  # convert DataFrame object
+                    node_features = pd.read_csv(f'{directory}/{graph}', header=None)  # load csv file
+                    self.node_tensor = torch.LongTensor(np.array(node_features))  # convert DataFrame object
                     self.node_name = graph.removesuffix('_nodefeatures.csv')
                 if '_A' in graph:
-                    adjacency = pd.read_csv(
-                        f'{directory}/{graph}', header=None)
+                    adjacency = pd.read_csv(f'{directory}/{graph}', header=None)
                     self.edge_tensor = torch.LongTensor(np.array(adjacency))
                     self.edge_name = graph.removesuffix('_A.csv')
                 if 'graph_labels' in graph:
-                    graph_label = pd.read_csv(
-                        f'{directory}/{graph}', header=None)
+                    graph_label = pd.read_csv(f'{directory}/{graph}', header=None)
                     self.gr_name = np.array(graph_label[0])
                     self.gr_label = np.array(graph_label[1])
                 # create graph = tuple of edges and node features
@@ -70,14 +62,12 @@ class RepositoryDataset(Dataset):
         sorted_labels = torch.LongTensor(np.array(sort))
         return sorted_labels
 
-    # takes two folders as input
+    '''takes two folders as input, 
+       load labeled repository from excel/ods file,
+        requirements for format: no empty rows in between and header names for columns'''
     def convert_labeled_graphs(labels, output_graph_labels):
-        # load labeled repository from excel/ods file
-        # requirements for format: no empty rows in between and header names for columns
         resource = pd.read_excel(labels)
-
-        new_resource_nodes = open(
-            f"{output_graph_labels}/graph_labels.csv", "w+")
+        new_resource_nodes = open(f"{output_graph_labels}/graph_labels.csv", "w+")
         graph_labels = []
         graph_names = []
 

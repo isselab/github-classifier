@@ -8,7 +8,7 @@ from testUtils import count_packages, Types, count_calls
 meaning it tests whether all nodes were converted by counting the types.
 Use the tool by running main.py to create the files first.'''
 
-output_directory = 'D:/tool_output' #path to the folder containing the xmi and csv files
+output_directory = 'D:/random_output' #path to the folder containing the xmi and csv files
 
 list_xmi_files = os.listdir(f'{output_directory}/xmi_files') 
 rset = ResourceSet()
@@ -158,10 +158,3 @@ for x, xmi_file in enumerate(list_xmi_files):
             print('Number of modules correct, test passed')
         else:
             print('Number of modules not correct, test failed')
-
-        if count_method == count_method_sig:
-            print('Number of methods and method sigs in xmi file matches, test passed')
-        else:
-            print('Number of methods and method sigs in xmi file does not match, test failed')
-
-

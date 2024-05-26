@@ -3,8 +3,8 @@ from GCN import GCN
 from PipelineUtils import prepare_dataset, create_matrix_structure
 
 repository_list = '../random_sample_icse_CO.xls'
-repository_directory = 'D:/no-compile-issue'
-output_directory = 'D:/compile_output'
+repository_directory = 'D:/dataset_repos'
+output_directory = 'D:/tool_output'
 
 if __name__ == '__main__':
 

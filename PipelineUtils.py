@@ -4,8 +4,7 @@ from ASTToEcoreConverter import ProjectEcoreGraph
 from EcoreToMatrixConverter import EcoreToMatrixConverter
 import pandas as pd
 
-# in this file are the pipeline components put into reusable functions
-
+'''in this file are the pipeline components put into reusable functions'''
 
 def create_output_folders(directory):
     if not os.path.exists(directory):
@@ -51,8 +50,7 @@ def create_ecore_graphs(repository_directory, output_directory):
         print(current_directory)
         if os.path.isdir(current_directory):
             try:
-                ProjectEcoreGraph(current_directory, resource_set,
-                                  output_directory, repository)
+                ProjectEcoreGraph(current_directory, resource_set, output_directory, repository)
             except Exception as e:
                 print(e)
                 if 'inconsistent use of tabs and spaces in indentation' in str(e):
@@ -62,8 +60,7 @@ def create_ecore_graphs(repository_directory, output_directory):
                     for file_path in python_files:
                         os.system(f'autopep8 --in-place {file_path}')
                     try:
-                        ProjectEcoreGraph(current_directory, resource_set,
-                                          output_directory, repository)
+                        ProjectEcoreGraph(current_directory, resource_set, output_directory, repository)
                     except Exception as e:
                         print(e)
                         print(f'Problem with repository {repository}. Skipping.')
@@ -79,8 +76,7 @@ def create_ecore_graphs(repository_directory, output_directory):
 
 def create_matrix_structure(output_directory):
     skip_xmi = 0
-    list_xmi_files = os.listdir(
-        f'{output_directory}/xmi_files')  # get output from above
+    list_xmi_files = os.listdir(f'{output_directory}/xmi_files')
     rset = ResourceSet()
     resource = rset.get_resource(URI('Basic.ecore'))
     mm_root = resource.contents[0]
@@ -88,11 +84,9 @@ def create_matrix_structure(output_directory):
 
     for x, xmi_file in enumerate(list_xmi_files):
         print(f'Progress: {x}/{len(list_xmi_files)}')
-        current_xmi_file = os.path.join(
-            f'{output_directory}/xmi_files', xmi_file)
+        current_xmi_file = os.path.join(f'{output_directory}/xmi_files', xmi_file)
         print(current_xmi_file)
-        resource = rset.get_resource(
-            URI(f'{output_directory}/xmi_files/{xmi_file}'))
+        resource = rset.get_resource(URI(f'{output_directory}/xmi_files/{xmi_file}'))
         try:
             EcoreToMatrixConverter(resource, f'{output_directory}/csv_files')
         except Exception as e:

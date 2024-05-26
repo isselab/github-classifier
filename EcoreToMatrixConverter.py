@@ -2,26 +2,22 @@ from pyecore.resources import ResourceSet
 from enum import Enum
 from LabelEncoder import convert_labels
 
-
 class EcoreToMatrixConverter:
     def __init__(self, resource: ResourceSet, output_folder):
-        # we have the entire typegraph object here
+
         self.typegraph_root = resource.contents[0]
         # nxc feature matrix with n nodes and c features for each node: node type and identifier (e.g. name or location)
         self.node_matrix = []
+        self.adjacency_list = []
         self.node_dict = {}  # internal structure to set edges later, node_id as key, value is list with type, name, object name, that's connected by edge
         self.node_count = 0  # to create id for nodes, keys in node_dict
 
         self.convert_nodes(self.typegraph_root)
 
-        self.adjacency_list = []  # empty list for edge info
-
         self.convert_edges()
 
-        node_labels = [self.NodeTypes.PACKAGE.value, self.NodeTypes.MODULE.value, self.NodeTypes.CLASS.value, self.NodeTypes.METHOD_DEFINITION.value,
-                       self.NodeTypes.METHOD.value, self.NodeTypes.METHOD_SIGNATURE.value, self.NodeTypes.PARAMETER.value, self.NodeTypes.CALL.value]
-        self.encoded_node_matrix = convert_labels(
-            node_labels, self.node_matrix)
+        node_labels = [self.NodeTypes.PACKAGE.value, self.NodeTypes.MODULE.value, self.NodeTypes.CLASS.value, self.NodeTypes.METHOD_DEFINITION.value, self.NodeTypes.METHOD.value, self.NodeTypes.METHOD_SIGNATURE.value, self.NodeTypes.PARAMETER.value, self.NodeTypes.CALL.value]
+        self.encoded_node_matrix = convert_labels(node_labels, self.node_matrix)
         output_name = self.get_graph_name()
         self.write_csv(output_folder, output_name)
 
@@ -37,19 +33,17 @@ class EcoreToMatrixConverter:
     def get_graph_name(self):
         return self.typegraph_root.tName
 
-    # this is the main function, that converts the nodes in the ecore graph into a matrix structure
+    '''this is the main function, that converts the nodes in the ecore graph into a matrix structure'''
     def convert_nodes(self, typegraph):
+
         # convert packages and subpackages
         for tpackage in typegraph.packages:
             current_package = None
-            # check if package is already in node matrix
-            current_package = self.get_node(
-                tpackage.tName, self.NodeTypes.PACKAGE.value)
+            current_package = self.get_node(tpackage.tName, self.NodeTypes.PACKAGE.value)
             # if package exists but has length 4 it was a subpackage --> different package, same name
             if current_package is None or len(current_package) == 4:
                 self.node_matrix.append(self.NodeTypes.PACKAGE.value)
-                self.node_dict[self.node_count] = [
-                    self.NodeTypes.PACKAGE.value, tpackage.tName]
+                self.node_dict[self.node_count] = [self.NodeTypes.PACKAGE.value, tpackage.tName]
                 self.node_count += 1
                 if hasattr(tpackage, 'subpackages'):
                     self.convert_subpackages_recursive(tpackage)
@@ -57,49 +51,40 @@ class EcoreToMatrixConverter:
         # convert modules and contained objects
         for tmodule in typegraph.modules:
             current_module = None
-            current_module = self.get_node(
-                tmodule.location, self.NodeTypes.MODULE.value)
+            current_module = self.get_node(tmodule.location, self.NodeTypes.MODULE.value)
             if current_module is None:
                 self.node_matrix.append(self.NodeTypes.MODULE.value)
                 if tmodule.namespace is not None:
-                    self.node_dict[self.node_count] = [self.NodeTypes.MODULE.value, tmodule.location,
-                                                       self.NodeTypes.PACKAGE.value, tmodule.namespace.tName]  # name of TPackage object
+                    self.node_dict[self.node_count] = [self.NodeTypes.MODULE.value, tmodule.location, self.NodeTypes.PACKAGE.value, tmodule.namespace.tName]  # name of TPackage object
                     self.node_count += 1
                 else:
-                    self.node_dict[self.node_count] = [
-                        self.NodeTypes.MODULE.value, tmodule.location]
+                    self.node_dict[self.node_count] = [self.NodeTypes.MODULE.value, tmodule.location]
                     self.node_count += 1
                 if hasattr(tmodule, 'contains'):
                     # can contain TContainableElements (TAbstractType and TMember)
                     for tobject in tmodule.contains:
-                        # check TAbstractTypes
                         if tobject.eClass.name == self.NodeTypes.CLASS.value:
                             self.node_matrix.append(self.NodeTypes.CLASS.value)
-                            self.node_dict[self.node_count] = [
-                                self.NodeTypes.CLASS.value, tobject.tName, self.NodeTypes.MODULE.value, tmodule.location]
+                            self.node_dict[self.node_count] = [self.NodeTypes.CLASS.value, tobject.tName, self.NodeTypes.MODULE.value, tmodule.location]
                             self.node_count += 1
                             if hasattr(tobject, 'childClasses'):
                                 self.convert_childClasses(tobject)
                             if hasattr(tobject, 'defines'):
                                 self.convert_defined_methods(tobject)
                         if tobject.eClass.name == self.NodeTypes.METHOD_DEFINITION.value:
-                            # here are the TMember objects checked
-                            self.convert_method_definitions(
-                                tobject, self.NodeTypes.MODULE.value, tmodule.location)
+                            self.convert_method_definitions(tobject, self.NodeTypes.MODULE.value, tmodule.location)
 
         # convert methods and contained objects
         for tmethod in typegraph.methods:
             self.node_matrix.append(self.NodeTypes.METHOD.value)
-            self.node_dict[self.node_count] = [
-                self.NodeTypes.METHOD.value, tmethod.tName]
+            self.node_dict[self.node_count] = [self.NodeTypes.METHOD.value, tmethod.tName]
             self.node_count += 1
             node_name = tmethod.tName
             for tobject in tmethod.signatures:
                 node_name += '_signature'
                 signature_name = node_name
                 self.node_matrix.append(self.NodeTypes.METHOD_SIGNATURE.value)
-                self.node_dict[self.node_count] = [self.NodeTypes.METHOD_SIGNATURE.value, node_name,
-                                                   self.NodeTypes.METHOD.value, tmethod.tName]  # savig method name helps later on!!
+                self.node_dict[self.node_count] = [self.NodeTypes.METHOD_SIGNATURE.value, node_name, self.NodeTypes.METHOD.value, tmethod.tName]
                 self.node_count += 1
                 if hasattr(tobject, 'parameters'):
                     node_name += '_param'
@@ -112,8 +97,7 @@ class EcoreToMatrixConverter:
                         if tparam.next is None:
                             self.node_matrix.append(
                                 self.NodeTypes.PARAMETER.value)
-                            self.node_dict[self.node_count] = [
-                                self.NodeTypes.PARAMETER.value, param_name, self.NodeTypes.METHOD_SIGNATURE.value, signature_name]
+                            self.node_dict[self.node_count] = [self.NodeTypes.PARAMETER.value, param_name, self.NodeTypes.METHOD_SIGNATURE.value, signature_name]
                             self.node_count += 1
 
                         if tparam.next is not None:
@@ -123,20 +107,16 @@ class EcoreToMatrixConverter:
                             next_param_name = node_name + next_param
                             self.node_matrix.append(
                                 self.NodeTypes.PARAMETER.value)
-                            self.node_dict[self.node_count] = [self.NodeTypes.PARAMETER.value, param_name,
-                                                               self.NodeTypes.METHOD_SIGNATURE.value, signature_name, 'Next', next_param_name]
+                            self.node_dict[self.node_count] = [self.NodeTypes.PARAMETER.value, param_name, self.NodeTypes.METHOD_SIGNATURE.value, signature_name, 'Next', next_param_name]
                             self.node_count += 1
 
         # convert classes and contained objects
         for tclass in typegraph.classes:
             current_class = None
-            current_class = self.get_node(
-                tclass.tName, self.NodeTypes.CLASS.value)
+            current_class = self.get_node(tclass.tName, self.NodeTypes.CLASS.value)
             if current_class is None:
                 self.node_matrix.append(self.NodeTypes.CLASS.value)
-                # does not have package in namespace
-                self.node_dict[self.node_count] = [
-                    self.NodeTypes.CLASS.value, tclass.tName]
+                self.node_dict[self.node_count] = [self.NodeTypes.CLASS.value, tclass.tName]
                 self.node_count += 1
                 if hasattr(tclass, 'childClasses'):
                     self.convert_childClasses(tclass)
@@ -145,12 +125,10 @@ class EcoreToMatrixConverter:
 
     def convert_subpackages_recursive(self, tpackage):
         for tsubpackage in tpackage.subpackages:
-            current_subpackage = self.get_node_in_container(
-                tsubpackage.tName, self.NodeTypes.PACKAGE.value, tpackage.tName, self.NodeTypes.PACKAGE.value)
+            current_subpackage = self.get_node_in_container(tsubpackage.tName, self.NodeTypes.PACKAGE.value, tpackage.tName, self.NodeTypes.PACKAGE.value)
             if current_subpackage is None:
                 self.node_matrix.append(self.NodeTypes.PACKAGE.value)
-                self.node_dict[self.node_count] = [self.NodeTypes.PACKAGE.value, tsubpackage.tName,
-                                                   self.NodeTypes.PACKAGE.value, tpackage.tName]  # save type and name for edge info
+                self.node_dict[self.node_count] = [self.NodeTypes.PACKAGE.value, tsubpackage.tName, self.NodeTypes.PACKAGE.value, tpackage.tName]  # save type and name for edge info
                 self.node_count += 1
                 if hasattr(tsubpackage, 'subpackages'):
                     self.convert_subpackages_recursive(tsubpackage)
@@ -161,51 +139,44 @@ class EcoreToMatrixConverter:
     def convert_childClasses(self, tclass):
         for child in tclass.childClasses:
             self.node_matrix.append(self.NodeTypes.CLASS.value)
-            self.node_dict[self.node_count] = [
-                self.NodeTypes.CLASS.value, child.tName, self.NodeTypes.CLASS.value, tclass.tName]
+            self.node_dict[self.node_count] = [self.NodeTypes.CLASS.value, child.tName, self.NodeTypes.CLASS.value, tclass.tName]
             self.node_count += 1
             if hasattr(child, 'defines'):
                 self.convert_defined_methods(child)
 
-    # convert TMethod objects that are defined within a class
+    '''convert TMethod objects that are defined within a class'''
     def convert_defined_methods(self, tclass):
         for tobject in tclass.defines:
             if tobject.eClass.name == self.NodeTypes.METHOD_DEFINITION.value:
-                self.convert_method_definitions(
-                    tobject, self.NodeTypes.CLASS.value, tclass.tName)
+                self.convert_method_definitions(tobject, self.NodeTypes.CLASS.value, tclass.tName)
 
-    # convert TMethodDefinition objects and contained call objects
+    '''convert TMethodDefinition objects and contained call objects'''
     def convert_method_definitions(self, t_meth_def, container_type, tcontainer_name):
         tobject_name = t_meth_def.signature.method.tName
         tobject_name += '_definition'
         self.node_matrix.append(self.NodeTypes.METHOD_DEFINITION.value)
-        self.node_dict[self.node_count] = [
-            self.NodeTypes.METHOD_DEFINITION.value, tobject_name, container_type, tcontainer_name]
+        self.node_dict[self.node_count] = [self.NodeTypes.METHOD_DEFINITION.value, tobject_name, container_type, tcontainer_name]
         self.node_count += 1
         if hasattr(t_meth_def, 'accessing'):
             self.convert_call(t_meth_def, tobject_name)
 
-    # convert call objects, are only contained in TMethodDefinition objects
+    '''convert call objects, are only contained in TMethodDefinition objects'''
     def convert_call(self, tmethod_def, tmethod_def_name):
         call_source = tmethod_def_name
         tmethod_def_name += '_call'
         for c, call in enumerate(tmethod_def.accessing):
             methoddef_target = call.target
-            # used continue to fix issue in one xmi file, where target is not set even though it existed!?
-            if methoddef_target is None:
-                continue
             # name of the TMethod object that's being called
             target_name = methoddef_target.signature.method.tName
-            # create a ame for the call object
+            # create a name for the call object
             call_counter = c+1
             calls = str(call_counter)
             current_call = tmethod_def_name + calls
             self.node_matrix.append(self.NodeTypes.CALL.value)
-            self.node_dict[self.node_count] = [self.NodeTypes.CALL.value,
-                                               current_call, 'Source', call_source, 'Target', target_name]
+            self.node_dict[self.node_count] = [self.NodeTypes.CALL.value, current_call, 'Source', call_source, 'Target', target_name]
             self.node_count += 1
 
-    # this function checks if a node already exists by comparing node type and name
+    '''this function checks if a node already exists by comparing node type and name'''
     def get_node(self, node_name, type):
         for current_node in self.node_dict:
             node = self.node_dict[current_node]
@@ -213,7 +184,7 @@ class EcoreToMatrixConverter:
                 if node[1] == node_name:
                     return node
 
-    # necessary for objects with the same name but different parents/container objects
+    '''necessary for objects with the same name but different parents/container objects'''
     def get_node_in_container(self, node_name, type, parent_name, parent_type):
         for current_node in self.node_dict:
             node = self.node_dict[current_node]
@@ -224,24 +195,22 @@ class EcoreToMatrixConverter:
                             if node[3] == parent_name:
                                 return node
 
-    # this function sets the existing edges in the adjacency matrix to 1
+    '''this function sets the existing edges in the adjacency matrix to 1'''
     def convert_edges(self):
         for keys in self.node_dict:
             current_node = self.node_dict[keys]
 
             # set edges between packages and subpackages
             if current_node[0] == self.NodeTypes.PACKAGE.value:
-                if len(current_node) == 4:  # there is a subpackage
-                    find_key = self.find_key_of_connected_node(
-                        self.NodeTypes.PACKAGE.value, current_node)  # search for key of the parent package
+                if len(current_node) == 4:  # has subpackage
+                    find_key = self.find_key_of_connected_node(self.NodeTypes.PACKAGE.value, current_node)  # search for key of the parent package
                     self.adjacency_list.append([find_key, keys])
 
             # set edges between Modules and Packages
             if current_node[0] == self.NodeTypes.MODULE.value:
                 if len(current_node) == 4:
                     if current_node[2] == self.NodeTypes.PACKAGE.value:
-                        find_key = self.find_key_of_connected_node(
-                            self.NodeTypes.PACKAGE.value, current_node)
+                        find_key = self.find_key_of_connected_node(self.NodeTypes.PACKAGE.value, current_node)
                         # edge in both directions
                         self.adjacency_list.append([find_key, keys])
                         self.adjacency_list.append([keys, find_key])
@@ -250,12 +219,10 @@ class EcoreToMatrixConverter:
             if current_node[0] == self.NodeTypes.CLASS.value:
                 if len(current_node) == 4:
                     if current_node[2] == self.NodeTypes.MODULE.value:
-                        find_key = self.find_key_of_connected_node(
-                            self.NodeTypes.MODULE.value, current_node)
+                        find_key = self.find_key_of_connected_node(self.NodeTypes.MODULE.value, current_node)
                         self.adjacency_list.append([find_key, keys])
                     if current_node[2] == self.NodeTypes.CLASS.value:
-                        find_key = self.find_key_of_connected_node(
-                            self.NodeTypes.CLASS.value, current_node)
+                        find_key = self.find_key_of_connected_node(self.NodeTypes.CLASS.value, current_node)
                         # edge from TClass to child class
                         self.adjacency_list.append([find_key, keys])
 
@@ -263,61 +230,52 @@ class EcoreToMatrixConverter:
             if current_node[0] == self.NodeTypes.METHOD_DEFINITION.value:
                 if len(current_node) == 4:
                     if current_node[2] == self.NodeTypes.MODULE.value:
-                        find_key = self.find_key_of_connected_node(
-                            self.NodeTypes.MODULE.value, current_node)
+                        find_key = self.find_key_of_connected_node(self.NodeTypes.MODULE.value, current_node)
                         self.adjacency_list.append([find_key, keys])
                     if current_node[2] == self.NodeTypes.CLASS.value:
-                        find_key = self.find_key_of_connected_node(
-                            self.NodeTypes.CLASS.value, current_node)
+                        find_key = self.find_key_of_connected_node(self.NodeTypes.CLASS.value, current_node)
                         self.adjacency_list.append([find_key, keys])
 
             # set edges for TMethod objects
             if current_node[0] == self.NodeTypes.METHOD_SIGNATURE.value:
-                find_key = self.find_key_of_connected_node(
-                    self.NodeTypes.METHOD.value, current_node)
+                find_key = self.find_key_of_connected_node(self.NodeTypes.METHOD.value, current_node)
                 # edge from TMethod to TMethodSignature object
                 self.adjacency_list.append([find_key, keys])
             if current_node[0] == self.NodeTypes.METHOD.value:
                 method_name = current_node[1]
                 method_name += '_definition'
-                find_key = self.find_connected_node(
-                    self.NodeTypes.METHOD_DEFINITION.value, method_name)
-                if find_key is not None:  # there can be less meth def than method objects, due to imports
-                    # edge from TMethod to TMethodDef object!
-                    self.adjacency_list.append([keys, find_key])
+                find_key = self.find_connected_node(self.NodeTypes.METHOD_DEFINITION.value, method_name)
+                # edge from TMethod to TMethodDef object!
+                self.adjacency_list.append([keys, find_key])
 
             # set edges for parameters
             if current_node[0] == self.NodeTypes.PARAMETER.value:
-                find_key = self.find_key_of_connected_node(
-                    self.NodeTypes.METHOD_SIGNATURE.value, current_node)
+                find_key = self.find_key_of_connected_node(self.NodeTypes.METHOD_SIGNATURE.value, current_node)
                 # edge from TMethodSignature to TParameter
                 self.adjacency_list.append([find_key, keys])
                 if len(current_node) == 6:  # function has multiple parameters
                     next_parameter_name = current_node[5]
-                    find_key = self.find_connected_node(
-                        self.NodeTypes.PARAMETER.value, next_parameter_name)
+                    find_key = self.find_connected_node(self.NodeTypes.PARAMETER.value, next_parameter_name)
                     # edges between next/previous parameters of one function
                     self.adjacency_list.append([find_key, keys])
                     self.adjacency_list.append([keys, find_key])
 
             # set edges for calls
             if current_node[0] == self.NodeTypes.CALL.value:
-                find_key = self.find_key_of_connected_node(
-                    self.NodeTypes.METHOD_DEFINITION.value, current_node)
+                find_key = self.find_key_of_connected_node(self.NodeTypes.METHOD_DEFINITION.value, current_node)
                 # edge TMethDef to TCall, 'accessing'
                 self.adjacency_list.append([find_key, keys])
                 if len(current_node) == 6:
                     # method name that's being called
                     target_name = current_node[5]
                     target_name += '_definition'
-                    find_key = self.find_connected_node(
-                        self.NodeTypes.METHOD_DEFINITION.value, target_name)
+                    find_key = self.find_connected_node(self.NodeTypes.METHOD_DEFINITION.value, target_name)
                     # edge TMethDef to TCall, 'accessedBy'
                     self.adjacency_list.append([find_key, keys])
                     # edge TCall to TMethDef, 'target'
                     self.adjacency_list.append([keys, find_key])
 
-    # find number of node (key), name explicitly saved in current_node
+    '''find number of node (key), name explicitly saved in current_node'''
     def find_key_of_connected_node(self, type_string, current_node):
         for find_key in self.node_dict:
             find_node = self.node_dict[find_key]
@@ -325,7 +283,7 @@ class EcoreToMatrixConverter:
                 if find_node[1] == current_node[3]:
                     return find_key
 
-    # find number of node (key), name not explicitly saved
+    '''find number of node (key), name not explicitly saved'''
     def find_connected_node(self, type_string, node_name):
         for find_key in self.node_dict:
             find_node = self.node_dict[find_key]
@@ -333,10 +291,9 @@ class EcoreToMatrixConverter:
                 if find_node[1] == node_name:
                     return find_key
 
-    # write graph in two csv files
+    '''write graph in two csv files'''
     def write_csv(self, output_folder, output_name):
-        new_resource_nodes = open(
-            f"{output_folder}/{output_name}_nodefeatures.csv", "w+")
+        new_resource_nodes = open(f"{output_folder}/{output_name}_nodefeatures.csv", "w+")
         new_resource_edges = open(f"{output_folder}/{output_name}_A.csv", "w+")
 
         for node in self.encoded_node_matrix:
