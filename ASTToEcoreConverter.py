@@ -146,7 +146,7 @@ class ProjectEcoreGraph:
         with open(path, 'r', errors='ignore') as file:
             code = file.read()
         # added following to fix some invalid character and syntax errors
-        code = code.replace('“', '"').replace('”', '"').replace("‘", "'").replace("’", "'").replace("»", ">>").replace("—", "-").replace("¿", "_")
+        code = code.replace('“', '"').replace('”', '"').replace("‘", "'").replace("’", "'").replace("»", ">>").replace("—", "-")
         tree = ast.parse(code)
         visitor = ASTVisitor(self)
         visitor.visit(tree)
