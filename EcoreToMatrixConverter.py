@@ -296,10 +296,13 @@ class EcoreToMatrixConverter:
         new_resource_nodes = open(f"{output_folder}/{output_name}_nodefeatures.csv", "w+")
         new_resource_edges = open(f"{output_folder}/{output_name}_A.csv", "w+")
 
+        #node_counter = 0 #added this to get 2 dim vector for gcn, test, bringt nix falsche dim
         for node in self.encoded_node_matrix:
+            #new_resource_nodes.write("%s, " % node_counter)
             new_resource_nodes.write("%s" % node)
             # write next slice (node) in new line
             new_resource_nodes.write("\n")
+            #node_counter += 1
 
         # edge is array with two entries [node_id, node_id]
         for edge in self.adjacency_list:

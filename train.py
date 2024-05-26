@@ -1,6 +1,9 @@
 from CustomDataset import RepositoryDataset
 from PipelineUtils import prepare_dataset
 from torch.utils.data import random_split
+from GCN import GCN
+import torch
+#import torch.nn.functional as F
 
 repository_directory = 'D:/dataset_repos'  # input repositories
 output_directory = 'D:/tool_output'  
@@ -40,3 +43,28 @@ print(testset[0][1]) #this is a label --> label of first graph of testset?!
 print(testset[0][0][0]) #this is a node feature tensor --> of the first graph in the testset
 
 '''i need to implement shuffling and iterating in batches over training set??'''
+
+model = GCN(num_node_features=dataset.num_node_features, num_classes= dataset.num_classes, hidden_channels=1)
+
+optimizer = torch.optim.Adam(model.parameters(), lr=0.001)
+criterion = torch.nn.CrossEntropyLoss()
+
+def train():
+    model.train()
+    optimizer.zero_grad()
+    for graph in trainset:
+        output = model(graph[0][0], graph[0][1]) #graph[0][0] is node feature tensor, graph[0][1] is edge tensor
+        loss_train = criterion(output, graph[1]) #graph[1] is label
+        #compute accuracy
+        loss_train.backward() #backward propagation to update weights? do this for entire batch for performance i think
+        optimizer.step()
+
+def test():
+    model.eval()
+    for graph in testset:
+        output = model(graph[0][0], graph[0][1])
+        loss = criterion(output, graph[1])
+        #compute accuracy
+
+for epoch in range(1,5):
+    train()
