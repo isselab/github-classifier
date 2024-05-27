@@ -30,14 +30,22 @@ class ProjectEcoreGraph:
 
         python_files = [os.path.join(root, file) for root, _, files in os.walk(
             self.root_directory) for file in files if file.endswith('.py')]
+        
+        skipped_files = 0
 
         for file_path in python_files:
-            self.process_file(file_path)
+            try:
+               self.process_file(file_path)
+            except Exception as e:
+                if 'invalid syntax' in str(e):
+                    skipped_files += 1
+                    continue #skip file
 
         self.append_modules()
         
         self.search_meth_defs()
         self.write_xmi(resource_set, output_directory, repository)
+        print(f'Number of files skipped: {skipped_files}')
 
 
     '''check_list at start contains all classes with method defs that are created in typegraph,
