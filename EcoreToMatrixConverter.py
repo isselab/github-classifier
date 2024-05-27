@@ -195,7 +195,7 @@ class EcoreToMatrixConverter:
                             if node[3] == parent_name:
                                 return node
 
-    '''this function sets the existing edges in the adjacency matrix to 1'''
+    '''this function sets the existing edges, it appends the node_ids of the nodes connected by an edge to the adjacency list'''
     def convert_edges(self):
         for keys in self.node_dict:
             current_node = self.node_dict[keys]
