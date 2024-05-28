@@ -24,6 +24,7 @@ class ProjectEcoreGraph:
         self.class_list = []  # entries [class_node, name, module/None]
         self.classes_without_module = []
         self.method_list = []  # entries [method_node, name, module_node]
+        self.call_list = []
 
         #to search for missing meth defs in classes, that are not appended to a module for some reason
         self.check_list = [] # entries [class_node, method_def_node, method_name] #right now only need class node
@@ -37,7 +38,127 @@ class ProjectEcoreGraph:
         self.append_modules()
         
         self.search_meth_defs()
+        self.check_missing_calls()
         self.write_xmi(resource_set, output_directory, repository)
+
+    
+    def check_missing_calls(self):
+        for object in self.call_list:
+            called_instance = object[0]
+            caller_node = object[1]
+            call_check = False
+            called_instance = called_instance.split('.')
+            first_item = called_instance[0]
+            package = self.check_package_list(first_item, None)
+            if package is not None:
+                del called_instance[0] #delete found package
+                for i, item in enumerate(called_instance):
+                    package = self.check_package_list(item, package)
+                    if package is not None:
+                        del called_instance[i]
+                        found_package = package #save package found last
+                        '''i think i need to check modules here then??'''
+                    if package is None:
+                        #print(found_package)
+                        #print(called_instance)
+                        for o, obj in enumerate(called_instance):
+                            module = self.get_module_by_name(obj)
+                            if module is not None:
+                                #print(module.location)
+                                del called_instance[o]
+                                #print(called_instance)
+                                if len(called_instance) == 1:
+                                    if called_instance[0][0].isupper(): #its a class (init)
+                                        found_class = self.get_class_from_internal_structure(obj, module)
+                                        #print(found_class) #all none right now
+                                        if found_class is not None:
+                                            print('heyyy') #findet keine bei aktueller datei
+                                    else:
+                                        #print(object[2]) #alle 0, funktionsaufruf
+                                        method_def = self.get_method_def_in_module(obj, module)
+                                        if method_def is not None:
+                                            call_check = self.get_calls(caller_node, method_def)
+                                            if call_check is False:
+                                                self.create_calls(caller_node, method_def)
+                                                self.call_list.remove(object)
+                                        if method_def is None:
+                                            method_def = self.create_ecore_instance(self.Types.METHOD_DEFINITION)
+                                            self.create_method_signature(method_def, obj, [])
+                                            module.contains.append(method_def)
+                                            self.create_calls(caller_node, method_def)
+                                if len(called_instance) > 1:
+                                    #print(called_instance)
+                                    if called_instance[0][0].isupper():
+                                        if hasattr(module, 'contains'):
+                                            for current_class in module.contains:
+                                                if current_class.eClass.name == self.Types.CLASS.value:
+                                                    if current_class.tName == called_instance[0]:
+                                                        if hasattr(current_class, 'defines'):
+                                                            for method_def in current_class.defines:
+                                                                if method_def.signature.method.tName == called_instance[1]:
+                                                                    call_check = self.get_calls(caller_node, method_def)
+                                                                    if call_check is False:
+                                                                        self.create_calls(caller_node, method_def)
+                                        '''else erstelle class??'''
+                                    else:
+                                        #print(called_instance)
+                                        #print(object[2]) #all 1 cause instance
+                                        method_def = self.get_method_def_in_module(called_instance[0], module)
+                                        if method_def is not None:
+                                            call_check = self.get_calls(caller_node, method_def)
+                                            if call_check is False:
+                                                self.create_calls(caller_node, method_def)
+                                        if method_def is None:
+                                            method_def = self.create_ecore_instance(self.Types.METHOD_DEFINITION)
+                                            self.create_method_signature(method_def, obj, [])
+                                            module.contains.append(method_def)
+                                            self.create_calls(caller_node, method_def)
+
+
+                            if module is None:
+                                found_class = self.get_class_from_internal_structure(obj, None)
+                                if found_class is not None:
+                                    del called_instance[o]
+                                    #print(found_class.tName)
+                                    #print(called_instance)
+
+
+
+            #called_module = called_instance.split('.')[0]
+            #called_method = called_instance.split('.')[-1]
+           # if len(called_instance.split('.'))>2:
+                #print(called_instance.split('.')[1])
+           # module_node = self.get_module_by_name(called_module)
+           # if module_node is not None:
+               # method_node = self.get_method_def_in_module(called_method, module_node)
+               # if method_node is not None:
+                   # call_check = self.get_calls(caller_node, method_node)
+                   # if call_check is False:
+                      #  self.create_calls(caller_node, method_node)
+                      #  self.call_list.remove(object)
+                #if method_node is None:
+                  #  method_node = self.get_method_def_from_internal_structure(called_method, module_node)
+                   # if method_node is not None:
+                        #call_check = self.get_calls(caller_node, method_node)
+                        #if call_check is False:
+                           # self.create_calls(caller_node, method_node)
+                           # self.call_list.remove(object)
+
+                   # if method_node is None and call_check is False:
+                       # method_node = self.create_ecore_instance(self.Types.METHOD_DEFINITION)
+                       # self.create_method_signature(method_node, called_method, [])
+                       # module_node.contains.append(method_node)
+                       # self.create_calls(caller_node, method_node)
+                       # self.call_list.remove(object)
+           # if module_node is None:
+               # module = self.create_ecore_instance(self.Types.MODULE)
+                #module.location = called_module
+               # method_node = self.create_ecore_instance(self.Types.METHOD_DEFINITION)
+               # self.create_method_signature(method_node, called_method, [])
+               # self.module_list.append([module, called_module])
+               # module.contains.append(method_node)
+               # self.create_calls(caller_node, method_node)
+               # self.call_list.remove(object)
 
 
     '''check_list at start contains all classes with method defs that are created in typegraph,
@@ -484,6 +605,7 @@ class ASTVisitor(ast.NodeVisitor):
         method_name = instance_name.split('.')[-1]
         self.called_node = None
         self.call_check = False
+        self.instance_missing = None
 
         # set called_node
         if type == 1:  # instance from class being called
@@ -497,6 +619,8 @@ class ASTVisitor(ast.NodeVisitor):
                         self.called_node = self.graph_class.create_ecore_instance(self.graph_class.Types.METHOD_DEFINITION)
                         self.graph_class.create_method_signature(self.called_node, method_name, [])
                         instance_node.defines.append(self.called_node)
+            if instance_node is None:
+                self.instance_missing = instance_name
 
         if type == 0:  # instance from module being called
             module = instance_name.split('.')[0]
@@ -510,6 +634,8 @@ class ASTVisitor(ast.NodeVisitor):
                         self.graph_class.create_method_signature(called_node, method_name, [])
                         instance_node.contains.append(called_node)
                         self.called_node = called_node
+            if instance_node is None:
+                self.instance_missing = instance_name
 
         # set caller_node
         if self.current_method is not None:
@@ -531,5 +657,9 @@ class ASTVisitor(ast.NodeVisitor):
             self.call_check = self.graph_class.get_calls(caller_node, self.called_node)
             if self.call_check is False:
                 self.graph_class.create_calls(caller_node, self.called_node)
+
+        # check after all the files are processed if modules and methods called exist then
+        if self.instance_missing is not None:
+            self.graph_class.call_list.append([self.instance_missing, caller_node, type])
 
         self.generic_visit(node)
