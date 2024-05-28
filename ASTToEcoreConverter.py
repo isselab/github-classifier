@@ -86,12 +86,12 @@ class ProjectEcoreGraph:
                                 for m in self.module_list:
                                     if m[1]== imported[-1]:
                                         m[0].contains.append(obj[0])
-                if ref is None:
-                    if hasattr(obj[0], 'parentClasses'):
-                        for parent in obj[0].parentClasses:
-                            parent_module =self.get_module_of_class(parent.tName, obj[0].tName)
-                            if parent_module is not None:
-                                parent_module.contains.append(obj[0])
+                #if ref is None:
+                   # if hasattr(obj[0], 'parentClasses'):
+                       # for parent in obj[0].parentClasses:
+                            #parent_module =self.get_module_of_class(parent.tName, obj[0].tName)
+                            #if parent_module is not None:
+                               # parent_module.contains.append(obj[0])
 
     def get_epackage(self):
         return self.epackage
@@ -142,6 +142,7 @@ class ProjectEcoreGraph:
         for class_object in self.classes_without_module:
             for index, path_part in enumerate(path_split):
                 if class_object.tName == path_part:
+                    self.current_module.contains.append(class_object) #added this to try get better performance
                     if index == len(path_split) - 1:
                         for child in class_object.childClasses: 
                             self.current_module.contains.append(child)
