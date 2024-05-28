@@ -4,7 +4,7 @@ from enum import Enum
 from pyecore.resources import ResourceSet, URI
 
 class ProjectEcoreGraph:
-    def __init__(self, directory, resource_set: ResourceSet, output_directory, repository):
+    def __init__(self, directory, resource_set: ResourceSet, output_directory, repository, write_in_file):
         if directory is None or directory == '':
             raise ValueError('Directory is required')
 
@@ -46,8 +46,10 @@ class ProjectEcoreGraph:
         
         self.search_meth_defs()
         self.check_missing_calls()
-        self.write_xmi(resource_set, output_directory, repository)
+        if write_in_file is True:
+            self.write_xmi(resource_set, output_directory, repository)
         print(f'Number of files skipped: {skipped_files}')
+            
 
     def check_missing_calls(self):
         for object in self.call_list:

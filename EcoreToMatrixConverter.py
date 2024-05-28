@@ -3,9 +3,11 @@ from enum import Enum
 from LabelEncoder import convert_labels
 
 class EcoreToMatrixConverter:
-    def __init__(self, resource: ResourceSet, output_folder):
-
-        self.typegraph_root = resource.contents[0]
+    def __init__(self, resource: ResourceSet, write_in_file, output_folder=None):
+        if write_in_file is True:
+            self.typegraph_root = resource.contents[0]
+        else:
+            self.typegraph_root = resource
         # nxc feature matrix with n nodes and c features for each node: node type and identifier (e.g. name or location)
         self.node_matrix = []
         self.adjacency_list = []
@@ -19,7 +21,8 @@ class EcoreToMatrixConverter:
         node_labels = [self.NodeTypes.PACKAGE.value, self.NodeTypes.MODULE.value, self.NodeTypes.CLASS.value, self.NodeTypes.METHOD_DEFINITION.value, self.NodeTypes.METHOD.value, self.NodeTypes.METHOD_SIGNATURE.value, self.NodeTypes.PARAMETER.value, self.NodeTypes.CALL.value]
         self.encoded_node_matrix = convert_labels(node_labels, self.node_matrix)
         output_name = self.get_graph_name()
-        self.write_csv(output_folder, output_name)
+        if write_in_file is True:
+            self.write_csv(output_folder, output_name)
 
     def get_node_matrix(self):
         return self.node_matrix

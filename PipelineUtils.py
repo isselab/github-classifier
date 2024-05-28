@@ -40,7 +40,7 @@ def download_repositories(repository_directory, repository_list):
     os.chdir(working_directory)
 
 
-def create_ecore_graphs(repository_directory, output_directory):
+def create_ecore_graphs(repository_directory, output_directory, write_in_file):
     repositories = os.listdir(repository_directory)
     skip_counter = 0
     resource_set = ResourceSet()
@@ -50,7 +50,7 @@ def create_ecore_graphs(repository_directory, output_directory):
         print(current_directory)
         if os.path.isdir(current_directory):
             try:
-                ProjectEcoreGraph(current_directory, resource_set, output_directory, repository)
+                ecore_graph = ProjectEcoreGraph(current_directory, resource_set, output_directory, repository, write_in_file)
             except Exception as e:
                 print(e)
                 if 'inconsistent use of tabs and spaces in indentation' in str(e):
@@ -60,7 +60,7 @@ def create_ecore_graphs(repository_directory, output_directory):
                     for file_path in python_files:
                         os.system(f'autopep8 --in-place {file_path}')
                     try:
-                        ProjectEcoreGraph(current_directory, resource_set, output_directory, repository)
+                        ecore_graph = ProjectEcoreGraph(current_directory, resource_set, output_directory, repository, write_in_file)
                     except Exception as e:
                         print(e)
                         print(f'Problem with repository {repository}. Skipping.')
@@ -72,43 +72,69 @@ def create_ecore_graphs(repository_directory, output_directory):
             skip_counter += 1
     print('----------------------------------------------')
     print(f'Skipped {skip_counter} of {len(repositories)}.')
+    if write_in_file is False:
+        return ecore_graph.get_graph()
+    else:
+        return None
 
 
-def create_matrix_structure(output_directory):
+def create_matrix_structure(output_directory, write_in_file, ecore_graph=None):
     skip_xmi = 0
-    list_xmi_files = os.listdir(f'{output_directory}/xmi_files')
-    rset = ResourceSet()
-    resource = rset.get_resource(URI('Basic.ecore'))
-    mm_root = resource.contents[0]
-    rset.metamodel_registry[mm_root.nsURI] = mm_root
+    if write_in_file is True:
+        list_xmi_files = os.listdir(f'{output_directory}/xmi_files')
+        rset = ResourceSet()
+        resource = rset.get_resource(URI('Basic.ecore'))
+        mm_root = resource.contents[0]
+        rset.metamodel_registry[mm_root.nsURI] = mm_root
 
-    for x, xmi_file in enumerate(list_xmi_files):
-        print(f'Progress: {x}/{len(list_xmi_files)}')
-        current_xmi_file = os.path.join(f'{output_directory}/xmi_files', xmi_file)
-        print(current_xmi_file)
-        resource = rset.get_resource(URI(f'{output_directory}/xmi_files/{xmi_file}'))
+        for x, xmi_file in enumerate(list_xmi_files):
+            print(f'Progress: {x}/{len(list_xmi_files)}')
+            current_xmi_file = os.path.join(f'{output_directory}/xmi_files', xmi_file)
+            print(current_xmi_file)
+            resource = rset.get_resource(URI(f'{output_directory}/xmi_files/{xmi_file}'))
+            try:
+                EcoreToMatrixConverter(resource, write_in_file, f'{output_directory}/csv_files')
+            except Exception as e:
+                print(e)
+                print(f'Problem with xmi file {xmi_file}. Skipping')
+                skip_xmi += 1
+        print('----------------------------------------------')
+        print(f'Skipped {skip_xmi} of {len(list_xmi_files)}')
+    if write_in_file is False:
         try:
-            EcoreToMatrixConverter(resource, f'{output_directory}/csv_files')
+            matrix = EcoreToMatrixConverter(ecore_graph, write_in_file)
+            node_features = matrix.get_encoded_node_matrix()
+            adj_list = matrix.get_adjacency_list()
         except Exception as e:
             print(e)
-            print(f'Problem with xmi file {xmi_file}. Skipping')
-            skip_xmi += 1
-    print('----------------------------------------------')
-    print(f'Skipped {skip_xmi} of {len(list_xmi_files)}')
+    if write_in_file is False:
+        return node_features, adj_list
+    else:
+        return None, None
+    
 
 
-def prepare_dataset(repository_directory, output_directory, repository_list=None):
+def prepare_dataset(repository_directory, output_directory=None, repository_list=None):
     # clone repositories for the dataset
     if repository_list is not None:
         download_repositories(repository_directory, repository_list)
+    
+    repositories = os.listdir(repository_directory)
+    if len(repositories) == 1:
+        write_in_file = False
+    if len(repositories) > 1:
+        write_in_file = True
 
     # create output directory
-    create_output_folders(output_directory)
-
+    if write_in_file is True:
+        create_output_folders(output_directory)
+    
     print('--convert repositories into ecore metamodels--')
     # convert repositories into ecore metamodels
-    create_ecore_graphs(repository_directory, output_directory)
+    ecore_graph = create_ecore_graphs(repository_directory, output_directory, write_in_file)
 
     print('---convert ecore graphs to matrix structure---')
     # load xmi instance and convert them to a matrix structure for the gcn
-    create_matrix_structure(output_directory)
+    node_features, adj_list = create_matrix_structure(output_directory, write_in_file, ecore_graph)
+
+    return node_features, adj_list
