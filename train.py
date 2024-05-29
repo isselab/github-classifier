@@ -49,20 +49,45 @@ edges = trainset[0][0][1]
 print(f'{nodes.size()}, dimension 0: {nodes.size(dim=0)}, dimension 1: {nodes.size(dim=1)}')
 print(f'{edges.size()}, dimension 0: {edges.size(dim=0)}, dimension 1: {edges.size(dim=1)}')
 
-#model = GCN(num_node_features=dataset.num_node_features, num_classes= dataset.num_classes, hidden_channels=1)
+'''tensors connected, gradient propagated to the cloned tensor also propagate to the original tensor, 
+use detach() if not wanted'''
+#unsq_nodes = torch.unsqueeze(nodes, 0)
+#unsq_edges = torch.unsqueeze(edges, 0)
+#perm_edges = edges.permute(1, 0)
+#perm_nodes = nodes.permute(1, 0)
+#node_pad = nodes.clone()
+#padding = len(edges)-len(nodes)
+#node_pad = torch.zeros((padding, 1))
+#padded_node_features = torch.nn.functional.pad(nodes, node_pad, mode='constant', value=int) #node_pad must be tupel of ints, not tensor
+#padded_node_features = torch.cat((nodes, node_pad), 1) #concatenate in dimension 0
+#print(padded_node_features)
+#N = len(nodes)
+#sliced_nodes = nodes[:N, 0]
+#print(sliced_nodes)
+m_edges = torch.movedim(edges, 1, 0)
+print(m_edges)
+#slice_edges = edges[:N, 0]
+print(f'{nodes.size()}, dimension 0: {nodes.size(dim=0)}, dimension 1: {nodes.size(dim=1)}')
+print(f'{m_edges.size()}, dimension 0: {m_edges.size(dim=0)},dimension 1: {m_edges.size(dim=1)}')
 
-#optimizer = torch.optim.Adam(model.parameters(), lr=0.001)
+model = GCN(num_node_features=dataset.num_node_features, num_classes= dataset.num_classes, hidden_channels=1)
+
+optimizer = torch.optim.Adam(model.parameters(), lr=0.001)
 criterion = torch.nn.CrossEntropyLoss()
 
 def train():
     model.train()
     optimizer.zero_grad()
-    for graph in trainset:
-        output = model(graph[0][0], graph[0][1]) #graph[0][0] is node feature tensor, graph[0][1] is edge tensor
-        loss_train = criterion(output, graph[1]) #graph[1] is label
+    #for graph in trainset:
+        #output = model(graph[0][0], graph[0][1]) #graph[0][0] is node feature tensor, graph[0][1] is edge tensor
+        #loss_train = criterion(output, graph[1]) #graph[1] is label
         #compute accuracy
-        loss_train.backward() #backward propagation to update weights? do this for entire batch for performance i think
-        optimizer.step()
+        #loss_train.backward() #backward propagation to update weights? do this for entire batch for performance i think
+        #optimizer.step()
+    output, nb_classes = model(nodes, m_edges)
+    loss_train = criterion(output, trainset[0][1])
+    loss_train.backwards()
+    optimizer.step()
 
 def test():
     model.eval()
@@ -71,5 +96,5 @@ def test():
         loss = criterion(output, graph[1])
         #compute accuracy
 
-#for epoch in range(1,5):
-    #train()
+for epoch in range(1,5):
+    train()
