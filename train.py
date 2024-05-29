@@ -5,8 +5,8 @@ from GCN import GCN
 import torch
 #import torch.nn.functional as F
 
-repository_directory = 'D:/dataset_repos'  # input repositories
-output_directory = 'D:/tool_output'  
+#repository_directory = 'D:/dataset_repos'  # input repositories
+output_directory = 'D:/output'  
 labels = '../random_sample_icse_CO.xls' # labeled repositories for the training dataset
 
 # create the graph dataset of the repositories
@@ -32,21 +32,26 @@ except Exception as e:
     print('Dataset cannot be loaded.')
 
 # split into train and testset, this is for training the tool, not using finished tool
-trainset, testset = random_split(dataset, [0.7, 0.3])
+trainset, testset = random_split(dataset, [0.5, 0.5])
 print(len(trainset), len(testset))
 
-for graph in testset:
+#for graph in testset:
     #print(graph[1]) #these are the label tensors
-    print(len(graph[0][0]))
+    #print(len(graph[0][0]))
 
-print(testset[0][1]) #this is a label --> label of first graph of testset?!
-print(testset[0][0][0]) #this is a node feature tensor --> of the first graph in the testset
+#print(trainset[0][1]) #this is a label --> label of first graph of testset?!
+#print(trainset[0][0][0]) #this is a node feature tensor --> of the first graph in the testset
+#print(trainset[0][0][1])
 
 '''i need to implement shuffling and iterating in batches over training set??'''
+nodes = trainset[0][0][0]
+edges = trainset[0][0][1]
+print(nodes.size())
+print(edges.size())
 
-model = GCN(num_node_features=dataset.num_node_features, num_classes= dataset.num_classes, hidden_channels=1)
+#model = GCN(num_node_features=dataset.num_node_features, num_classes= dataset.num_classes, hidden_channels=1)
 
-optimizer = torch.optim.Adam(model.parameters(), lr=0.001)
+#optimizer = torch.optim.Adam(model.parameters(), lr=0.001)
 criterion = torch.nn.CrossEntropyLoss()
 
 def train():
@@ -66,5 +71,5 @@ def test():
         loss = criterion(output, graph[1])
         #compute accuracy
 
-for epoch in range(1,5):
-    train()
+#for epoch in range(1,5):
+    #train()
