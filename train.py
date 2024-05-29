@@ -46,8 +46,8 @@ print(len(trainset), len(testset))
 '''i need to implement shuffling and iterating in batches over training set??'''
 nodes = trainset[0][0][0]
 edges = trainset[0][0][1]
-print(nodes.size())
-print(edges.size())
+print(f'{nodes.size()}, dimension 0: {nodes.size(dim=0)}, dimension 1: {nodes.size(dim=1)}')
+print(f'{edges.size()}, dimension 0: {edges.size(dim=0)}, dimension 1: {edges.size(dim=1)}')
 
 #model = GCN(num_node_features=dataset.num_node_features, num_classes= dataset.num_classes, hidden_channels=1)
 
