@@ -3,6 +3,7 @@ from PipelineUtils import prepare_dataset
 from torch.utils.data import random_split
 from GCN import GCN
 import torch
+from GCNUtils import prepare_input_data
 #import torch.nn.functional as F
 
 #repository_directory = 'D:/dataset_repos'  # input repositories
@@ -41,6 +42,9 @@ edges = trainset[0][0][1]
 print(f'{nodes.size()}, dimension 0: {nodes.size(dim=0)}, dimension 1: {nodes.size(dim=1)}')
 print(f'{edges.size()}, dimension 0: {edges.size(dim=0)}, dimension 1: {edges.size(dim=1)}')
 
+permuted_edges = prepare_input_data(edges)
+
+print(f'{permuted_edges.size()}, dimension 0: {permuted_edges.size(dim=0)}, dimension 1: {permuted_edges.size(dim=1)}')
 
 model = GCN(num_node_features=dataset.num_node_features, num_classes= dataset.num_classes, hidden_channels=1)
 
@@ -56,7 +60,7 @@ def train():
         #compute accuracy
         #loss_train.backward() #backward propagation to update weights? do this for entire batch for performance i think
         #optimizer.step()
-    output, nb_classes = model(nodes, edges)
+    output, nb_classes = model(nodes, permuted_edges)
     loss_train = criterion(output, trainset[0][1])
     loss_train.backwards()
     optimizer.step()

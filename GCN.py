@@ -22,13 +22,13 @@ class GCN(torch.nn.Module):
     '''add self-loop to edge info? keeps appearing in tutorials
        x=[N, 1] N=number of nodes, x is feature vector
        edge_index=[2, E] E=number of edges, edge_index is adjacency list'''
-    def forward(self, x, edge):  # runs sigle iteration of a forward pass, orig edge_index
+    def forward(self, x, edge_index):  # runs sigle iteration of a forward pass, orig edge_index
         # obtain node embeddings
-        x = self.conv1(x, edge)
+        x = self.conv1(x, edge_index)
         x = x.relu()  # relu for non-linearity
-        x = self.conv2(x, edge)
+        x = self.conv2(x, edge_index)
         x = x.relu()
-        x = self.conv3(x, edge)
+        x = self.conv3(x, edge_index)
 
         # readout layer
         # what is batch parameter? appears only in testing i think
