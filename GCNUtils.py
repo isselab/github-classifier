@@ -14,7 +14,6 @@ def normalize_matrix(matrix):
         normalized_matrix = matrix/norm
         return normalized_matrix
 
-'''maybe/preferably call normalize matrix in prepare input data'''
 
 '''i dont think this is required shape after all??!!'''
 def prepare_input(node_tensor, edge_tensor, batch_size, hidden_channels):

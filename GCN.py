@@ -4,7 +4,8 @@ from torch_geometric.nn import ChebConv #im not using my gcnlayer.py right now
 from torch_geometric.nn import global_mean_pool
 import torch
 
-'''class GCN defines the architecture of the graph convolutional network'''
+'''class GCN defines the architecture of the graph convolutional network,
+what is good value for K??'''
 class GCN(torch.nn.Module):
     def __init__(self, num_node_features, num_classes, hidden_channels, K): #hidden channels are filters/number(/dimension) of weight tensors?
         super(GCN, self).__init__()
@@ -34,6 +35,7 @@ class GCN(torch.nn.Module):
         # apply a final classifier
         # dropout for regularization
         x = F.dropout(x, p=0.5, training=self.training)
-        x = self.lin(x) #maybe softmax instead?
+        #x = self.lin(x) #maybe softmax instead?
+        x = F.log_softmax(x, dim=1)
 
         return x
