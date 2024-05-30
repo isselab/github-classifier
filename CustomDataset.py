@@ -47,10 +47,14 @@ class RepositoryDataset(Dataset):
         return size
 
     # fetches pair (sample, label) from the dataset at index position, indexing starts at 0
+    # returns only graph in the dataset at index position, when dataset is not used for training and has no labels
     def __getitem__(self, index):
         graph = self.graph_list[index]
-        label = self.graph_labels[index]
-        return graph, label
+        if hasattr(self, 'graph_labels'):
+            label = self.graph_labels[index]
+            return graph, label
+        else:
+            return graph
 
     def sort_labels(self):
         sort = []
@@ -61,7 +65,7 @@ class RepositoryDataset(Dataset):
                     sort.append(label)
         sorted_labels = torch.LongTensor(np.array(sort))
         return sorted_labels
-
+    
     '''takes two folders as input, 
        load labeled repository from excel/ods file,
         requirements for format: no empty rows in between and header names for columns'''
@@ -92,9 +96,3 @@ class RepositoryDataset(Dataset):
             new_resource_nodes.write("%s" % label)
             new_resource_nodes.write("\n")
         new_resource_nodes.close()
-
-    # normalize to avoid bias, leave out for now
-    def normalize_matrix(matrix):
-        norm = np.linalg.norm(matrix)
-        normalized_matrix = matrix/norm
-        return normalized_matrix

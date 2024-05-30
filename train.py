@@ -3,12 +3,17 @@ from PipelineUtils import prepare_dataset
 from torch.utils.data import random_split
 from GCN import GCN
 import torch
-from GCNUtils import prepare_input_data
+from GCNUtils import prepare_input_data, normalize_matrix
 #import torch.nn.functional as F
+
+'''do not forget to save trained model in the end!!!'''
 
 #repository_directory = 'D:/dataset_repos'  # input repositories
 output_directory = 'D:/output'  
 labels = '../random_sample_icse_CO.xls' # labeled repositories for the training dataset
+
+batch_size = 1
+hidden_channels = 16
 
 # create the graph dataset of the repositories
 #try:
@@ -42,11 +47,16 @@ edges = trainset[0][0][1]
 print(f'{nodes.size()}, dimension 0: {nodes.size(dim=0)}, dimension 1: {nodes.size(dim=1)}')
 print(f'{edges.size()}, dimension 0: {edges.size(dim=0)}, dimension 1: {edges.size(dim=1)}')
 
-permuted_edges = prepare_input_data(edges)
+norm_nodes = normalize_matrix(nodes)
+print(norm_nodes)
+reshaped_nodes, permuted_edges = prepare_input_data(norm_nodes, edges, batch_size, 1) #output has shape [batch_size, 2, E, hidden_channels]
 
+print(f'{reshaped_nodes.size()}, dimension 0: {reshaped_nodes.size(dim=0)}, dimension 1: {reshaped_nodes.size(dim=1)}')
 print(f'{permuted_edges.size()}, dimension 0: {permuted_edges.size(dim=0)}, dimension 1: {permuted_edges.size(dim=1)}')
+#print(f'{re_edges.size()}, dimension 0: {re_edges.size(dim=0)}, dimension 1: {re_edges.size(dim=1)}')
+print(permuted_edges)
 
-model = GCN(num_node_features=dataset.num_node_features, num_classes= dataset.num_classes, hidden_channels=1)
+model = GCN(dataset.num_node_features, dataset.num_classes, hidden_channels)
 
 optimizer = torch.optim.Adam(model.parameters(), lr=0.001)
 criterion = torch.nn.CrossEntropyLoss()
@@ -60,7 +70,7 @@ def train():
         #compute accuracy
         #loss_train.backward() #backward propagation to update weights? do this for entire batch for performance i think
         #optimizer.step()
-    output, nb_classes = model(nodes, permuted_edges)
+    output, nb_classes = model(reshaped_nodes, permuted_edges)
     loss_train = criterion(output, trainset[0][1])
     loss_train.backwards()
     optimizer.step()
