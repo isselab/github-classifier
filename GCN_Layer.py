@@ -3,8 +3,9 @@ import torch
 from torch.nn.parameter import Parameter
 import math
 import torch.nn as nn
+from torch_geometric.nn.conv import MessagePassing
 
-class ChebConv(torch.nn.Module):
+class ChebConv(MessagePassing):
     def __init__(self, in_features, out_features, bias=True): #out_features: size of each output sample
         super(ChebConv, self).__init__()
         self.in_features = in_features

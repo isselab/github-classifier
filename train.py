@@ -47,16 +47,16 @@ edges = trainset[0][0][1]
 print(f'{nodes.size()}, dimension 0: {nodes.size(dim=0)}, dimension 1: {nodes.size(dim=1)}')
 print(f'{edges.size()}, dimension 0: {edges.size(dim=0)}, dimension 1: {edges.size(dim=1)}')
 
-norm_nodes = normalize_matrix(nodes)
-print(norm_nodes)
-reshaped_nodes, permuted_edges = prepare_input_data(norm_nodes, edges, batch_size, 1) #output has shape [batch_size, 2, E, hidden_channels]
 
-print(f'{reshaped_nodes.size()}, dimension 0: {reshaped_nodes.size(dim=0)}, dimension 1: {reshaped_nodes.size(dim=1)}')
+'''wir kriege ich das in verbindung mit dem trainset?'''
+normalized_nodes, permuted_edges = prepare_input_data(nodes, edges) 
+
+
 print(f'{permuted_edges.size()}, dimension 0: {permuted_edges.size(dim=0)}, dimension 1: {permuted_edges.size(dim=1)}')
 #print(f'{re_edges.size()}, dimension 0: {re_edges.size(dim=0)}, dimension 1: {re_edges.size(dim=1)}')
 print(permuted_edges)
 
-model = GCN(dataset.num_node_features, dataset.num_classes, hidden_channels)
+model = GCN(dataset.num_node_features, dataset.num_classes, hidden_channels, 6)
 
 optimizer = torch.optim.Adam(model.parameters(), lr=0.001)
 criterion = torch.nn.CrossEntropyLoss()
@@ -64,13 +64,20 @@ criterion = torch.nn.CrossEntropyLoss()
 def train():
     model.train()
     optimizer.zero_grad()
-    #for graph in trainset:
-        #output = model(graph[0][0], graph[0][1]) #graph[0][0] is node feature tensor, graph[0][1] is edge tensor
-        #loss_train = criterion(output, graph[1]) #graph[1] is label
+    #for graph in trainset: 
+       # output = model(graph[0][0], graph[0][1]) #graph[0][0] is node feature tensor, graph[0][1] is edge tensor
+       # loss_train = criterion(output, graph[1]) #graph[1] is label
         #compute accuracy
         #loss_train.backward() #backward propagation to update weights? do this for entire batch for performance i think
-        #optimizer.step()
-    output, nb_classes = model(reshaped_nodes, permuted_edges)
+       # optimizer.step()
+    #for graph in trainset:
+        #norm_nodes, perm_edges = prepare_input_data(graph[0][0], graph[0][1])
+        #output = model(norm_nodes, perm_edges)
+        #loss_train = criterion(output, graph[1])
+        #compute accuracy
+       # loss_train.backwards()
+       # optimizer.step()
+    output = model(normalized_nodes, permuted_edges)
     loss_train = criterion(output, trainset[0][1])
     loss_train.backwards()
     optimizer.step()
