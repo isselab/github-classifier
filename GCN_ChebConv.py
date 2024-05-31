@@ -20,17 +20,16 @@ class GCN(torch.nn.Module):
     '''add self-loop to edge info? keeps appearing in tutorials
        x=[N, 1] N=number of nodes, x is feature vector
        edge_index=[2, E] E=number of edges, edge_index is adjacency list'''
-    def forward(self, x, edge_index):  # runs sigle iteration of a forward pass
+    def forward(self, x, edge_index, batch):  # runs sigle iteration of a forward pass
         # obtain node embeddings
         x = self.conv1(x, edge_index)
-        x = F.relu(x)  # relu for non-linearity
+        x = x.relu()  # relu for non-linearity
         x = self.conv2(x, edge_index)
-        x = F.relu(x)
+        x = x.relu()
         x = self.conv3(x, edge_index)
 
         # readout layer
-        # what is batch parameter? appears only in testing i think
-        #x = global_mean_pool(x, batch)  # [batch_size, hidden_channels]
+        x = global_mean_pool(x, batch)  # [batch_size, hidden_channels]
 
         # apply a final classifier
         # dropout for regularization

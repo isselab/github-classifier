@@ -2,13 +2,14 @@ from CustomDataset import RepositoryDataset
 from PipelineUtils import prepare_dataset
 from torch.utils.data import random_split
 from torch_geometric.loader import DataLoader
-from GCN import GCN
+#from GCN import GCN
+from GCN_ChebConv import GCN
 import torch
 
-#repository_directory = 'D:/dataset_repos'  # input repositories
-#output_directory = 'D:/output'  
+repository_directory = 'D:/dataset_repos'  # input repositories
 output_directory = 'D:/tool_output'
 labels = '../random_sample_icse_CO.xls' # labeled repositories for the training dataset
+n_epoch = 30
 
 # create the graph dataset of the repositories
 #try:
@@ -26,31 +27,16 @@ except Exception as e:
 
 # split into train and testset, this is for training the tool, not using finished tool
 trainset, testset = random_split(dataset, [0.7, 0.3])
-print(len(trainset), len(testset))
+print(f'size of train dataset: {len(trainset)}, test dataset: {len(testset)}')
 
-trainloader = DataLoader(trainset, batch_size=16, shuffle=True)
+trainloader = DataLoader(trainset, batch_size=32, shuffle=True)
 testloader = DataLoader(testset, batch_size=1, shuffle=False)
-print(f'number of batches: {len(trainloader)}, {len(testloader)}')
+print(f'number of batches in train dataset: {len(trainloader)}, test dataset: {len(testloader)}')
 
-for step, data in enumerate(trainloader):
-    print(f'Step {step + 1}:')
-    print('=======')
-    print(f'Number of graphs in the current batch: {data.num_graphs}')
-    print(data)
-    print()
-    print(len(data.x))
-
-model = GCN(dataset.num_node_features, dataset.num_classes, hidden_channels=64)
+model = GCN(dataset.num_node_features, dataset.num_classes, hidden_channels=64, K=6) #in paper K=10
 
 optimizer = torch.optim.Adam(model.parameters(), lr=0.001)
 criterion = torch.nn.CrossEntropyLoss()
-
-'''accuracy func not used right now, maybe never'''
-def accuracy(output, labels):
-    preds = output.max(1)[1].type_as(labels)
-    correct = preds.eq(labels).double()
-    correct = correct.sum()
-    return correct / len(labels)
 
 def train():
     model.train()
@@ -58,7 +44,6 @@ def train():
     for graph in trainloader: 
         output = model(graph.x, graph.edge_index, graph.batch)
         loss_train = criterion(output, graph.y) #graph.y is label
-        #acc_train = accuracy(output, graph.y)
         loss_train.backward() #backward propagation to update weights? do this for entire batch for performance i think
         optimizer.step()
         optimizer.zero_grad()
@@ -72,16 +57,17 @@ def test(loader):
         loss = criterion(output, graph.y)
         loss_test += loss.item()
         pred = output.argmax(dim=1)
-        #correct = accuracy(output, graph.y)
         correct += int((pred == graph.y).sum())
     return correct/len(loader.dataset), loss_test/len(loader.dataset)
 
-for epoch in range(1,20):
+for epoch in range(1, n_epoch):
+    print(f'Epoch {epoch}')
     train()
-    train_acc, train_loss = test(trainloader) #this cause issues with shape/dimension
+    train_acc, train_loss = test(trainloader)
     test_acc, test_loss = test(testloader)
     print(f'training acc: {train_acc}, loss: {train_loss}')
     print(f'testing acc: {test_acc}, loss: {test_loss}')
+    print('==============================================')
 
 #save trained model in file
 torch.save(model, 'graph_classification_model.pt')
