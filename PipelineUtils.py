@@ -14,8 +14,8 @@ def create_output_folders(directory):
         os.makedirs(f'{directory}/xmi_files')
     if not os.path.exists(f'{directory}/csv_files'):
         os.makedirs(f'{directory}/csv_files')
-    if not os.path.exists(f'{directory}/labeled_repositories'):
-        os.makedirs(f'{directory}/labeled_repositories')
+    #if not os.path.exists(f'{directory}/labeled_repositories'):
+       # os.makedirs(f'{directory}/labeled_repositories')
 
 
 def download_repositories(repository_directory, repository_list):
