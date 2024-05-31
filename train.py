@@ -1,6 +1,8 @@
 from CustomDataset import RepositoryDataset
 from PipelineUtils import prepare_dataset
 from torch.utils.data import random_split
+from torch_geometric.loader import DataLoader
+from torch_geometric.data import Data
 from GCN import GCN
 import torch
 from GCNUtils import prepare_input_data, normalize_matrix
@@ -9,8 +11,8 @@ from GCNUtils import prepare_input_data, normalize_matrix
 '''do not forget to save trained model in the end!!!'''
 
 #repository_directory = 'D:/dataset_repos'  # input repositories
-output_directory = 'D:/output'  
-#output_directory = 'D:/tool_output'
+#output_directory = 'D:/output'  
+output_directory = 'D:/tool_output'
 labels = '../random_sample_icse_CO.xls' # labeled repositories for the training dataset
 
 batch_size = 1
@@ -22,13 +24,13 @@ hidden_channels = 16
 #except Exception as e:
    # print(e)
 
-print('---convert dataset labels for training---')
-try:
-    '''labeled repositories should have column headers 'html_url' and 'type', and no empty lines in the columns'''
-    RepositoryDataset.convert_labeled_graphs(labels, f'{output_directory}/csv_files')
-except Exception as e:
-    print(e)
-    print('There is a problem with the labeled dataset. Check format in excel file. Labeled repositories should have column headers html_url and type, and no empty lines in the columns!')
+#print('---convert dataset labels for training---')
+#try:
+   # '''labeled repositories should have column headers 'html_url' and 'type', and no empty lines in the columns'''
+   # RepositoryDataset.convert_labeled_graphs(labels, f'{output_directory}/csv_files')
+#except Exception as e:
+   # print(e)
+   # print('There is a problem with the labeled dataset. Check format in excel file. Labeled repositories should have column headers html_url and type, and no empty lines in the columns!')
 
 print('--------------load dataset---------------')
 
@@ -42,24 +44,36 @@ except Exception as e:
 trainset, testset = random_split(dataset, [0.7, 0.3])
 print(len(trainset), len(testset))
 
+trainloader = DataLoader(trainset, batch_size=64, shuffle=True)
+testloader = DataLoader(testset, batch_size=1, shuffle=False)
+print(len(trainloader), len(testloader))
+
+for step, data in enumerate(trainloader):
+    print(f'Step {step + 1}:')
+    print('=======')
+   # print(f'Number of graphs in the current batch: {data.num_graphs}')
+    print(data)
+    print()
+    print(len(data.x))
+
 '''i need to implement shuffling and iterating in batches over training set??'''
-nodes = trainset[0][0][0]
-edges = trainset[0][0][1]
+#nodes = trainset[0][0][0]
+#edges = trainset[0][0][1]
 #print(f'{nodes.size()}, dimension 0: {nodes.size(dim=0)}, dimension 1: {nodes.size(dim=1)}')
 #print(f'{edges.size()}, dimension 0: {edges.size(dim=0)}, dimension 1: {edges.size(dim=1)}')
 
 
 '''wir kriege ich das in verbindung mit dem trainset? ---> in loop '''
-normalized_nodes, permuted_edges = prepare_input_data(nodes, edges) 
+#normalized_nodes, permuted_edges = prepare_input_data(nodes, edges) 
 
 
-print(f'{permuted_edges.size()}, dimension 0: {permuted_edges.size(dim=0)}, dimension 1: {permuted_edges.size(dim=1)}')
+#print(f'{permuted_edges.size()}, dimension 0: {permuted_edges.size(dim=0)}, dimension 1: {permuted_edges.size(dim=1)}')
 
-print(permuted_edges)
+#print(permuted_edges)
 
-model = GCN(dataset.num_node_features, dataset.num_classes, hidden_channels, 6)
+#model = GCN(dataset.num_node_features, dataset.num_classes, hidden_channels, 6)
 
-optimizer = torch.optim.Adam(model.parameters(), lr=0.001)
+#optimizer = torch.optim.Adam(model.parameters(), lr=0.001)
 criterion = torch.nn.CrossEntropyLoss()
 
 def train():
@@ -90,5 +104,5 @@ def test():
         loss = criterion(output, graph[1])
         #compute accuracy
 
-for epoch in range(1,5):
-    train()
+#for epoch in range(1,5):
+    #train()
