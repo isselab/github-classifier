@@ -25,9 +25,7 @@ class ProjectEcoreGraph:
         self.classes_without_module = []
         self.method_list = []  # entries [method_node, name, module_node]
         self.call_list = []
-
-        #to search for missing meth defs in classes, that are not appended to a module for some reason
-        self.check_list = [] # entries [class_node, method_def_node, method_name] #right now only need class node
+        self.check_list = [] # entries: class_node
 
         python_files = [os.path.join(root, file) for root, _, files in os.walk(
             self.root_directory) for file in files if file.endswith('.py')]
@@ -43,9 +41,9 @@ class ProjectEcoreGraph:
                     continue #skip file
 
         self.append_modules()
-        
         self.search_meth_defs()
         self.check_missing_calls()
+
         if write_in_file is True:
             self.write_xmi(resource_set, output_directory, repository)
         print(f'Number of files skipped: {skipped_files}')
@@ -165,30 +163,27 @@ class ProjectEcoreGraph:
     those not found need to be appended to a module, otherwise the meth defs are missing'''
     def search_meth_defs(self):
         classes_found = []
-        for item in self.check_list:
-            class_node = item[0]
+        for class_node in self.check_list:
             for mod in self.graph.modules:
                 if hasattr(mod, 'contains'):
                     for obj in mod.contains:
                         if obj.eClass.name == self.Types.CLASS.value: 
                             if obj.tName == class_node.tName:
-                                classes_found.append(item)
+                                classes_found.append(class_node)
 
         # remove already appended classes from check_list
         for cl in classes_found:
-            cl_name = cl[0].tName
-            for i in self.check_list:
-                name = i[0].tName
-                if cl_name == name:
-                    self.check_list.remove(i)
+            for item in self.check_list:
+                if cl.tName == item.tName:
+                    self.check_list.remove(item)
 
         if len(self.check_list) > 0:
-            module_node = self.create_ecore_instance(self.Types.MODULE) #maybe i need a package for this also
+            module_node = self.create_ecore_instance(self.Types.MODULE)
             module_node.location = 'ImportedClasses' #actually base or parent classes of other classes that are inside modules
             self.graph.modules.append(module_node)
             for obj in self.check_list:
-                module_node.contains.append(obj[0])
-                ref, ty = self.get_reference_by_name(obj[0].tName)
+                module_node.contains.append(obj)
+                ref, ty = self.get_reference_by_name(obj.tName)
                 if ref is not None:
                     imported = ref.split('.')
                     del imported[-1] #delete name of the class
@@ -197,13 +192,7 @@ class ProjectEcoreGraph:
                             if pack[1] == im:
                                 for m in self.module_list:
                                     if m[1]== imported[-1]:
-                                        m[0].contains.append(obj[0])
-                #if ref is None:
-                   # if hasattr(obj[0], 'parentClasses'):
-                       # for parent in obj[0].parentClasses:
-                            #parent_module =self.get_module_of_class(parent.tName, obj[0].tName)
-                            #if parent_module is not None:
-                               # parent_module.contains.append(obj[0])
+                                        m[0].contains.append(obj)
 
     def get_epackage(self):
         return self.epackage
@@ -254,7 +243,7 @@ class ProjectEcoreGraph:
         for class_object in self.classes_without_module:
             for index, path_part in enumerate(path_split):
                 if class_object.tName == path_part:
-                    self.current_module.contains.append(class_object) #added this to try get better performance
+                    self.current_module.contains.append(class_object)
                     if index == len(path_split) - 1:
                         for child in class_object.childClasses: 
                             self.current_module.contains.append(child)
@@ -396,7 +385,7 @@ class ProjectEcoreGraph:
             if instance[1] == class_name:
                 self.instances.remove(instance)
     
-    #checks if TMethodDefinition object in class already exists
+    '''checks if TMethodDefinition object in class already exists'''
     def get_method_def_in_class(self, name, class_node):
         for method_def in class_node.defines:
             if method_def.signature.method.tName == name:
@@ -539,7 +528,7 @@ class ASTVisitor(ast.NodeVisitor):
                     self.graph_class.create_method_signature(method_node, method_name, item.args.args)
                     class_node.defines.append(method_node)
                     #to search for missing meth defs later
-                    self.graph_class.check_list.append([class_node, method_node, method_name])
+                    self.graph_class.check_list.append(class_node)
         self.generic_visit(node)
 
     def visit_FunctionDef(self, node):

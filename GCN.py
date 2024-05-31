@@ -4,8 +4,7 @@ from torch_geometric.nn import GCNConv
 from torch_geometric.nn import global_mean_pool
 import torch
 
-'''class GCN defines the architecture of the graph convolutional network,
-what is good value for K??'''
+'''class GCN defines the architecture of the graph convolutional network'''
 class GCN(torch.nn.Module):
     def __init__(self, num_node_features, num_classes, hidden_channels): #hidden channels are filters/number(/dimension) of weight tensors?
         super(GCN, self).__init__()

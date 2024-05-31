@@ -78,7 +78,7 @@ class RepositoryDataset(Dataset):
         y = torch.LongTensor(np.array(sort))
         return y
     
-    '''this function takes two directory paths as input and converts the labeled dataset into 
+    '''takes two directory paths as input and converts the labeled dataset into 
         a csv file, it loads the dataset from excel/ods file,
         requirements for format: no empty rows in between and header names for columns'''
     def convert_labeled_graphs(self, labels, directory):

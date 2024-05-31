@@ -108,8 +108,7 @@ class EcoreToMatrixConverter:
                             next_param_counter = param_counter+1
                             next_param = str(next_param_counter)
                             next_param_name = node_name + next_param
-                            self.node_matrix.append(
-                                self.NodeTypes.PARAMETER.value)
+                            self.node_matrix.append(self.NodeTypes.PARAMETER.value)
                             self.node_dict[self.node_count] = [self.NodeTypes.PARAMETER.value, param_name, self.NodeTypes.METHOD_SIGNATURE.value, signature_name, 'Next', next_param_name]
                             self.node_count += 1
 
@@ -138,7 +137,6 @@ class EcoreToMatrixConverter:
 
     '''has only one attribute childclasses checking recursively will result 
         in potential endless loop, without these child classes existing in the xmi file'''
-
     def convert_childClasses(self, tclass):
         for child in tclass.childClasses:
             self.node_matrix.append(self.NodeTypes.CLASS.value)
@@ -179,7 +177,7 @@ class EcoreToMatrixConverter:
             self.node_dict[self.node_count] = [self.NodeTypes.CALL.value, current_call, 'Source', call_source, 'Target', target_name]
             self.node_count += 1
 
-    '''this function checks if a node already exists by comparing node type and name'''
+    '''checks if a node already exists by comparing node type and name'''
     def get_node(self, node_name, type):
         for current_node in self.node_dict:
             node = self.node_dict[current_node]
@@ -205,11 +203,11 @@ class EcoreToMatrixConverter:
 
             # set edges between packages and subpackages
             if current_node[0] == self.NodeTypes.PACKAGE.value:
-                if len(current_node) == 4:  # has subpackage
+                if len(current_node) == 4:
                     find_key = self.find_key_of_connected_node(self.NodeTypes.PACKAGE.value, current_node)  # search for key of the parent package
                     self.adjacency_list.append([find_key, keys])
 
-            # set edges between Modules and Packages
+            # set edges between modules and packages
             if current_node[0] == self.NodeTypes.MODULE.value:
                 if len(current_node) == 4:
                     if current_node[2] == self.NodeTypes.PACKAGE.value:
@@ -226,7 +224,7 @@ class EcoreToMatrixConverter:
                         self.adjacency_list.append([find_key, keys])
                     if current_node[2] == self.NodeTypes.CLASS.value:
                         find_key = self.find_key_of_connected_node(self.NodeTypes.CLASS.value, current_node)
-                        # edge from TClass to child class
+                        # edge from class to child class
                         self.adjacency_list.append([find_key, keys])
 
             # set edges between classes/modules and method definitions
@@ -248,7 +246,7 @@ class EcoreToMatrixConverter:
                 method_name = current_node[1]
                 method_name += '_definition'
                 find_key = self.find_connected_node(self.NodeTypes.METHOD_DEFINITION.value, method_name)
-                # edge from TMethod to TMethodDef object!
+                # edge from TMethod to TMethodDef object
                 self.adjacency_list.append([keys, find_key])
 
             # set edges for parameters
@@ -256,7 +254,7 @@ class EcoreToMatrixConverter:
                 find_key = self.find_key_of_connected_node(self.NodeTypes.METHOD_SIGNATURE.value, current_node)
                 # edge from TMethodSignature to TParameter
                 self.adjacency_list.append([find_key, keys])
-                if len(current_node) == 6:  # function has multiple parameters
+                if len(current_node) == 6:
                     next_parameter_name = current_node[5]
                     find_key = self.find_connected_node(self.NodeTypes.PARAMETER.value, next_parameter_name)
                     # edges between next/previous parameters of one function
@@ -269,7 +267,6 @@ class EcoreToMatrixConverter:
                 # edge TMethDef to TCall, 'accessing'
                 self.adjacency_list.append([find_key, keys])
                 if len(current_node) == 6:
-                    # method name that's being called
                     target_name = current_node[5]
                     target_name += '_definition'
                     find_key = self.find_connected_node(self.NodeTypes.METHOD_DEFINITION.value, target_name)
@@ -299,13 +296,9 @@ class EcoreToMatrixConverter:
         new_resource_nodes = open(f"{output_folder}/{output_name}_nodefeatures.csv", "w+")
         new_resource_edges = open(f"{output_folder}/{output_name}_A.csv", "w+")
 
-        #node_counter = 0 #added this to get 2 dim vector for gcn, test, bringt nix falsche dim
         for node in self.encoded_node_matrix:
-            #new_resource_nodes.write("%s, " % node_counter)
             new_resource_nodes.write("%s" % node)
-            # write next slice (node) in new line
             new_resource_nodes.write("\n")
-            #node_counter += 1
 
         # edge is array with two entries [node_id, node_id]
         for edge in self.adjacency_list:
