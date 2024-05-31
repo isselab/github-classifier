@@ -54,7 +54,7 @@ class RepositoryDataset(Dataset):
             try:
                 if f'{graph_name}_nodefeatures' in graph:
                     node_features = pd.read_csv(f'{self.directory}/{graph}', header=None)  # load csv file
-                    x = torch.Tensor(np.array(node_features))  # convert DataFrame object
+                    x = torch.LongTensor(np.array(node_features))  # convert DataFrame object
                     self.x = self.normalize_matrix(x)
                 if f'{graph_name}_A' in graph:
                     adjacency = pd.read_csv(f'{self.directory}/{graph}', header=None)
@@ -75,7 +75,7 @@ class RepositoryDataset(Dataset):
                 if item == name:
                     label = self.gr_label[i]
                     sort.append(label)
-        y = torch.Tensor(np.array(sort))
+        y = torch.LongTensor(np.array(sort))
         return y
     
     '''this function takes two directory paths as input and converts the labeled dataset into 

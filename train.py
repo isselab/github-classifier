@@ -4,16 +4,11 @@ from torch.utils.data import random_split
 from torch_geometric.loader import DataLoader
 from GCN import GCN
 import torch
-#import torch.nn.functional as F
-
-'''do not forget to save trained model in the end!!!'''
 
 #repository_directory = 'D:/dataset_repos'  # input repositories
 #output_directory = 'D:/output'  
 output_directory = 'D:/tool_output'
 labels = '../random_sample_icse_CO.xls' # labeled repositories for the training dataset
-
-hidden_channels = 16
 
 # create the graph dataset of the repositories
 #try:
@@ -45,38 +40,48 @@ for step, data in enumerate(trainloader):
     print()
     print(len(data.x))
 
-#model = GCN(dataset.num_node_features, dataset.num_classes, hidden_channels, 6)
+model = GCN(dataset.num_node_features, dataset.num_classes, hidden_channels=64)
 
-#optimizer = torch.optim.Adam(model.parameters(), lr=0.001)
+optimizer = torch.optim.Adam(model.parameters(), lr=0.001)
 criterion = torch.nn.CrossEntropyLoss()
+
+'''accuracy func not used right now, maybe never'''
+def accuracy(output, labels):
+    preds = output.max(1)[1].type_as(labels)
+    correct = preds.eq(labels).double()
+    correct = correct.sum()
+    return correct / len(labels)
 
 def train():
     model.train()
-    optimizer.zero_grad()
-    #for graph in trainset: 
-       # output = model(graph[0][0], graph[0][1]) #graph[0][0] is node feature tensor, graph[0][1] is edge tensor
-       # loss_train = criterion(output, graph[1]) #graph[1] is label
-        #compute accuracy
-        #loss_train.backward() #backward propagation to update weights? do this for entire batch for performance i think
-       # optimizer.step()
-    #for graph in trainset:
-        #norm_nodes, perm_edges = prepare_input_data(graph[0][0], graph[0][1])
-        #output = model(norm_nodes, perm_edges)
-        #loss_train = criterion(output, graph[1])
-        #compute accuracy
-       # loss_train.backwards()
-       # optimizer.step()
-    output = model(normalized_nodes, permuted_edges)
-    loss_train = criterion(output, trainset[0][1])
-    loss_train.backwards()
-    optimizer.step()
+    
+    for graph in trainloader: 
+        output = model(graph.x, graph.edge_index, graph.batch)
+        loss_train = criterion(output, graph.y) #graph.y is label
+        #acc_train = accuracy(output, graph.y)
+        loss_train.backward() #backward propagation to update weights? do this for entire batch for performance i think
+        optimizer.step()
+        optimizer.zero_grad()
 
-def test():
+def test(loader):
     model.eval()
-    for graph in testset:
-        output = model(graph[0][0], graph[0][1])
-        loss = criterion(output, graph[1])
-        #compute accuracy
+    loss_test = 0
+    correct = 0
+    for graph in loader:
+        output = model(graph.x, graph.edge_index, graph.batch)
+        loss = criterion(output, graph.y)
+        loss_test += loss.item()
+        pred = output.argmax(dim=1)
+        #correct = accuracy(output, graph.y)
+        correct += int((pred == graph.y).sum())
+    return correct/len(loader.dataset), loss_test/len(loader.dataset)
 
-#for epoch in range(1,5):
-    #train()
+for epoch in range(1,20):
+    train()
+    train_acc, train_loss = test(trainloader) #this cause issues with shape/dimension
+    test_acc, test_loss = test(testloader)
+    print(f'training acc: {train_acc}, loss: {train_loss}')
+    print(f'testing acc: {test_acc}, loss: {test_loss}')
+
+#save trained model in file
+torch.save(model, 'graph_classification_model.pt')
