@@ -4,7 +4,6 @@ from torch.utils.data import random_split
 from torch_geometric.loader import DataLoader
 from GCN import GCN
 import torch
-from GCNUtils import prepare_input_data, normalize_matrix
 #import torch.nn.functional as F
 
 '''do not forget to save trained model in the end!!!'''
@@ -34,22 +33,17 @@ except Exception as e:
 trainset, testset = random_split(dataset, [0.7, 0.3])
 print(len(trainset), len(testset))
 
-for graph in trainset:
-    print(type(graph))
-
-trainloader = DataLoader(trainset, batch_size=64, shuffle=True)
+trainloader = DataLoader(trainset, batch_size=16, shuffle=True)
 testloader = DataLoader(testset, batch_size=1, shuffle=False)
-print(len(trainloader), len(testloader))
+print(f'number of batches: {len(trainloader)}, {len(testloader)}')
 
 for step, data in enumerate(trainloader):
     print(f'Step {step + 1}:')
     print('=======')
-   # print(f'Number of graphs in the current batch: {data.num_graphs}')
+    print(f'Number of graphs in the current batch: {data.num_graphs}')
     print(data)
     print()
     print(len(data.x))
-
-'''where do i normalize the node type matrix best??'''
 
 #model = GCN(dataset.num_node_features, dataset.num_classes, hidden_channels, 6)
 
