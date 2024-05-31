@@ -2,7 +2,6 @@ from CustomDataset import RepositoryDataset
 from PipelineUtils import prepare_dataset
 from torch.utils.data import random_split
 from torch_geometric.loader import DataLoader
-from torch_geometric.data import Data
 from GCN import GCN
 import torch
 from GCNUtils import prepare_input_data, normalize_matrix
@@ -15,7 +14,6 @@ from GCNUtils import prepare_input_data, normalize_matrix
 output_directory = 'D:/tool_output'
 labels = '../random_sample_icse_CO.xls' # labeled repositories for the training dataset
 
-batch_size = 1
 hidden_channels = 16
 
 # create the graph dataset of the repositories
@@ -24,18 +22,10 @@ hidden_channels = 16
 #except Exception as e:
    # print(e)
 
-#print('---convert dataset labels for training---')
-#try:
-   # '''labeled repositories should have column headers 'html_url' and 'type', and no empty lines in the columns'''
-   # RepositoryDataset.convert_labeled_graphs(labels, f'{output_directory}/csv_files')
-#except Exception as e:
-   # print(e)
-   # print('There is a problem with the labeled dataset. Check format in excel file. Labeled repositories should have column headers html_url and type, and no empty lines in the columns!')
-
 print('--------------load dataset---------------')
 
 try:
-    dataset = RepositoryDataset(f'{output_directory}/csv_files')
+    dataset = RepositoryDataset(f'{output_directory}/csv_files', labels)
 except Exception as e:
     print(e)
     print('Dataset cannot be loaded.')
@@ -43,6 +33,9 @@ except Exception as e:
 # split into train and testset, this is for training the tool, not using finished tool
 trainset, testset = random_split(dataset, [0.7, 0.3])
 print(len(trainset), len(testset))
+
+for graph in trainset:
+    print(type(graph))
 
 trainloader = DataLoader(trainset, batch_size=64, shuffle=True)
 testloader = DataLoader(testset, batch_size=1, shuffle=False)
@@ -56,20 +49,7 @@ for step, data in enumerate(trainloader):
     print()
     print(len(data.x))
 
-'''i need to implement shuffling and iterating in batches over training set??'''
-#nodes = trainset[0][0][0]
-#edges = trainset[0][0][1]
-#print(f'{nodes.size()}, dimension 0: {nodes.size(dim=0)}, dimension 1: {nodes.size(dim=1)}')
-#print(f'{edges.size()}, dimension 0: {edges.size(dim=0)}, dimension 1: {edges.size(dim=1)}')
-
-
-'''wir kriege ich das in verbindung mit dem trainset? ---> in loop '''
-#normalized_nodes, permuted_edges = prepare_input_data(nodes, edges) 
-
-
-#print(f'{permuted_edges.size()}, dimension 0: {permuted_edges.size(dim=0)}, dimension 1: {permuted_edges.size(dim=1)}')
-
-#print(permuted_edges)
+'''where do i normalize the node type matrix best??'''
 
 #model = GCN(dataset.num_node_features, dataset.num_classes, hidden_channels, 6)
 

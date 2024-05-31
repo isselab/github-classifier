@@ -27,6 +27,7 @@ print(f'Number of test graphs: {len(test_dataset)}')
 
 for graph in train_dataset:
     print(len(graph.x))
+    print(type(graph))
 
 train_loader = DataLoader(train_dataset, batch_size=64, shuffle=True)
 test_loader = DataLoader(test_dataset, batch_size=1, shuffle=False)

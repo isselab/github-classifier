@@ -1,5 +1,7 @@
 import numpy as np
 
+'''deprecated file!!!!!!!!!!!!'''
+
 '''i definitely need to permute the edges to fit the dimensions needed of the input, 
 not sure about four dim in general,
 found info only for 2d convolution'''
@@ -15,7 +17,7 @@ def normalize_matrix(matrix):
         return normalized_matrix
 
 
-'''i dont think this is required shape after all??!!'''
+'''i dont think this is required shape after all??!! this is bullsh*t'''
 def prepare_input(node_tensor, edge_tensor, batch_size, hidden_channels):
     N = len(node_tensor)
     reshaped_nodes = node_tensor.reshape([batch_size, N, 1, hidden_channels]) #nodes only have 1 feature (their type)
