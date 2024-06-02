@@ -9,7 +9,7 @@ import torch
 repository_directory = 'D:/dataset_repos'  # input repositories
 output_directory = 'D:/tool_output'
 labels = '../random_sample_icse_CO.xls' # labeled repositories for the training dataset
-n_epoch = 30
+n_epoch = 20
 
 # create the graph dataset of the repositories
 #try:
@@ -50,23 +50,21 @@ def train():
 
 def test(loader):
     model.eval()
-    loss_test = 0
+
     correct = 0
     for graph in loader:
         output = model(graph.x, graph.edge_index, graph.batch)
-        loss = criterion(output, graph.y)
-        loss_test += loss.item()
         pred = output.argmax(dim=1)
         correct += int((pred == graph.y).sum())
-    return correct/len(loader.dataset), loss_test/len(loader.dataset)
+    return correct/len(loader.dataset)
 
 for epoch in range(1, n_epoch):
     print(f'Epoch {epoch}')
     train()
-    train_acc, train_loss = test(trainloader)
-    test_acc, test_loss = test(testloader)
-    print(f'training acc: {train_acc}, loss: {train_loss}')
-    print(f'testing acc: {test_acc}, loss: {test_loss}')
+    train_acc = test(trainloader)
+    test_acc = test(testloader)
+    print(f'training acc: {train_acc}')
+    print(f'testing acc: {test_acc}')
     print('==============================================')
 
 #save trained model in file

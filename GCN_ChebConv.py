@@ -3,6 +3,7 @@ import torch.nn.functional as F
 from torch_geometric.nn import ChebConv 
 from torch_geometric.nn import global_mean_pool
 import torch
+import torch.nn as nn
 
 '''class GCN defines the architecture of the graph convolutional network'''
 class GCN(torch.nn.Module):
@@ -33,7 +34,6 @@ class GCN(torch.nn.Module):
         # apply a final classifier
         # dropout for regularization
         x = F.dropout(x, p=0.5, training=self.training)
-        #x = self.lin(x) #maybe softmax instead?
-        x = F.log_softmax(x, dim=1)
-
+        #x = F.log_softmax(x, dim=1)
+        x = self.lin(x)
         return x
