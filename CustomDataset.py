@@ -6,6 +6,7 @@ import torch
 import numpy as np
 from DefinedGraphClasses import graph_types
 from LabelEncoder import convert_labels
+from DataformatUtils import convert_edge_dim, convert_list_to_tensor
 
 class RepositoryDataset(Dataset):
     def __init__(self, directory, label_list=None):
@@ -54,12 +55,12 @@ class RepositoryDataset(Dataset):
             try:
                 if f'{graph_name}_nodefeatures' in graph:
                     node_features = pd.read_csv(f'{self.directory}/{graph}', header=None)  # load csv file
-                    x = torch.LongTensor(np.array(node_features))  # convert DataFrame object
+                    x = convert_list_to_tensor(node_features)
                     self.x = self.normalize_matrix(x)
                 if f'{graph_name}_A' in graph:
                     adjacency = pd.read_csv(f'{self.directory}/{graph}', header=None)
-                    edge_tensor = torch.LongTensor(np.array(adjacency))
-                    self.edge_index = self.convert_edge_dim(edge_tensor)
+                    edge_tensor = convert_list_to_tensor(adjacency)
+                    self.edge_index = convert_edge_dim(edge_tensor)
             except Exception as e:
                 print(e)
         graph = Data(x=self.x, edge_index=self.edge_index)
@@ -108,11 +109,6 @@ class RepositoryDataset(Dataset):
             new_resource_nodes.write("%s" % label)
             new_resource_nodes.write("\n")
         new_resource_nodes.close()
-
-    '''change the shape of the edge tensor to E=[2, number of edges]'''
-    def convert_edge_dim(self, edge_tensor):
-        edge_tensor = edge_tensor.permute(1,0)
-        return edge_tensor
     
     '''normalize to avoid bias with node types'''
     def normalize_matrix(self, matrix):

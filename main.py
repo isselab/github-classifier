@@ -2,34 +2,38 @@ from CustomDataset import RepositoryDataset
 from PipelineUtils import prepare_dataset
 import torch
 
+'''repository list is optional parameter, if you want to download the repositories automatically;
+    output_directory is required when more than one repository is going to be converted,
+    if there is only one repository the output of the converter is saved in return variables and can be
+    piped into the gcn as input without needing to load the data from files'''
+
 repository_list = '../random_sample_icse_CO.xls'
-repository_directory = 'D:/dataset_repos'
+repository_directory = 'D:/test_pipeline'
 output_directory = 'D:/tool_output'
 
 if __name__ == '__main__':
 
     try:
         # create the graph dataset of the repositories
-        '''repository list is optional parameter, if you want to download the repositories automatically;
-        output_directory is required when more than one repository is going to be converted,
-        if there is only one repository the output of the converter is saved in return variables and can be
-        piped into the gcn as input without needing to load the data from files'''
-        nodes, edges = prepare_dataset(repository_directory, output_directory)
+        nodes, edges = prepare_dataset(repository_directory)
+        #load trained graph convolutional network model
+        model = torch.load('graph_classification_model.pt')
+        print(model)
+        print(nodes, nodes.size())
+        print(edges, edges.size())
+        output = model(nodes, edges, 1) #complains about missing batch
+        print(output)
     except Exception as e:
         print(e)
-        print('There is a problem with the input directory.')
 
     print('----------------load dataset------------------')
     try:
-        dataset = RepositoryDataset(f'{output_directory}/csv_files')
+        #dataset = RepositoryDataset(f'{output_directory}/csv_files')
         print('Dataset size: ')
-        print(dataset.__len__())
+        #print(dataset.__len__())
         print('Number of classes: ')
-        print(dataset.num_classes)
+        #print(dataset.num_classes)
     except Exception as e:
         print(e)
         print('The dataset cannot be loaded.')
 
-#load trained graph convolutional network model
-model = torch.load('graph_classification_model.pt')
-print(model)

@@ -70,4 +70,4 @@ for epoch in range(1, n_epoch):
     print('==============================================')
 
 #save trained model in file
-torch.save(model, 'graph_classification_model.pt')
+torch.save(model, 'graph_classification_model.pt') #alt.: state dict

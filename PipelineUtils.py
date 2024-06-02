@@ -3,6 +3,7 @@ from pyecore.resources import ResourceSet, URI
 from ASTToEcoreConverter import ProjectEcoreGraph
 from EcoreToMatrixConverter import EcoreToMatrixConverter
 import pandas as pd
+from DataformatUtils import convert_edge_dim, convert_list_to_tensor
 
 '''in this file are the pipeline components put into reusable functions'''
 
@@ -14,9 +15,6 @@ def create_output_folders(directory):
         os.makedirs(f'{directory}/xmi_files')
     if not os.path.exists(f'{directory}/csv_files'):
         os.makedirs(f'{directory}/csv_files')
-    #if not os.path.exists(f'{directory}/labeled_repositories'):
-       # os.makedirs(f'{directory}/labeled_repositories')
-
 
 def download_repositories(repository_directory, repository_list):
     working_directory = os.getcwd()
@@ -38,7 +36,6 @@ def download_repositories(repository_directory, repository_list):
 
     # change working directory back to github-classifier, otherwise cannot load resources from there
     os.chdir(working_directory)
-
 
 def create_ecore_graphs(repository_directory, output_directory, write_in_file):
     repositories = os.listdir(repository_directory)
@@ -77,7 +74,6 @@ def create_ecore_graphs(repository_directory, output_directory, write_in_file):
     else:
         return None
 
-
 def create_matrix_structure(output_directory, write_in_file, ecore_graph=None):
     skip_xmi = 0
     if write_in_file is True:
@@ -112,8 +108,6 @@ def create_matrix_structure(output_directory, write_in_file, ecore_graph=None):
     else:
         return None, None
     
-
-
 def prepare_dataset(repository_directory, output_directory=None, repository_list=None):
     # clone repositories for the dataset
     if repository_list is not None:
@@ -136,5 +130,10 @@ def prepare_dataset(repository_directory, output_directory=None, repository_list
     print('---convert ecore graphs to matrix structure---')
     # load xmi instance and convert them to a matrix structure for the gcn
     node_features, adj_list = create_matrix_structure(output_directory, write_in_file, ecore_graph)
+
+    if node_features is not None and adj_list is not None:
+        node_features = convert_list_to_tensor(node_features)
+        adj_list = convert_list_to_tensor(adj_list)
+        adj_list = convert_edge_dim(adj_list)
 
     return node_features, adj_list
