@@ -6,6 +6,7 @@ from torch_geometric.loader import DataLoader
 from GCN_ChebConv import GCN
 import torch
 import mlflow
+import matplotlib.pylab as plt
 
 repository_directory = 'D:/dataset_repos'  # input repositories
 output_directory = 'D:/tool_output'
@@ -54,28 +55,37 @@ def train():
 
 def test(loader):
     model.eval()
-
+    loss_test = 0
     correct = 0
     for graph in loader:
         output = model(graph.x, graph.edge_index, graph.batch)
+        loss = criterion(output, graph.y)
+        loss_test += loss.item()
         pred = output.argmax(dim=1)
-        correct += int((pred == graph.y).sum())
-    return correct/len(loader.dataset)
+        correct += int((pred == graph.y).sum())       
+        
+    return correct/len(loader.dataset), loss_test/len(loader.dataset)
 
 with mlflow.start_run():
+    x_axis = []
+    y_axis = []
+    for epoch in range(1, n_epoch):
+        print(f'Epoch {epoch}')
+        train()
+        train_acc, train_loss = test(trainloader)
+        test_acc, test_loss = test(testloader)
 
-  for epoch in range(1, n_epoch):
-    print(f'Epoch {epoch}')
-    train()
-    train_acc = test(trainloader)
-    test_acc = test(testloader)
+        #mlflow.log_params(model.parameters())
+        mlflow.log_metric("accuracy", test_acc, step=epoch)
+        x_axis.append(epoch)
+        y_axis.append(test_acc)
 
-    #mlflow.log_params(model.parameters())
-    mlflow.log_metric("accuracy", test_acc, step=epoch)
+        print(f'training acc: {train_acc}, training loss: {train_loss}')
+        print(f'testing acc: {test_acc}, testing loss: {test_loss}')
+        print('==============================================')
 
-    print(f'training acc: {train_acc}')
-    print(f'testing acc: {test_acc}')
-    print('==============================================')
+    plt.plot(x_axis, y_axis)
+    plt.show()
 
 #save trained model in file
 torch.save(model, 'graph_classification_model.pt') #alt.: state dict
