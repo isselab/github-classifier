@@ -5,11 +5,12 @@ from torch_geometric.loader import DataLoader
 #from GCN import GCN
 from GCN_ChebConv import GCN
 import torch
+import mlflow
 
 repository_directory = 'D:/dataset_repos'  # input repositories
 output_directory = 'D:/tool_output'
 labels = '../random_sample_icse_CO.xls' # labeled repositories for the training dataset
-n_epoch = 20
+n_epoch = 5
 
 # create the graph dataset of the repositories
 #try:
@@ -26,12 +27,15 @@ except Exception as e:
     print('Dataset cannot be loaded.')
 
 # split into train and testset, this is for training the tool, not using finished tool
-trainset, testset = random_split(dataset, [0.7, 0.3])
+trainset, testset = random_split(dataset, [0.9, 0.1]) #more training data
 print(f'size of train dataset: {len(trainset)}, test dataset: {len(testset)}')
 
 trainloader = DataLoader(trainset, batch_size=32, shuffle=True)
 testloader = DataLoader(testset, batch_size=1, shuffle=False)
 print(f'number of batches in train dataset: {len(trainloader)}, test dataset: {len(testloader)}')
+
+#mlflow.autolog() #only added this for logging (and plotting)
+#exp_id = mlflow.create_experiment('Test')
 
 model = GCN(dataset.num_node_features, dataset.num_classes, hidden_channels=64, K=6) #in paper K=10
 
@@ -58,11 +62,17 @@ def test(loader):
         correct += int((pred == graph.y).sum())
     return correct/len(loader.dataset)
 
-for epoch in range(1, n_epoch):
+with mlflow.start_run():
+
+  for epoch in range(1, n_epoch):
     print(f'Epoch {epoch}')
     train()
     train_acc = test(trainloader)
     test_acc = test(testloader)
+
+    #mlflow.log_params(model.parameters())
+    mlflow.log_metric("accuracy", test_acc, step=epoch)
+
     print(f'training acc: {train_acc}')
     print(f'testing acc: {test_acc}')
     print('==============================================')
