@@ -9,14 +9,14 @@ import torch
 
 repository_list = '../random_sample_icse_CO.xls'
 repository_directory = 'D:/repos'
-repository_directory = 'D:/single'
+#repository_directory = 'D:/single'
 output_directory = 'D:/pool_test'
 
 if __name__ == '__main__':
 
     try:
         # create the graph dataset of the repositories
-        nodes, edges = prepare_dataset(repository_directory)
+        nodes, edges = prepare_dataset(repository_directory, output_directory)
         if nodes is not None and edges is not None:
             #load trained graph convolutional network model
             model = torch.load('graph_classification_model.pt')
