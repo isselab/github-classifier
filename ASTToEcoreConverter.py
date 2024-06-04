@@ -4,11 +4,11 @@ from enum import Enum
 from pyecore.resources import ResourceSet, URI
 
 class ProjectEcoreGraph:
-    def __init__(self, directory, resource_set: ResourceSet, output_directory, repository, write_in_file):
-        if directory is None or directory == '':
+    def __init__(self, resource_set: ResourceSet, output_directory, repository, write_in_file):
+        if repository is None or repository == '':
             raise ValueError('Directory is required')
 
-        self.root_directory = directory.replace('\\', '/')
+        self.root_directory = repository.replace('\\', '/')
 
         metamodel_resource = resource_set.get_resource(URI('Basic.ecore'))
 
@@ -447,7 +447,8 @@ class ProjectEcoreGraph:
         call.target = called_node
 
     def write_xmi(self, resource_set, output_directory, repository):
-        resource = resource_set.create_resource(URI(f'{output_directory}/xmi_files/{repository}.xmi'), use_uuid=True)
+        repository_name = repository.split('\\')[-1]
+        resource = resource_set.create_resource(URI(f'{output_directory}/xmi_files/{repository_name}.xmi'), use_uuid=True)
         resource.append(self.graph)
         resource.save()
 

@@ -37,43 +37,41 @@ def download_repositories(repository_directory, repository_list):
 
     # change working directory back to github-classifier, otherwise cannot load resources from there
     os.chdir(working_directory)
-
-def create_ecore_graphs(repository_directory, output_directory, write_in_file):
-    repositories = os.listdir(repository_directory)
+    
+def create_ecore_graphs(repository, output_directory, write_in_file):
     skip_counter = 0
     resource_set = ResourceSet()
-    for i, repository in enumerate(repositories):
-        print(f'Progress: {i}/{len(repositories)}')
-        current_directory = os.path.join(repository_directory, repository)
-        print(current_directory)
-        if os.path.isdir(current_directory):
-            try:
-                ecore_graph = ProjectEcoreGraph(current_directory, resource_set, output_directory, repository, write_in_file)
-            except Exception as e:
-                print(e)
-                if 'inconsistent use of tabs and spaces in indentation' in str(e):
-                    # format repository files using autopep8
-                    python_files = [os.path.join(root, file) for root, _, files in os.walk(
-                                    current_directory) for file in files if file.endswith('.py')]
-                    for file_path in python_files:
+    print(repository)
+    if os.path.isdir(repository):
+        try:
+            ecore_graph = ProjectEcoreGraph(resource_set, output_directory, repository, write_in_file)
+        except Exception as e:
+            print(e)
+            if 'inconsistent use of tabs and spaces in indentation' in str(e):
+                # format repository files using autopep8
+                python_files = [os.path.join(root, file) for root, _, files in os.walk(
+                                    repository) for file in files if file.endswith('.py')]
+                for file_path in python_files:
                         os.system(f'autopep8 --in-place {file_path}')
-                    try:
-                        ecore_graph = ProjectEcoreGraph(current_directory, resource_set, output_directory, repository, write_in_file)
-                    except Exception as e:
-                        print(e)
-                        print(f'Problem with repository {repository}. Skipping.')
-                        skip_counter += 1
-                else:
+                try:
+                    ecore_graph = ProjectEcoreGraph(resource_set, output_directory, repository, write_in_file)
+                except Exception as e:
+                    print(e)
                     print(f'Problem with repository {repository}. Skipping.')
                     skip_counter += 1
-        else:
-            skip_counter += 1
-    print('----------------------------------------------')
-    print(f'Skipped {skip_counter} of {len(repositories)}.')
+            else:
+                print(f'Problem with repository {repository}. Skipping.')
+                skip_counter += 1
+    else:
+        skip_counter += 1
     if write_in_file is False:
         return ecore_graph.get_graph()
     else:
         return None
+    
+def parallel_processing(repository_list):
+    pool = Pool(2)
+    pool.starmap(create_ecore_graphs, repository_list)
 
 def create_matrix_structure(output_directory, write_in_file, ecore_graph=None):
     skip_xmi = 0
@@ -123,11 +121,21 @@ def prepare_dataset(repository_directory, output_directory=None, repository_list
     # create output directory
     if write_in_file is True:
         create_output_folders(output_directory)
-    
+        #create pool for multiprocessing/parallelisation
+        repo_multiprocess = []
+        for repository in repositories:
+            current_directory = os.path.join(repository_directory, repository)
+            repo_multiprocess.append((current_directory, output_directory, write_in_file))
+
+    #print(repo_multiprocess)
     print('--convert repositories into ecore metamodels--')
     # convert repositories into ecore metamodels
-    ecore_graph = create_ecore_graphs(repository_directory, output_directory, write_in_file)
-
+    if write_in_file is True:
+        parallel_processing(repo_multiprocess)
+    else:
+        single_directory = os.path.join(repository_directory, repositories[0])
+        ecore_graph = create_ecore_graphs(single_directory, output_directory, write_in_file)
+    
     print('---convert ecore graphs to matrix structure---')
     # load xmi instance and convert them to a matrix structure for the gcn
     node_features, adj_list = create_matrix_structure(output_directory, write_in_file, ecore_graph)
