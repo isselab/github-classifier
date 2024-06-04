@@ -38,9 +38,8 @@ print(f'number of batches in train dataset: {len(trainloader)}, test dataset: {l
 #mlflow.autolog() #only added this for logging (and plotting)
 #exp_id = mlflow.create_experiment('Test')
 
-#device = torch.device('cuda' if torch.cuda.is_available() else 'cpu')
 device = 'cuda' if torch.cuda.is_available() else 'cpu'
-print(device)
+
 model = GCN(dataset.num_node_features, dataset.num_classes, hidden_channels=64, K=6) #in paper K=10
 
 if device == 'cuda':
@@ -83,8 +82,9 @@ def test(loader):
     return correct/len(loader.dataset), loss_test/len(loader.dataset)
 
 with mlflow.start_run():
-    x_axis = []
-    y_axis = []
+    plt_epoch = []
+    plt_test_acc = []
+    plt_test_loss = []
     for epoch in range(1, n_epoch):
         print(f'Epoch {epoch}')
         train()
@@ -93,14 +93,28 @@ with mlflow.start_run():
 
         #mlflow.log_params(model.parameters())
         mlflow.log_metric("accuracy", test_acc, step=epoch)
-        x_axis.append(epoch)
-        y_axis.append(test_acc)
+        plt_epoch.append(epoch)
+        plt_test_acc.append(test_acc)
+        plt_test_loss.append(test_loss)
 
         print(f'training acc: {train_acc}, training loss: {train_loss}')
         print(f'testing acc: {test_acc}, testing loss: {test_loss}')
         print('==============================================')
+    
+    #plot visualization of accuracy and loss from testing in figure
+    plt.figure(1)
 
-    plt.plot(x_axis, y_axis)
+    p1 = plt.subplot(2, 1, 1)
+    plt.plot(plt_epoch, plt_test_acc, 'b')
+    plt.setp(p1.get_xticklabels(), visible=False)
+    plt.ylabel('test accuracy')
+
+    p2 = plt.subplot(2, 1, 2, sharex=p1)
+    plt.plot(plt_epoch, plt_test_loss, 'r')
+    plt.setp(p2.get_xticklabels())
+    plt.xlabel('epoch')
+    plt.ylabel('test loss')
+
     plt.show()
 
 #save trained model in file

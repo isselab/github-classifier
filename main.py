@@ -14,6 +14,8 @@ output_directory = 'D:/pool_test'
 
 if __name__ == '__main__':
 
+    device = 'cuda' if torch.cuda.is_available() else 'cpu'
+
     try:
         # create the graph dataset of the repositories
         nodes, edges = prepare_dataset(repository_directory, output_directory)
@@ -23,6 +25,9 @@ if __name__ == '__main__':
             print(model)
             print(nodes, nodes.size())
             print(edges, edges.size())
+            #if device == 'cuda':
+               # nodes.to(device)
+                #edges.to(device)
             output = model(nodes, edges, 1) #complains about missing batch
             print(output)
     except Exception as e:
@@ -37,6 +42,9 @@ if __name__ == '__main__':
         print(dataset.num_classes)
         model = torch.load('graph_classification_model.pt')
         for graph in dataset:
+            #if device == 'cuda':
+                #graph.x.to(device)
+                #graph.edge_index.to(device)
             output = model(graph.x, graph.edge_index, 1) #how to save output? --> necessary to save it?
             print(output) #maybe new func to get graph name?
     except Exception as e:

@@ -41,7 +41,6 @@ def download_repositories(repository_directory, repository_list):
 def create_ecore_graphs(repository, output_directory, write_in_file):
     skip_counter = 0
     resource_set = ResourceSet()
-    print(repository)
     if os.path.isdir(repository):
         try:
             ecore_graph = ProjectEcoreGraph(resource_set, output_directory, repository, write_in_file)
@@ -69,15 +68,15 @@ def create_ecore_graphs(repository, output_directory, write_in_file):
     else:
         return None
 
-def create_matrix_structure(output_directory, xmi_file, write_in_file, ecore_graph=None):
+def create_matrix_structure(output_directory, write_in_file, xmi_file=None, ecore_graph=None):
     skip_xmi = 0
+    
     if write_in_file is True:
         rset = ResourceSet()
         resource = rset.get_resource(URI('Basic.ecore'))
         mm_root = resource.contents[0]
         rset.metamodel_registry[mm_root.nsURI] = mm_root
 
-        print(xmi_file)
         resource = rset.get_resource(URI(f'{output_directory}/xmi_files/{xmi_file}'))
         try:
             EcoreToMatrixConverter(resource, write_in_file, f'{output_directory}/csv_files')
@@ -138,10 +137,10 @@ def prepare_dataset(repository_directory, output_directory=None, repository_list
         list_xmi_files = os.listdir(f'{output_directory}/xmi_files')
         xmi_multiprocess = []
         for xmi_file in list_xmi_files:
-            xmi_multiprocess.append((output_directory, xmi_file, write_in_file))
+            xmi_multiprocess.append((output_directory, write_in_file, xmi_file))
         parallel_processing(create_matrix_structure, xmi_multiprocess)
     else:
-        node_features, adj_list = create_matrix_structure(output_directory, write_in_file, ecore_graph)
+        node_features, adj_list = create_matrix_structure(output_directory, write_in_file, None, ecore_graph)
 
     if node_features is not None and adj_list is not None:
         node_features = convert_list_to_tensor(node_features)

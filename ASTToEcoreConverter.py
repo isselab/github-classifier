@@ -46,7 +46,7 @@ class ProjectEcoreGraph:
 
         if write_in_file is True:
             self.write_xmi(resource_set, output_directory, repository)
-        print(f'Number of files skipped: {skipped_files}')
+        print(f'{repository}, Number of files skipped: {skipped_files}')
             
 
     def check_missing_calls(self):
