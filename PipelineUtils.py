@@ -85,7 +85,6 @@ def create_matrix_structure(output_directory, xmi_file, write_in_file, ecore_gra
             print(e)
             print(f'Problem with xmi file {xmi_file}. Skipping')
             skip_xmi += 1
-        print('----------------------------------------------')
     if write_in_file is False:
         try:
             matrix = EcoreToMatrixConverter(ecore_graph, write_in_file)
@@ -99,10 +98,13 @@ def create_matrix_structure(output_directory, xmi_file, write_in_file, ecore_gra
         return None, None
     
 def parallel_processing(func, repository_list):
-    pool = Pool() #number of processes returned by os.cpu_count()
+    pool = Pool() #number of processes: return of os.cpu_count()
     pool.starmap(func, repository_list)
     
 def prepare_dataset(repository_directory, output_directory=None, repository_list=None):
+    node_features = None
+    adj_list = None
+
     # clone repositories for the dataset
     if repository_list is not None:
         download_repositories(repository_directory, repository_list)
@@ -122,7 +124,6 @@ def prepare_dataset(repository_directory, output_directory=None, repository_list
             current_directory = os.path.join(repository_directory, repository)
             repo_multiprocess.append((current_directory, output_directory, write_in_file))
 
-    #print(repo_multiprocess)
     print('--convert repositories into ecore metamodels--')
     # convert repositories into ecore metamodels
     if write_in_file is True:
