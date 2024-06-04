@@ -38,7 +38,13 @@ print(f'number of batches in train dataset: {len(trainloader)}, test dataset: {l
 #mlflow.autolog() #only added this for logging (and plotting)
 #exp_id = mlflow.create_experiment('Test')
 
+#device = torch.device('cuda' if torch.cuda.is_available() else 'cpu')
+device = 'cuda' if torch.cuda.is_available() else 'cpu'
+print(device)
 model = GCN(dataset.num_node_features, dataset.num_classes, hidden_channels=64, K=6) #in paper K=10
+
+if device == 'cuda':
+    model = model.to(device)
 
 optimizer = torch.optim.Adam(model.parameters(), lr=0.001)
 criterion = torch.nn.CrossEntropyLoss()
@@ -47,6 +53,11 @@ def train():
     model.train()
     
     for graph in trainloader: 
+        if device == 'cuda':
+            graph.x = graph.x.to(device)
+            graph.edge_index = graph.edge_index.to(device)
+            graph.y = graph.y.to(device)
+            graph.batch = graph.batch.to(device)
         output = model(graph.x, graph.edge_index, graph.batch)
         loss_train = criterion(output, graph.y) #graph.y is label
         loss_train.backward() #backward propagation to update weights? do this for entire batch for performance i think
@@ -58,6 +69,11 @@ def test(loader):
     loss_test = 0
     correct = 0
     for graph in loader:
+        if device == 'cuda':
+            graph.x = graph.x.to(device)
+            graph.edge_index = graph.edge_index.to(device)
+            graph.y = graph.y.to(device)
+            graph.batch = graph.batch.to(device)
         output = model(graph.x, graph.edge_index, graph.batch)
         loss = criterion(output, graph.y)
         loss_test += loss.item()
