@@ -4,6 +4,7 @@ from ASTToEcoreConverter import ProjectEcoreGraph
 from EcoreToMatrixConverter import EcoreToMatrixConverter
 import pandas as pd
 from DataformatUtils import convert_edge_dim, convert_list_to_tensor
+from multiprocessing import Pool
 
 '''in this file are the pipeline components put into reusable functions'''
 
