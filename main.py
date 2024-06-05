@@ -11,6 +11,7 @@ repository_list = '../random_sample_icse_CO.xls'
 repository_directory = 'D:/repos'
 #repository_directory = 'D:/single'
 output_directory = 'D:/pool_test'
+path_to_model = 'graph_classification_model.pt'
 
 if __name__ == '__main__':
 
@@ -21,14 +22,15 @@ if __name__ == '__main__':
         nodes, edges = prepare_dataset(repository_directory, output_directory)
         if nodes is not None and edges is not None:
             #load trained graph convolutional network model
-            model = torch.load('graph_classification_model.pt')
+            model = torch.load(path_to_model)
+            model.eval() #in pytorch doc!!
             print(model)
             print(nodes, nodes.size())
             print(edges, edges.size())
             #if device == 'cuda':
                # nodes.to(device)
                 #edges.to(device)
-            output = model(nodes, edges, 1) #complains about missing batch
+            output = model(nodes, edges) #complains about missing batch?
             print(output)
     except Exception as e:
         print(e)
@@ -40,12 +42,13 @@ if __name__ == '__main__':
         print(dataset.__len__())
         print('Number of classes: ')
         print(dataset.num_classes)
-        model = torch.load('graph_classification_model.pt')
+        model = torch.load(path_to_model)
+        model.eval()
         for graph in dataset:
             #if device == 'cuda':
                 #graph.x.to(device)
                 #graph.edge_index.to(device)
-            output = model(graph.x, graph.edge_index, 1) #how to save output? --> necessary to save it?
+            output = model(graph.x, graph.edge_index) #how to save output? --> necessary to save it?
             print(output) #maybe new func to get graph name?
     except Exception as e:
         print(e)

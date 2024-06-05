@@ -2,8 +2,8 @@ from CustomDataset import RepositoryDataset
 from PipelineUtils import prepare_dataset
 from torch.utils.data import random_split
 from torch_geometric.loader import DataLoader
-#from GCN import GCN
-from GCN_ChebConv import GCN
+from GCN import GCN
+#from GCN_ChebConv import GCN
 import torch
 import mlflow
 import matplotlib.pylab as plt
@@ -12,7 +12,7 @@ from sklearn.model_selection import KFold
 repository_directory = 'D:/dataset_repos'  # input repositories
 output_directory = 'D:/tool_output'
 labels = '../random_sample_icse_CO.xls' # labeled repositories for the training dataset
-n_epoch = 5
+n_epoch = 2
 k_folds = 2
 figure_output = 'C:/Users/const/Documents/Bachelorarbeit/training_testing_plot'
 
@@ -69,7 +69,7 @@ except Exception as e:
 
 device = 'cuda' if torch.cuda.is_available() else 'cpu'
 
-model = GCN(dataset.num_node_features, dataset.num_classes, hidden_channels=64, K=6) #in paper K=10
+model = GCN(dataset.num_node_features, dataset.num_classes, hidden_channels=64) #in paper K=10
 
 if device == 'cuda':
     model = model.to(device)
@@ -87,7 +87,7 @@ for f, fold in enumerate(kfold.split(dataset)):
     trainset, testset = random_split(dataset, [0.9, 0.1]) #more training data
     print(f'size of train dataset: {len(trainset)}, test dataset: {len(testset)}')
 
-    trainloader = DataLoader(trainset, batch_size=32, shuffle=True)
+    trainloader = DataLoader(trainset, batch_size=16, shuffle=True)
     testloader = DataLoader(testset, batch_size=1, shuffle=False)
     print(f'number of batches in train dataset: {len(trainloader)}, test dataset: {len(testloader)}')
 
@@ -115,8 +115,8 @@ for f, fold in enumerate(kfold.split(dataset)):
             print('==============================================')
     
         #plot visualization of accuracy and loss from testing in figure also for entire folds?
-        fig = plt.figure(1)
-
+        fig = plt.figure(f)
+        plt.title(f"Fold {f}")
         p1 = plt.subplot(2, 1, 1)
         plt.plot(plt_epoch, plt_test_acc, 'b')
         plt.setp(p1.get_xticklabels(), visible=False)
@@ -131,6 +131,10 @@ for f, fold in enumerate(kfold.split(dataset)):
         #plt.show() #save instead of showing
         plt.savefig(f'{figure_output}/fig_{f}.pdf', bbox_inches='tight')
 
+        #save trained model in file
+        save_path = f'./graph_classification_model_fold{f}.pth'
+        torch.save(model, save_path)
+
 
 # Print fold results
 print(f'K-FOLD CROSS VALIDATION RESULTS FOR {k_folds} FOLDS')
@@ -140,8 +144,3 @@ for key, value in results.items():
     print(f'Fold {key}: {value} %')
     sum += value
 print(f'Average: {sum/len(results.items())} %') #check if computation is correct/matches my thingi
-
-
-#save trained model in file
-#maybe save model per fold, with variable path and state dict form
-torch.save(model, 'graph_classification_model.pt') #alt.: state dict

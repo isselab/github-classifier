@@ -13,8 +13,10 @@ class GCN(torch.nn.Module):
         self.conv1 = GCNConv(num_node_features, hidden_channels)
         self.conv2 = GCNConv(hidden_channels, hidden_channels)
         self.conv3 = GCNConv(hidden_channels, hidden_channels)
+        self.conv4 = GCNConv(hidden_channels, hidden_channels) #added these two layers to make it overfit hopefully
+        self.conv5 = GCNConv(hidden_channels, hidden_channels)
         # number of classes we want to predict
-        self.lin = Linear(hidden_channels, num_classes) 
+        #self.lin = Linear(hidden_channels, num_classes) 
 
     '''add self-loop to edge info? keeps appearing in tutorials
        x=[N, 1] N=number of nodes, x is feature vector
@@ -26,6 +28,10 @@ class GCN(torch.nn.Module):
         x = self.conv2(x, edge_index)
         x = x.relu()
         x = self.conv3(x, edge_index)
+        x = x.relu()
+        x = self.conv4(x, edge_index)
+        x = x.relu()
+        x = self.conv5(x, edge_index)
 
         # readout layer
         x = global_mean_pool(x, batch)  # [batch_size, hidden_channels]
@@ -33,7 +39,7 @@ class GCN(torch.nn.Module):
         # apply a final classifier
         # dropout for regularization
         x = F.dropout(x, p=0.5, training=self.training)
-        x = self.lin(x) #maybe softmax instead?
-        #x = F.log_softmax(x, dim=1)
+        #x = self.lin(x) #maybe softmax instead?
+        x = F.log_softmax(x, dim=1)
 
         return x
