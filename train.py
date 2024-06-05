@@ -7,11 +7,50 @@ from GCN_ChebConv import GCN
 import torch
 import mlflow
 import matplotlib.pylab as plt
+from sklearn.model_selection import KFold
 
 repository_directory = 'D:/dataset_repos'  # input repositories
 output_directory = 'D:/tool_output'
 labels = '../random_sample_icse_CO.xls' # labeled repositories for the training dataset
 n_epoch = 5
+k_folds = 2
+figure_output = 'C:/Users/const/Documents/Bachelorarbeit/training_testing_plot'
+
+def train():
+        model.train()
+    
+        for graph in trainloader: 
+            if device == 'cuda':
+                graph.x = graph.x.to(device)
+                graph.edge_index = graph.edge_index.to(device)
+                graph.y = graph.y.to(device)
+                graph.batch = graph.batch.to(device)
+            output = model(graph.x, graph.edge_index, graph.batch)
+            loss_train = criterion(output, graph.y) #graph.y is label
+            loss_train.backward() #backward propagation to update weights? do this for entire batch for performance i think
+            optimizer.step()
+            optimizer.zero_grad()
+
+def test(loader):
+        model.eval()
+        loss_test = 0
+        correct, total = 0, 0
+        for graph in loader:
+            if device == 'cuda':
+                graph.x = graph.x.to(device)
+                graph.edge_index = graph.edge_index.to(device)
+                graph.y = graph.y.to(device)
+                graph.batch = graph.batch.to(device)
+            output = model(graph.x, graph.edge_index, graph.batch)
+            loss = criterion(output, graph.y)
+            loss_test += loss.item()
+            pred = output.argmax(dim=1)
+            correct += int((pred == graph.y).sum())  
+            total += graph.y.size(0)  
+            results[f] = 100.0 * (correct / total)
+        
+        return correct/len(loader.dataset), loss_test/len(loader.dataset)
+
 
 # create the graph dataset of the repositories
 #try:
@@ -27,16 +66,6 @@ except Exception as e:
     print(e)
     print('Dataset cannot be loaded.')
 
-# split into train and testset, this is for training the tool, not using finished tool
-trainset, testset = random_split(dataset, [0.9, 0.1]) #more training data
-print(f'size of train dataset: {len(trainset)}, test dataset: {len(testset)}')
-
-trainloader = DataLoader(trainset, batch_size=32, shuffle=True)
-testloader = DataLoader(testset, batch_size=1, shuffle=False)
-print(f'number of batches in train dataset: {len(trainloader)}, test dataset: {len(testloader)}')
-
-#mlflow.autolog() #only added this for logging (and plotting)
-#exp_id = mlflow.create_experiment('Test')
 
 device = 'cuda' if torch.cuda.is_available() else 'cpu'
 
@@ -48,74 +77,71 @@ if device == 'cuda':
 optimizer = torch.optim.Adam(model.parameters(), lr=0.001)
 criterion = torch.nn.CrossEntropyLoss()
 
-def train():
-    model.train()
-    
-    for graph in trainloader: 
-        if device == 'cuda':
-            graph.x = graph.x.to(device)
-            graph.edge_index = graph.edge_index.to(device)
-            graph.y = graph.y.to(device)
-            graph.batch = graph.batch.to(device)
-        output = model(graph.x, graph.edge_index, graph.batch)
-        loss_train = criterion(output, graph.y) #graph.y is label
-        loss_train.backward() #backward propagation to update weights? do this for entire batch for performance i think
-        optimizer.step()
-        optimizer.zero_grad()
+kfold = KFold(n_splits=k_folds, shuffle=True)
 
-def test(loader):
-    model.eval()
-    loss_test = 0
-    correct = 0
-    for graph in loader:
-        if device == 'cuda':
-            graph.x = graph.x.to(device)
-            graph.edge_index = graph.edge_index.to(device)
-            graph.y = graph.y.to(device)
-            graph.batch = graph.batch.to(device)
-        output = model(graph.x, graph.edge_index, graph.batch)
-        loss = criterion(output, graph.y)
-        loss_test += loss.item()
-        pred = output.argmax(dim=1)
-        correct += int((pred == graph.y).sum())       
-        
-    return correct/len(loader.dataset), loss_test/len(loader.dataset)
+# For fold results
+results = {}
 
-with mlflow.start_run():
-    plt_epoch = []
-    plt_test_acc = []
-    plt_test_loss = []
-    for epoch in range(1, n_epoch):
-        print(f'Epoch {epoch}')
-        train()
-        train_acc, train_loss = test(trainloader)
-        test_acc, test_loss = test(testloader)
+for f, fold in enumerate(kfold.split(dataset)):
+    # split into train and testset, this is for training the tool, not using finished tool
+    trainset, testset = random_split(dataset, [0.9, 0.1]) #more training data
+    print(f'size of train dataset: {len(trainset)}, test dataset: {len(testset)}')
+
+    trainloader = DataLoader(trainset, batch_size=32, shuffle=True)
+    testloader = DataLoader(testset, batch_size=1, shuffle=False)
+    print(f'number of batches in train dataset: {len(trainloader)}, test dataset: {len(testloader)}')
+
+#mlflow.autolog() #only added this for logging (and plotting)
+#exp_id = mlflow.create_experiment('Test')
+
+    with mlflow.start_run():
+        plt_epoch = []
+        plt_test_acc = []
+        plt_test_loss = []
+        for epoch in range(1, n_epoch):
+            print(f'Fold {f}, Epoch {epoch}')
+            train()
+            train_acc, train_loss = test(trainloader)
+            test_acc, test_loss = test(testloader)
 
         #mlflow.log_params(model.parameters())
-        mlflow.log_metric("accuracy", test_acc, step=epoch)
-        plt_epoch.append(epoch)
-        plt_test_acc.append(test_acc)
-        plt_test_loss.append(test_loss)
+            mlflow.log_metric("accuracy", test_acc, step=epoch)
+            plt_epoch.append(epoch)
+            plt_test_acc.append(test_acc)
+            plt_test_loss.append(test_loss)
 
-        print(f'training acc: {train_acc}, training loss: {train_loss}')
-        print(f'testing acc: {test_acc}, testing loss: {test_loss}')
-        print('==============================================')
+            print(f'training acc: {train_acc}, training loss: {train_loss}')
+            print(f'testing acc: {test_acc}, testing loss: {test_loss}')
+            print('==============================================')
     
-    #plot visualization of accuracy and loss from testing in figure
-    plt.figure(1)
+        #plot visualization of accuracy and loss from testing in figure also for entire folds?
+        fig = plt.figure(1)
 
-    p1 = plt.subplot(2, 1, 1)
-    plt.plot(plt_epoch, plt_test_acc, 'b')
-    plt.setp(p1.get_xticklabels(), visible=False)
-    plt.ylabel('test accuracy')
+        p1 = plt.subplot(2, 1, 1)
+        plt.plot(plt_epoch, plt_test_acc, 'b')
+        plt.setp(p1.get_xticklabels(), visible=False)
+        plt.ylabel('test accuracy')
 
-    p2 = plt.subplot(2, 1, 2, sharex=p1)
-    plt.plot(plt_epoch, plt_test_loss, 'r')
-    plt.setp(p2.get_xticklabels())
-    plt.xlabel('epoch')
-    plt.ylabel('test loss')
+        p2 = plt.subplot(2, 1, 2, sharex=p1)
+        plt.plot(plt_epoch, plt_test_loss, 'r')
+        plt.setp(p2.get_xticklabels())
+        plt.xlabel('epoch')
+        plt.ylabel('test loss')
 
-    plt.show()
+        #plt.show() #save instead of showing
+        plt.savefig(f'{figure_output}/fig_{f}.pdf', bbox_inches='tight')
+
+
+# Print fold results
+print(f'K-FOLD CROSS VALIDATION RESULTS FOR {k_folds} FOLDS')
+print('--------------------------------')
+sum = 0.0
+for key, value in results.items():
+    print(f'Fold {key}: {value} %')
+    sum += value
+print(f'Average: {sum/len(results.items())} %') #check if computation is correct/matches my thingi
+
 
 #save trained model in file
+#maybe save model per fold, with variable path and state dict form
 torch.save(model, 'graph_classification_model.pt') #alt.: state dict
