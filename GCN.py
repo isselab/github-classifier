@@ -14,7 +14,7 @@ class GCN(torch.nn.Module):
         self.conv2 = GCNConv(hidden_channels, hidden_channels)
         self.conv3 = GCNConv(hidden_channels, hidden_channels)
         self.conv4 = GCNConv(hidden_channels, hidden_channels) #added these two layers to make it overfit hopefully
-        self.conv5 = GCNConv(hidden_channels, hidden_channels)
+        self.conv5 = GCNConv(hidden_channels, num_classes)
         # number of classes we want to predict
         #self.lin = Linear(hidden_channels, num_classes) 
 

@@ -12,7 +12,7 @@ from sklearn.model_selection import KFold
 repository_directory = 'D:/dataset_repos'  # input repositories
 output_directory = 'D:/tool_output'
 labels = '../random_sample_icse_CO.xls' # labeled repositories for the training dataset
-n_epoch = 2
+n_epoch = 200
 k_folds = 2
 figure_output = 'C:/Users/const/Documents/Bachelorarbeit/training_testing_plot'
 
@@ -87,7 +87,7 @@ for f, fold in enumerate(kfold.split(dataset)):
     trainset, testset = random_split(dataset, [0.9, 0.1]) #more training data
     print(f'size of train dataset: {len(trainset)}, test dataset: {len(testset)}')
 
-    trainloader = DataLoader(trainset, batch_size=16, shuffle=True)
+    trainloader = DataLoader(trainset, batch_size=64, shuffle=True)
     testloader = DataLoader(testset, batch_size=1, shuffle=False)
     print(f'number of batches in train dataset: {len(trainloader)}, test dataset: {len(testloader)}')
 
@@ -132,7 +132,7 @@ for f, fold in enumerate(kfold.split(dataset)):
         plt.savefig(f'{figure_output}/fig_{f}.pdf', bbox_inches='tight')
 
         #save trained model in file
-        save_path = f'./graph_classification_model_fold{f}.pth'
+        save_path = f'./graph_classification_model_fold{f}.pt'
         torch.save(model, save_path)
 
 
