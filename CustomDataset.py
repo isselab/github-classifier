@@ -6,7 +6,7 @@ import torch
 import numpy as np
 from DefinedGraphClasses import graph_types
 from LabelEncoder import convert_labels
-from DataformatUtils import convert_edge_dim, convert_list_to_tensor
+from DataformatUtils import convert_edge_dim, convert_list_to_floattensor, convert_list_to_longtensor, convert_list_to_inttensor
 
 class RepositoryDataset(Dataset):
     def __init__(self, directory, label_list=None):
@@ -55,11 +55,10 @@ class RepositoryDataset(Dataset):
             try:
                 if f'{graph_name}_nodefeatures' in graph:
                     node_features = pd.read_csv(f'{self.directory}/{graph}', header=None)  # load csv file
-                    x = convert_list_to_tensor(node_features)
-                    self.x = self.normalize_matrix(x)
+                    self.x = convert_list_to_floattensor(node_features)
                 if f'{graph_name}_A' in graph:
                     adjacency = pd.read_csv(f'{self.directory}/{graph}', header=None)
-                    edge_tensor = convert_list_to_tensor(adjacency)
+                    edge_tensor = convert_list_to_longtensor(adjacency)
                     self.edge_index = convert_edge_dim(edge_tensor)
             except Exception as e:
                 print(e)
@@ -110,7 +109,7 @@ class RepositoryDataset(Dataset):
             new_resource_nodes.write("\n")
         new_resource_nodes.close()
     
-    '''normalize to avoid bias with node types'''
+    '''DEPRECATED, DELETE LATER, normalize to avoid bias with node types'''
     def normalize_matrix(self, matrix):
         norm = np.linalg.norm(matrix)
         normalized_matrix = matrix/norm

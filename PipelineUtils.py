@@ -3,7 +3,7 @@ from pyecore.resources import ResourceSet, URI
 from ASTToEcoreConverter import ProjectEcoreGraph
 from EcoreToMatrixConverter import EcoreToMatrixConverter
 import pandas as pd
-from DataformatUtils import convert_edge_dim, convert_list_to_tensor
+from DataformatUtils import convert_edge_dim, convert_list_to_floattensor, convert_list_to_longtensor
 from multiprocessing import Pool
 
 '''in this file are the pipeline components put into reusable functions'''
@@ -143,8 +143,8 @@ def prepare_dataset(repository_directory, output_directory=None, repository_list
         node_features, adj_list = create_matrix_structure(output_directory, write_in_file, None, ecore_graph)
 
     if node_features is not None and adj_list is not None:
-        node_features = convert_list_to_tensor(node_features)
-        adj_list = convert_list_to_tensor(adj_list)
+        node_features = convert_list_to_floattensor(node_features)
+        adj_list = convert_list_to_longtensor(adj_list)
         adj_list = convert_edge_dim(adj_list)
 
     return node_features, adj_list

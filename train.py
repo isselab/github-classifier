@@ -8,11 +8,12 @@ import torch
 import mlflow
 import matplotlib.pylab as plt
 from sklearn.model_selection import KFold
+import torch.nn.functional as nn
 
 repository_directory = 'D:/dataset_repos'  # input repositories
 output_directory = 'D:/tool_output'
 labels = '../random_sample_icse_CO.xls' # labeled repositories for the training dataset
-n_epoch = 200
+n_epoch = 50
 k_folds = 2
 figure_output = 'C:/Users/const/Documents/Bachelorarbeit/training_testing_plot'
 
@@ -25,11 +26,15 @@ def train():
                 graph.edge_index = graph.edge_index.to(device)
                 graph.y = graph.y.to(device)
                 graph.batch = graph.batch.to(device)
+            graph.x = nn.normalize(graph.x, p=2.0)
+            #graph.edge_index = nn.normalize(graph.edge_index, p=2.0)
             output = model(graph.x, graph.edge_index, graph.batch)
             loss_train = criterion(output, graph.y) #graph.y is label
-            loss_train.backward() #backward propagation to update weights? do this for entire batch for performance i think
-            optimizer.step()
+            #backpropagation
             optimizer.zero_grad()
+            loss_train.backward()
+            #update weights
+            optimizer.step()
 
 def test(loader):
         model.eval()
@@ -45,6 +50,8 @@ def test(loader):
             loss = criterion(output, graph.y)
             loss_test += loss.item()
             pred = output.argmax(dim=1)
+            #print(graph.y.size())
+            #acc = (output.argmax(dim=1) == graph.y.argmax(dim=0)).float().mean()
             correct += int((pred == graph.y).sum())  
             total += graph.y.size(0)  
             results[f] = 100.0 * (correct / total)
@@ -74,8 +81,8 @@ model = GCN(dataset.num_node_features, dataset.num_classes, hidden_channels=64) 
 if device == 'cuda':
     model = model.to(device)
 
-optimizer = torch.optim.Adam(model.parameters(), lr=0.001)
-criterion = torch.nn.CrossEntropyLoss()
+optimizer = torch.optim.Adam(model.parameters(), lr=0.001) #, weight_decay=1e-3 with Adam, no change
+criterion = torch.nn.NLLLoss() #CrossEntropyLoss
 
 kfold = KFold(n_splits=k_folds, shuffle=True)
 
@@ -101,11 +108,12 @@ for f, fold in enumerate(kfold.split(dataset)):
         for epoch in range(1, n_epoch):
             print(f'Fold {f}, Epoch {epoch}')
             train()
-            train_acc, train_loss = test(trainloader)
+            train_acc, train_loss= test(trainloader)
             test_acc, test_loss = test(testloader)
 
-        #mlflow.log_params(model.parameters())
+            #mlflow.log_params(model.parameters())
             mlflow.log_metric("accuracy", test_acc, step=epoch)
+            mlflow.log_metric("loss", test_loss, step=epoch)
             plt_epoch.append(epoch)
             plt_test_acc.append(test_acc)
             plt_test_loss.append(test_loss)
