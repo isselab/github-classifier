@@ -13,8 +13,9 @@ import torch.nn.functional as nn
 repository_directory = 'D:/dataset_repos'  # input repositories
 output_directory = 'D:/tool_output'
 labels = '../random_sample_icse_CO.xls' # labeled repositories for the training dataset
-n_epoch = 50
+n_epoch = 5
 k_folds = 2
+learning_rate = 0.001
 figure_output = 'C:/Users/const/Documents/Bachelorarbeit/training_testing_plot'
 
 def train():
@@ -81,7 +82,7 @@ model = GCN(dataset.num_node_features, dataset.num_classes, hidden_channels=64) 
 if device == 'cuda':
     model = model.to(device)
 
-optimizer = torch.optim.Adam(model.parameters(), lr=0.001) #, weight_decay=1e-3 with Adam, no change
+optimizer = torch.optim.Adam(model.parameters(), learning_rate) #, weight_decay=1e-3 with Adam, no change
 criterion = torch.nn.NLLLoss() #CrossEntropyLoss
 
 kfold = KFold(n_splits=k_folds, shuffle=True)
@@ -98,22 +99,26 @@ for f, fold in enumerate(kfold.split(dataset)):
     testloader = DataLoader(testset, batch_size=1, shuffle=False)
     print(f'number of batches in train dataset: {len(trainloader)}, test dataset: {len(testloader)}')
 
-#mlflow.autolog() #only added this for logging (and plotting)
-#exp_id = mlflow.create_experiment('Test')
+    #log model parameters
+    params = {"lr": learning_rate}
+    for name, param in model.named_parameters():
+        if param.requires_grad:
+            params[f"{name}"] = param.data
 
     with mlflow.start_run():
         plt_epoch = []
         plt_test_acc = []
         plt_test_loss = []
+        mlflow.log_params(params)
         for epoch in range(1, n_epoch):
             print(f'Fold {f}, Epoch {epoch}')
             train()
             train_acc, train_loss= test(trainloader)
             test_acc, test_loss = test(testloader)
+            
+            metrics = {"training accuracy":train_acc, "training loss":train_loss, "test accuracy":test_acc, "test loss":test_loss}
+            mlflow.log_metrics(metrics, step=epoch)
 
-            #mlflow.log_params(model.parameters())
-            mlflow.log_metric("accuracy", test_acc, step=epoch)
-            mlflow.log_metric("loss", test_loss, step=epoch)
             plt_epoch.append(epoch)
             plt_test_acc.append(test_acc)
             plt_test_loss.append(test_loss)
@@ -122,7 +127,7 @@ for f, fold in enumerate(kfold.split(dataset)):
             print(f'testing acc: {test_acc}, testing loss: {test_loss}')
             print('==============================================')
     
-        #plot visualization of accuracy and loss from testing in figure also for entire folds?
+        #visualization of accuracy and loss from testing
         fig = plt.figure(f)
         plt.title(f"Fold {f}")
         p1 = plt.subplot(2, 1, 1)
@@ -136,10 +141,9 @@ for f, fold in enumerate(kfold.split(dataset)):
         plt.xlabel('epoch')
         plt.ylabel('test loss')
 
-        #plt.show() #save instead of showing
         plt.savefig(f'{figure_output}/fig_{f}.pdf', bbox_inches='tight')
 
-        #save trained model in file
+        #save trained model in file for each fold
         save_path = f'./graph_classification_model_fold{f}.pt'
         torch.save(model, save_path)
 
