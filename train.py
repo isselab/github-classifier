@@ -9,6 +9,7 @@ import mlflow
 import matplotlib.pylab as plt
 from sklearn.model_selection import KFold
 import torch.nn.functional as nn
+import numpy as np
 
 repository_directory = 'D:/dataset_repos'  # input repositories
 output_directory = 'D:/tool_output'
@@ -87,8 +88,11 @@ criterion = torch.nn.NLLLoss() #CrossEntropyLoss
 
 kfold = KFold(n_splits=k_folds, shuffle=True)
 
-# For fold results
+#fold results
 results = {}
+
+#initialize overall performance with negative infinity
+best_acc = - np.inf
 
 for f, fold in enumerate(kfold.split(dataset)):
     # split into train and testset, this is for training the tool, not using finished tool
@@ -126,6 +130,12 @@ for f, fold in enumerate(kfold.split(dataset)):
             print(f'training acc: {train_acc}, training loss: {train_loss}')
             print(f'testing acc: {test_acc}, testing loss: {test_loss}')
             print('==============================================')
+
+            #save trained model with best performance
+            if test_acc > best_acc:
+                best_acc = test_acc
+                #save_path = f'./graph_classification_model_fold{f}.pt'
+                torch.save(model, 'graph_classification_model.pt')
     
         #visualization of accuracy and loss from testing
         fig = plt.figure(f)
@@ -142,11 +152,6 @@ for f, fold in enumerate(kfold.split(dataset)):
         plt.ylabel('test loss')
 
         plt.savefig(f'{figure_output}/fig_{f}.pdf', bbox_inches='tight')
-
-        #save trained model in file for each fold
-        save_path = f'./graph_classification_model_fold{f}.pt'
-        torch.save(model, save_path)
-
 
 # Print fold results
 print(f'K-FOLD CROSS VALIDATION RESULTS FOR {k_folds} FOLDS')
