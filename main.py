@@ -8,9 +8,8 @@ import torch
     piped into the gcn as input without needing to load the data from files'''
 
 repository_list = '../random_sample_icse_CO.xls'
-repository_directory = 'D:/repos'
-#repository_directory = 'D:/single'
-output_directory = 'D:/pool_test'
+repository_directory = 'D:/compile'
+output_directory = 'D:/comp_output'
 path_to_model = 'graph_classification_model.pt'
 
 if __name__ == '__main__':
