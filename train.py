@@ -1,5 +1,5 @@
 from CustomDataset import RepositoryDataset
-from PipelineUtils import prepare_dataset
+from Pipeline import prepare_dataset
 from torch.utils.data import random_split
 from torch_geometric.loader import DataLoader
 from GCN import GCN

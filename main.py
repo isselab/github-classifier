@@ -1,5 +1,5 @@
 from CustomDataset import RepositoryDataset
-from PipelineUtils import prepare_dataset
+from Pipeline import prepare_dataset
 import torch
 
 '''repository list is optional parameter, if you want to download the repositories automatically;
