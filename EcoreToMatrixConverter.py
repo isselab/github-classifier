@@ -1,6 +1,6 @@
 from pyecore.resources import ResourceSet
 from enum import Enum
-from LabelEncoder import convert_labels
+from Encoder import label_encoding
 
 class EcoreToMatrixConverter:
     def __init__(self, resource: ResourceSet, write_in_file, output_folder=None):

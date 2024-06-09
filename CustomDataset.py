@@ -5,14 +5,14 @@ import pandas as pd
 import torch
 import numpy as np
 from DefinedGraphClasses import graph_types
-from LabelEncoder import convert_labels
+from Encoder import label_encoding, one_hot_encoding
 from DataformatUtils import convert_edge_dim, convert_list_to_floattensor, convert_list_to_longtensor, convert_list_to_inttensor
 
 class RepositoryDataset(Dataset):
     def __init__(self, directory, label_list=None):
         if label_list is not None:
             try:
-                self.convert_labeled_graphs(label_list, directory)
+                self.encoded_labels = self.convert_labeled_graphs(label_list)
             except Exception as e:
                 print(e)
         self.num_node_features = 1  # nodes only have its type as feature
@@ -28,10 +28,6 @@ class RepositoryDataset(Dataset):
                     self.node_name = graph.removesuffix('_nodefeatures.csv')
                 if '_A' in graph:
                     self.edge_name = graph.removesuffix('_A.csv')
-                if 'graph_labels' in graph:
-                    graph_label = pd.read_csv(f'{directory}/{graph}', header=None)
-                    self.gr_name = np.array(graph_label[0])
-                    self.gr_label = np.array(graph_label[1])
                 # create list of graphs to load graph via index and look up name to load graph from file
                 if self.node_name == self.edge_name and self.node_name not in self.graph_names:
                     self.graph_names.append(self.node_name)
@@ -39,8 +35,9 @@ class RepositoryDataset(Dataset):
                 print(e)
                 print(f'There is a problem loading {graph}')
         # load labels for graphs in correct order and return them in tensor
-        if hasattr(self, 'gr_name'):
+        if hasattr(self, 'encoded_labels'):
             self.y = self.sort_labels()
+            print(f'Number of Applications: {self.class_elements[0]}, Experiments: {self.class_elements[1]}, Frameworks: {self.class_elements[2]}, Libraries: {self.class_elements[3]}, Tutorials: {self.class_elements[4]}')
 
     # returns number of samples (graphs) in the dataset
     def __len__(self):
@@ -69,21 +66,24 @@ class RepositoryDataset(Dataset):
         return graph
 
     def sort_labels(self):
-        sort = []
-        for item in self.graph_names:
-            for i, name in enumerate(self.gr_name):
-                if item == name:
-                    label = self.gr_label[i]
-                    sort.append(label)
-        y = torch.LongTensor(np.array(sort))
+        label_list = list(self.encoded_labels)
+        sorted = None
+        for n, item in enumerate(self.graph_names):
+            for i, name in enumerate(label_list):
+                if item == name[0]:
+                    label = name[1]
+                    if sorted is None:
+                        sorted = np.array(label)
+                    else:
+                        sorted = np.vstack((sorted, label)).astype(np.float16)
+        y = torch.FloatTensor(sorted)
         return y
     
     '''takes two directory paths as input and converts the labeled dataset into 
         a csv file, it loads the dataset from excel/ods file,
         requirements for format: no empty rows in between and header names for columns'''
-    def convert_labeled_graphs(self, labels, directory):
+    def convert_labeled_graphs(self, labels):
         resource = pd.read_excel(labels)
-        new_resource_nodes = open(f"{directory}/graph_labels.csv", "w+")
         graph_labels = []
         graph_names = []
 
@@ -95,20 +95,34 @@ class RepositoryDataset(Dataset):
             graph_names.append(repo_name)
             type_label = object.get('type')
             graph_labels.append(type_label)
+        
+        self.class_elements = self.count_class_elements(graph_labels) #count how many repos are in each class
 
-        # encode labels numerically
-        encoded_nodes = convert_labels(graph_types, graph_labels)
+        #encode labels
+        encoded_nodes = one_hot_encoding(graph_types, graph_labels)
         file = zip(graph_names, encoded_nodes)
-
-        # write encoded labels into a file for the dataset
-        for item in list(file):
-            name = item[0]
-            new_resource_nodes.write("%s, " % name)
-            label = item[1]
-            new_resource_nodes.write("%s" % label)
-            new_resource_nodes.write("\n")
-        new_resource_nodes.close()
+        return file
     
+    def count_class_elements(self, labels):
+        app = 0
+        lib = 0
+        frame = 0
+        exp = 0
+        tut = 0
+        for element in labels:
+            if 'Application' in element:
+                app += 1
+            if 'Library' in element:
+                lib += 1
+            if 'Framework' in element:
+                frame += 1
+            if 'Experiment' in element:
+                exp += 1
+            if 'Tutorial' in element:
+                tut += 1
+        counted_elements = [app, exp, frame, lib, tut]
+        return counted_elements
+
     '''DEPRECATED, DELETE LATER, normalize to avoid bias with node types'''
     def normalize_matrix(self, matrix):
         norm = np.linalg.norm(matrix)

@@ -12,8 +12,9 @@ import torch.nn.functional as nn
 import numpy as np
 
 repository_directory = 'D:/dataset_repos'  # input repositories
-output_directory = 'D:/tool_output'
-labels = '../random_sample_icse_CO.xls' # labeled repositories for the training dataset
+output_directory = 'D:/tool_output_labelenc'
+#labels = '../random_sample_icse_CO.xls' # labeled repositories for the training dataset
+labels = '../test_multiple.xls'
 n_epoch = 5
 k_folds = 2
 learning_rate = 0.001
@@ -71,6 +72,7 @@ print('--------------load dataset---------------')
 
 try:
     dataset = RepositoryDataset(f'{output_directory}/csv_files', labels)
+    print(f'Dataset size: {dataset.__len__()}')
 except Exception as e:
     print(e)
     print('Dataset cannot be loaded.')
@@ -78,7 +80,7 @@ except Exception as e:
 
 device = 'cuda' if torch.cuda.is_available() else 'cpu'
 
-model = GCN(dataset.num_node_features, dataset.num_classes, hidden_channels=64) #in paper K=10
+#model = GCN(dataset.num_node_features, dataset.num_classes, hidden_channels=64) #in paper K=10
 
 if device == 'cuda':
     model = model.to(device)
