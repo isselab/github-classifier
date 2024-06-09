@@ -4,7 +4,7 @@ import os
 import pandas as pd
 import torch
 import numpy as np
-from DefinedGraphClasses import graph_types
+from GraphClasses import graph_types
 from Encoder import label_encoding, one_hot_encoding
 from DataformatUtils import convert_edge_dim, convert_list_to_floattensor, convert_list_to_longtensor, convert_list_to_inttensor
 
