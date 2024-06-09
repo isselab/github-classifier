@@ -23,6 +23,7 @@ class EcoreToMatrixConverter:
         output_name = self.get_graph_name()
         if write_in_file is True:
             self.write_csv(output_folder, output_name)
+            print(f'{output_name}')
 
     def get_node_matrix(self):
         return self.node_matrix

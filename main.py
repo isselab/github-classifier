@@ -7,9 +7,9 @@ import torch
     if there is only one repository the output of the converter is saved in return variables and can be
     piped into the gcn as input without needing to load the data from files'''
 
-repository_list = '../random_sample_icse_CO.xls'
-repository_directory = 'D:/compile'
-output_directory = 'D:/comp_output'
+repository_list = '../new_repos.xls'
+repository_directory = 'D:/new_repos'
+output_directory = 'D:/new_output'
 path_to_model = 'graph_classification_model.pt'
 
 if __name__ == '__main__':
@@ -41,14 +41,14 @@ if __name__ == '__main__':
         print(dataset.__len__())
         print('Number of classes: ')
         print(dataset.num_classes)
-        model = torch.load(path_to_model)
-        model.eval()
-        for graph in dataset:
+       # model = torch.load(path_to_model)
+        #model.eval()
+        #for graph in dataset:
             #if device == 'cuda':
                 #graph.x.to(device)
                 #graph.edge_index.to(device)
-            output = model(graph.x, graph.edge_index) #how to save output? --> necessary to save it?
-            print(output) #maybe new func to get graph name?
+            #output = model(graph.x, graph.edge_index) #how to save output? --> necessary to save it?
+            #print(output) #maybe new func to get graph name?
     except Exception as e:
         print(e)
         print('The dataset cannot be loaded.')
