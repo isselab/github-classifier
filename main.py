@@ -8,8 +8,8 @@ import torch
     piped into the gcn as input without needing to load the data from files'''
 
 repository_list = '../new_repos.xls'
-repository_directory = 'D:/new_repos'
-output_directory = 'D:/new_output'
+repository_directory = 'D:/dataset_repos'
+output_directory = 'D:/tool_output_labelenc'
 path_to_model = 'graph_classification_model.pt'
 
 if __name__ == '__main__':

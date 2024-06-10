@@ -168,15 +168,16 @@ class EcoreToMatrixConverter:
         tmethod_def_name += '_call'
         for c, call in enumerate(tmethod_def.accessing):
             methoddef_target = call.target
-            # name of the TMethod object that's being called
-            target_name = methoddef_target.signature.method.tName
-            # create a name for the call object
-            call_counter = c+1
-            calls = str(call_counter)
-            current_call = tmethod_def_name + calls
-            self.node_matrix.append(NodeTypes.CALL.value)
-            self.node_dict[self.node_count] = [NodeTypes.CALL.value, current_call, 'Source', call_source, 'Target', target_name]
-            self.node_count += 1
+            if methoddef_target is not None: #added to fix unexplainable single issue in one repo
+                #name of the TMethod object that's being called
+                target_name = methoddef_target.signature.method.tName
+                #create a name for the call object
+                call_counter = c+1
+                calls = str(call_counter)
+                current_call = tmethod_def_name + calls
+                self.node_matrix.append(NodeTypes.CALL.value)
+                self.node_dict[self.node_count] = [NodeTypes.CALL.value, current_call, 'Source', call_source, 'Target', target_name]
+                self.node_count += 1
 
     '''checks if a node already exists by comparing node type and name'''
     def get_node(self, node_name, type):

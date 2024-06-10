@@ -11,7 +11,7 @@ from multiprocessing import Pool
 def create_output_folders(directory):
     if not os.path.exists(directory):
         os.makedirs(directory)
-    # create sub folders for converter output and dataset
+    #create sub folders for converter output and dataset
     if not os.path.exists(f'{directory}/xmi_files'):
         os.makedirs(f'{directory}/xmi_files')
     if not os.path.exists(f'{directory}/csv_files'):
@@ -20,22 +20,22 @@ def create_output_folders(directory):
 def download_repositories(repository_directory, repository_list):
     working_directory = os.getcwd()
 
-    # load labeled repository from excel/ods file
-    # requirements for format: no empty rows in between and header name html_url
+    #load labeled repository from excel/ods file
+    #requirements for format: no empty rows in between and header name html_url
     resource = pd.read_excel(repository_list)
 
-    # create directory for cloning if it does not exist and set it as current working directory
+    #create directory for cloning if it does not exist and set it as current working directory
     if not os.path.exists(repository_directory):
         os.makedirs(repository_directory)
     os.chdir(repository_directory)
 
-    # retrieve urls and clone repositories
+    #retrieve urls and clone repositories
     for row in resource.iterrows():
         object = row[1]
         url = object.get('html_url')
         os.system(f'git clone {url}')
 
-    # change working directory back to github-classifier, otherwise cannot load resources from there
+    #change working directory back to github-classifier, otherwise cannot load resources from there
     os.chdir(working_directory)
     
 def create_ecore_graphs(repository, output_directory, write_in_file):
@@ -47,7 +47,7 @@ def create_ecore_graphs(repository, output_directory, write_in_file):
         except Exception as e:
             print(e)
             if 'inconsistent use of tabs and spaces in indentation' in str(e):
-                # format repository files using autopep8
+                #format repository files using autopep8
                 python_files = [os.path.join(root, file) for root, _, files in os.walk(
                                     repository) for file in files if file.endswith('.py')]
                 for file_path in python_files:
@@ -104,7 +104,7 @@ def prepare_dataset(repository_directory, output_directory=None, repository_list
     node_features = None
     adj_list = None
 
-    # clone repositories for the dataset
+    #clone repositories for the dataset
     if repository_list is not None:
         download_repositories(repository_directory, repository_list)
     
@@ -114,7 +114,7 @@ def prepare_dataset(repository_directory, output_directory=None, repository_list
     if len(repositories) > 1:
         write_in_file = True
 
-    # create output directory
+    #create output directory
     if write_in_file is True:
         create_output_folders(output_directory)
         #create pool for multiprocessing/parallelisation
@@ -124,7 +124,7 @@ def prepare_dataset(repository_directory, output_directory=None, repository_list
             repo_multiprocess.append((current_directory, output_directory, write_in_file))
 
     print('--convert repositories into ecore metamodels--')
-    # convert repositories into ecore metamodels
+    #convert repositories into ecore metamodels
     if write_in_file is True:
         parallel_processing(create_ecore_graphs, repo_multiprocess)
     else:
@@ -132,7 +132,7 @@ def prepare_dataset(repository_directory, output_directory=None, repository_list
         ecore_graph = create_ecore_graphs(single_directory, output_directory, write_in_file)
     
     print('---convert ecore graphs to matrix structure---')
-    # load xmi instance and convert them to a matrix structure for the gcn
+    #load xmi instance and convert them to a matrix structure for the gcn
     if write_in_file is True:
         list_xmi_files = os.listdir(f'{output_directory}/xmi_files')
         xmi_multiprocess = []
