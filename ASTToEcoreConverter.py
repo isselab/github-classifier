@@ -1,7 +1,7 @@
 import ast
 import os
-from enum import Enum
 from pyecore.resources import ResourceSet, URI
+from NodeFeatures import NodeTypes
 
 class ProjectEcoreGraph:
     def __init__(self, resource_set: ResourceSet, output_directory, repository, write_in_file):
@@ -61,20 +61,20 @@ class ProjectEcoreGraph:
                 '''it is an imported module from outside the repository like torch or numpy'''
                 module = self.get_module_by_name(called_package)
                 if module is None:
-                    module = self.create_ecore_instance(self.Types.MODULE)
+                    module = self.create_ecore_instance(NodeTypes.MODULE)
                     module.location = called_package
                     self.graph.modules.append(module)
                     self.module_list.append([module, called_package])
                     if len(called_instance) == 2:
                         method_name = called_instance[-1]
-                        method_def = self.create_ecore_instance(self.Types.METHOD_DEFINITION)
+                        method_def = self.create_ecore_instance(NodeTypes.METHOD_DEFINITION)
                         self.create_method_signature(method_def, method_name, [])
                         module.contains.append(method_def)
                         self.create_calls(caller_node, method_def)
                     if len(called_instance) > 2:
                         del called_instance[0]
                         method_name = '_'.join(called_instance)
-                        method_def = self.create_ecore_instance(self.Types.METHOD_DEFINITION)
+                        method_def = self.create_ecore_instance(NodeTypes.METHOD_DEFINITION)
                         self.create_method_signature(method_def, method_name, [])
                         module.contains.append(method_def)
                         self.create_calls(caller_node, method_def)
@@ -88,14 +88,14 @@ class ProjectEcoreGraph:
                     if hasattr(module, 'contains'):
                         find_method = None
                         for meth_def in module.contains:
-                            if meth_def.eClass.name == self.Types.METHOD_DEFINITION.value:
+                            if meth_def.eClass.name == NodeTypes.METHOD_DEFINITION.value:
                                 if meth_def.signature.method.tName == method_name:
                                     find_method = meth_def
                                     call_check = self.get_calls(caller_node, meth_def)
                                     if call_check is False:
                                         self.create_calls(caller_node, meth_def)
                         if find_method is None:
-                            method_def = self.create_ecore_instance(self.Types.METHOD_DEFINITION)
+                            method_def = self.create_ecore_instance(NodeTypes.METHOD_DEFINITION)
                             self.create_method_signature(method_def, method_name, [])
                             module.contains.append(method_def)
                             self.create_calls(caller_node, method_def)
@@ -113,12 +113,12 @@ class ProjectEcoreGraph:
                                 if len(called_instance) == 1:
                                     if hasattr(module, 'contains'):
                                         for element in module.contains:
-                                            if element.eClass.name == self.Types.METHOD_DEFINITION.value:
+                                            if element.eClass.name == NodeTypes.METHOD_DEFINITION.value:
                                                 if element.signature.method.tName == called_instance[0]:
                                                     call_check = self.get_calls(caller_node, element)
                                                     if call_check is False:
                                                         self.create_calls(caller_node, element)
-                                            if element.eClass.name == self.Types.CLASS.value:
+                                            if element.eClass.name == NodeTypes.CLASS.value:
                                                 if element.tName == called_instance[0]:
                                                     if hasattr(element, 'defines'):
                                                         for meth_def in element.defines:
@@ -131,7 +131,7 @@ class ProjectEcoreGraph:
                                     if submodule is not None:
                                         if hasattr(submodule, 'contains'):
                                             for meth_def in submodule.contains:
-                                                if meth_def.eClass.name == self.Types.METHOD_DEFINITION.value:
+                                                if meth_def.eClass.name == NodeTypes.METHOD_DEFINITION.value:
                                                     if meth_def.signature.method.tName == called_instance[1]:
                                                         call_check = self.get_calls(caller_node, meth_def)
                                                         if call_check is False:
@@ -140,7 +140,7 @@ class ProjectEcoreGraph:
                                         #its a class, method inside class is called
                                         if hasattr(module, 'contains'):
                                             for element in module.contains:
-                                                if element.eClass.name == self.Types.CLASS.value:
+                                                if element.eClass.name == NodeTypes.CLASS.value:
                                                     if element.tName == called_instance[0]:
                                                         if hasattr(element, 'defines'):
                                                             for meth_def in element.defines:
@@ -151,7 +151,7 @@ class ProjectEcoreGraph:
                         else:
                             if hasattr(module, 'contains'):
                                 for find_meth in module.contains:
-                                    if find_meth.eClass.name == self.Types.METHOD_DEFINITION.value:
+                                    if find_meth.eClass.name == NodeTypes.METHOD_DEFINITION.value:
                                         if find_meth.signature.method.tName == called_instance[1]:
                                             call_check = self.get_calls(caller_node, find_meth)
                                             if call_check is False:
@@ -167,7 +167,7 @@ class ProjectEcoreGraph:
             for mod in self.graph.modules:
                 if hasattr(mod, 'contains'):
                     for obj in mod.contains:
-                        if obj.eClass.name == self.Types.CLASS.value: 
+                        if obj.eClass.name == NodeTypes.CLASS.value: 
                             if obj.tName == class_node.tName:
                                 classes_found.append(class_node)
 
@@ -178,7 +178,7 @@ class ProjectEcoreGraph:
                     self.check_list.remove(item)
 
         if len(self.check_list) > 0:
-            module_node = self.create_ecore_instance(self.Types.MODULE)
+            module_node = self.create_ecore_instance(NodeTypes.MODULE)
             module_node.location = 'ImportedClasses' #actually base or parent classes of other classes that are inside modules
             self.graph.modules.append(module_node)
             for obj in self.check_list:
@@ -232,7 +232,7 @@ class ProjectEcoreGraph:
         current_package = self.get_package_by_path(path)
 
         #create module
-        self.current_module = self.create_ecore_instance(self.Types.MODULE)
+        self.current_module = self.create_ecore_instance(NodeTypes.MODULE)
         self.current_module.location = path.removesuffix('.py')
         self.current_module.namespace = current_package
         path_split = self.current_module.location.replace(f"{self.root_directory}/", '').split('/')
@@ -281,7 +281,7 @@ class ProjectEcoreGraph:
         my_package = self.check_package_list(name, parent)  # checks if subpackage already exists
         if my_package is not None:
             return my_package
-        package_node = self.create_ecore_instance(self.Types.PACKAGE)
+        package_node = self.create_ecore_instance(NodeTypes.PACKAGE)
         package_node.tName = name
         if parent is not None:
             package_node.parent = parent
@@ -340,7 +340,7 @@ class ProjectEcoreGraph:
                     self.classes_without_module.remove(class_object)
                 return class_object
         if create_if_not_found:
-            class_node = self.create_ecore_instance(self.Types.CLASS)
+            class_node = self.create_ecore_instance(NodeTypes.CLASS)
             class_node.tName = name
             if module is not None:
                 module.contains.append(class_node)
@@ -394,10 +394,10 @@ class ProjectEcoreGraph:
     
     def get_method_def_in_module(self, method_name, module):
         for object in module.contains:
-            if object.eClass.name == self.Types.METHOD_DEFINITION.value:
+            if object.eClass.name == NodeTypes.METHOD_DEFINITION.value:
                 if object.signature.method.tName == method_name:
                     return object
-            if object.eClass.name == self.Types.CLASS.value:
+            if object.eClass.name == NodeTypes.CLASS.value:
                 for meth in object.defines:
                     if meth.signature.method.tName == method_name:
                         return meth
@@ -414,15 +414,15 @@ class ProjectEcoreGraph:
         return None
     
     def create_method_signature(self, method_node, name, arguments):
-        method_signature = self.create_ecore_instance(self.Types.METHOD_SIGNATURE)
-        method = self.create_ecore_instance(self.Types.METHOD)
+        method_signature = self.create_ecore_instance(NodeTypes.METHOD_SIGNATURE)
+        method = self.create_ecore_instance(NodeTypes.METHOD)
         method.tName = name
         self.graph.methods.append(method)
         method_signature.method = method
 
         previous = None
         for arg in arguments:
-            parameter = self.create_ecore_instance(self.Types.PARAMETER)
+            parameter = self.create_ecore_instance(NodeTypes.PARAMETER)
             if previous is not None:
                 parameter.previous = previous
             previous = parameter
@@ -442,7 +442,7 @@ class ProjectEcoreGraph:
         return False
 
     def create_calls(self, caller_node, called_node):
-        call = self.create_ecore_instance(self.Types.CALL)
+        call = self.create_ecore_instance(NodeTypes.CALL)
         call.source = caller_node
         call.target = called_node
 
@@ -452,17 +452,6 @@ class ProjectEcoreGraph:
         resource.append(self.graph)
         resource.save()
 
-    # programm entities in metamodel
-    class Types(Enum):
-        CALL = "TCall"
-        CLASS = "TClass"
-        FIELD = "TField"
-        MODULE = "TModule"
-        METHOD = "TMethod"
-        METHOD_SIGNATURE = "TMethodSignature"
-        METHOD_DEFINITION = "TMethodDefinition"
-        PACKAGE = "TPackage"
-        PARAMETER = "TParameter"
 
 '''class ASTVisitor defines the visits of the different node types of the ast
 ASTVisitor calls the functions of ProjectEcoreGraph to create ecore instances'''
@@ -525,7 +514,7 @@ class ASTVisitor(ast.NodeVisitor):
                 method_name = item.name
                 method_node = self.graph_class.get_method_def_in_class(method_name, class_node)
                 if method_node is None:
-                    method_node = self.graph_class.create_ecore_instance(self.graph_class.Types.METHOD_DEFINITION)
+                    method_node = self.graph_class.create_ecore_instance(NodeTypes.METHOD_DEFINITION)
                     self.graph_class.create_method_signature(method_node, method_name, item.args.args)
                     class_node.defines.append(method_node)
                     #to search for missing meth defs later
@@ -538,7 +527,7 @@ class ASTVisitor(ast.NodeVisitor):
             self.current_method = self.graph_class.get_method_def_in_class(node.name, self.current_class)
         if self.current_method is None:
             self.current_class = None
-            self.current_method = self.graph_class.create_ecore_instance(self.graph_class.Types.METHOD_DEFINITION)
+            self.current_method = self.graph_class.create_ecore_instance(NodeTypes.METHOD_DEFINITION)
             self.graph_class.create_method_signature(self.current_method, node.name, node.args.args)
             module_node = self.graph_class.get_current_module()
             module_node.contains.append(self.current_method)
@@ -606,7 +595,7 @@ class ASTVisitor(ast.NodeVisitor):
                 if self.called_node is None:
                     self.called_node = self.graph_class.get_method_def_from_internal_structure(method_name, instance_node)
                     if self.called_node is None and instance_node is not None:
-                        self.called_node = self.graph_class.create_ecore_instance(self.graph_class.Types.METHOD_DEFINITION)
+                        self.called_node = self.graph_class.create_ecore_instance(NodeTypes.METHOD_DEFINITION)
                         self.graph_class.create_method_signature(self.called_node, method_name, [])
                         instance_node.defines.append(self.called_node)
 
@@ -618,7 +607,7 @@ class ASTVisitor(ast.NodeVisitor):
                 if self.called_node is None:
                     self.called_node = self.graph_class.get_method_def_from_internal_structure(method_name, instance_node)
                     if self.called_node is None and instance_node is not None:
-                        called_node = self.graph_class.create_ecore_instance(self.graph_class.Types.METHOD_DEFINITION)
+                        called_node = self.graph_class.create_ecore_instance(NodeTypes.METHOD_DEFINITION)
                         self.graph_class.create_method_signature(called_node, method_name, [])
                         instance_node.contains.append(called_node)
                         self.called_node = called_node
@@ -636,7 +625,7 @@ class ASTVisitor(ast.NodeVisitor):
             if caller_node is None:
                 caller_node = self.graph_class.get_method_def_from_internal_structure(method_name, module_node)
                 if caller_node is None:
-                    caller_node = self.graph_class.create_ecore_instance(self.graph_class.Types.METHOD_DEFINITION)
+                    caller_node = self.graph_class.create_ecore_instance(NodeTypes.METHOD_DEFINITION)
                     self.graph_class.create_method_signature(caller_node, method_name, [])
                     module_node.contains.append(caller_node)
 
