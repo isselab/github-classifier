@@ -1,5 +1,5 @@
 from pyecore.resources import ResourceSet
-from Encoder import label_encoding
+from Encoder import label_encoding, one_hot_encoding
 from NodeFeatures import NodeTypes
 
 class EcoreToMatrixConverter:
@@ -20,7 +20,7 @@ class EcoreToMatrixConverter:
 
         node_labels = [NodeTypes.PACKAGE.value, NodeTypes.MODULE.value, NodeTypes.CLASS.value, NodeTypes.METHOD_DEFINITION.value, 
                        NodeTypes.METHOD.value, NodeTypes.METHOD_SIGNATURE.value, NodeTypes.PARAMETER.value, NodeTypes.CALL.value]
-        self.encoded_node_matrix = label_encoding(node_labels, self.node_matrix)
+        self.encoded_node_matrix = one_hot_encoding(node_labels, self.node_matrix)
         output_name = self.get_graph_name()
         if write_in_file is True:
             self.write_csv(output_folder, output_name)

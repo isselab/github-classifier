@@ -7,9 +7,9 @@ import torch
     if there is only one repository the output of the converter is saved in return variables and can be
     piped into the gcn as input without needing to load the data from files'''
 
-repository_list = '../new_repos.xls'
+repository_list = '../dataset_co.xlsx'
 repository_directory = 'D:/dataset_repos'
-output_directory = 'D:/tool_output_labelenc'
+output_directory = 'D:/data_output'
 path_to_model = 'graph_classification_model.pt'
 
 if __name__ == '__main__':
@@ -18,7 +18,7 @@ if __name__ == '__main__':
 
     try:
         # create the graph dataset of the repositories
-        nodes, edges = prepare_dataset(repository_directory, output_directory)
+        nodes, edges = prepare_dataset(repository_directory, output_directory, repository_list)
         if nodes is not None and edges is not None:
             #load trained graph convolutional network model
             model = torch.load(path_to_model)
