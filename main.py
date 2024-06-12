@@ -19,9 +19,9 @@ if __name__ == '__main__':
 
     device = 'cuda' if torch.cuda.is_available() else 'cpu'
 
-    #try:
+    try:
         # create the graph dataset of the repositories
-        #nodes, edges = prepare_dataset(repository_directory, output_directory)
+        nodes, edges = prepare_dataset(repository_directory, output_directory)
         #if nodes is not None and edges is not None:
             #load trained graph convolutional network model
             #model = torch.load(path_to_model)
@@ -34,8 +34,8 @@ if __name__ == '__main__':
                 #edges.to(device)
             #output = model(nodes, edges) #complains about missing batch?
             #print(output)
-    #except Exception as e:
-        #print(e)
+    except Exception as e:
+        print(e)
 
     print('----------------load dataset------------------')
     try:

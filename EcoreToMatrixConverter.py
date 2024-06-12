@@ -299,7 +299,13 @@ class EcoreToMatrixConverter:
         new_resource_edges = open(f"{output_folder}/{output_name}_A.csv", "w+")
 
         for node in self.encoded_node_matrix:
-            new_resource_nodes.write("%s" % node)
+            node_counter = 1
+            for item in node:
+                if node_counter < len(node):
+                    new_resource_nodes.write("%s, " % item)
+                    node_counter += 1
+                else:
+                    new_resource_nodes.write("%s" % item)
             new_resource_nodes.write("\n")
 
         # edge is array with two entries [node_id, node_id]
