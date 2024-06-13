@@ -1,5 +1,5 @@
 from pyecore.resources import ResourceSet
-from Encoder import label_encoding
+from Encoder import label_encoding, one_hot_encoding
 from NodeFeatures import NodeTypes
 
 class EcoreToMatrixConverter:
@@ -20,7 +20,7 @@ class EcoreToMatrixConverter:
 
         node_labels = [NodeTypes.PACKAGE.value, NodeTypes.MODULE.value, NodeTypes.CLASS.value, NodeTypes.METHOD_DEFINITION.value, 
                        NodeTypes.METHOD.value, NodeTypes.METHOD_SIGNATURE.value, NodeTypes.PARAMETER.value, NodeTypes.CALL.value]
-        self.encoded_node_matrix = label_encoding(node_labels, self.node_matrix)
+        self.encoded_node_matrix = one_hot_encoding(node_labels, self.node_matrix)
         output_name = self.get_graph_name()
         if write_in_file is True:
             self.write_csv(output_folder, output_name)
@@ -299,7 +299,13 @@ class EcoreToMatrixConverter:
         new_resource_edges = open(f"{output_folder}/{output_name}_A.csv", "w+")
 
         for node in self.encoded_node_matrix:
-            new_resource_nodes.write("%s" % node)
+            node_counter = 1
+            for item in node:
+                if node_counter < len(node):
+                    new_resource_nodes.write("%s, " % item)
+                    node_counter += 1
+                else:
+                    new_resource_nodes.write("%s" % item)
             new_resource_nodes.write("\n")
 
         # edge is array with two entries [node_id, node_id]

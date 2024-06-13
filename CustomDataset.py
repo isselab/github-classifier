@@ -5,7 +5,8 @@ import pandas as pd
 import torch
 import numpy as np
 from GraphClasses import graph_types
-from Encoder import label_encoding, one_hot_encoding
+from NodeFeatures import NodeTypes
+from Encoder import label_encoding, one_hot_encoding, multiclass_one_hot_encoding
 from DataformatUtils import convert_edge_dim, convert_list_to_floattensor, convert_list_to_longtensor, convert_list_to_inttensor
 
 class RepositoryDataset(Dataset):
@@ -15,7 +16,7 @@ class RepositoryDataset(Dataset):
                 self.encoded_labels = self.convert_labeled_graphs(label_list)
             except Exception as e:
                 print(e)
-        self.num_node_features = 1  # nodes only have its type as feature
+        self.num_node_features = 8  # nodes have 8 type as features, one hot encoded
         self.num_classes = len(graph_types)
         self.directory = directory
         self.node_name = 'Test1'
@@ -79,27 +80,28 @@ class RepositoryDataset(Dataset):
         y = torch.FloatTensor(sorted)
         return y
     
-    '''takes two directory paths as input and converts the labeled dataset into 
-        a csv file, it loads the dataset from excel/ods file,
-        requirements for format: no empty rows in between and header names for columns'''
+    '''takes directory path of excel file with labeled repositories as input and converts the 
+        labeled dataset into a one hot encoded torch tensor/python list,
+        requirements for format: no empty rows in between and header names 'html_url'
+        and 'final type' for columns'''
     def convert_labeled_graphs(self, labels):
         resource = pd.read_excel(labels)
         graph_labels = []
         graph_names = []
 
-        # iterate over loaded file and retrieve labels
+        #iterate over loaded file and retrieve labels
         for row in resource.iterrows():
             object = row[1]
-            url = object.get('html_url')
-            repo_name = url.split('/')[-1]  # last element is repository name
+            url = object.get('html_url') #column header containing repository url
+            repo_name = url.split('/')[-1]  #last element is repository name
             graph_names.append(repo_name)
-            type_label = object.get('type')
+            type_label = object.get('final type') #column header wontaining label
             graph_labels.append(type_label)
         
         self.class_elements = self.count_class_elements(graph_labels) #count how many repos are in each class
 
         #encode labels
-        encoded_nodes = one_hot_encoding(graph_types, graph_labels)
+        encoded_nodes = multiclass_one_hot_encoding(graph_types, graph_labels)
         file = zip(graph_names, encoded_nodes)
         return file
     
