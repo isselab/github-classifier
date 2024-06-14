@@ -74,7 +74,7 @@ class RepositoryDataset(Dataset):
                 if item == name[0]:
                     label = name[1]
                     if sorted is None:
-                        sorted = np.array(label)
+                        sorted = np.array(label, dtype=np.float16)
                     else:
                         sorted = np.vstack((sorted, label)).astype(np.float16)
         y = torch.FloatTensor(sorted)

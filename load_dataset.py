@@ -1,5 +1,5 @@
 from CustomDataset import RepositoryDataset
-from PipelineUtils import prepare_dataset
+from Pipeline import prepare_dataset
 from torch.utils.data import random_split
 from torch_geometric.loader import DataLoader
 from GCN import GCN
@@ -9,16 +9,32 @@ import mlflow
 import matplotlib.pylab as plt
 from sklearn.model_selection import KFold
 
-repository_directory = 'D:/dataset_repos'  # input repositories
-output_directory = 'D:/tool_output'
-labels = '../test_notexclusive.xls' # labeled repositories for the training dataset
-n_epoch = 200
-k_folds = 2
-figure_output = 'C:/Users/const/Documents/Bachelorarbeit/training_testing_plot'
+#repository_directory = 'D:/dataset_repos'  # input repositories
+output_directory = 'D:/labeled_repos_first100'
+labels = '../labeled_repos_first100.xlsx' # labeled repositories for the training dataset
+#n_epoch = 5
+#k_folds = 2
+#figure_output = 'C:/Users/const/Documents/Bachelorarbeit/training_testing_plot'
 
 
 try:
     dataset = RepositoryDataset(f'{output_directory}/csv_files', labels)
+    print(dataset.__len__())
+    count_label = 0
+    count_features = 0
+    count_edges = 0
+    for graph in dataset:
+        #print(graph.y)
+        #print(type(graph))
+        if isinstance(graph.y, torch.FloatTensor):
+            count_label += 1
+        if isinstance(graph.x, torch.FloatTensor):
+            count_features += 1
+        if isinstance(graph.edge_index, torch.LongTensor):
+            count_edges += 1
+    print(count_label)
+    print(count_features)
+    print(count_edges)
 except Exception as e:
     print(e)
     print('Dataset cannot be loaded.')
