@@ -12,9 +12,7 @@ class GCN(torch.nn.Module):
         # input: number of features per node
         self.conv1 = GCNConv(num_node_features, hidden_channels)
         self.conv2 = GCNConv(hidden_channels, hidden_channels)
-        self.conv3 = GCNConv(hidden_channels, hidden_channels)
-        self.conv4 = GCNConv(hidden_channels, hidden_channels) #added these two layers to make it overfit hopefully
-        self.conv5 = GCNConv(hidden_channels, num_classes)
+        self.conv3 = GCNConv(hidden_channels, num_classes)
         # number of classes we want to predict
         #self.lin = Linear(hidden_channels, num_classes) 
 
@@ -29,9 +27,6 @@ class GCN(torch.nn.Module):
         x = x.relu()
         x = self.conv3(x, edge_index)
         x = x.relu()
-        x = self.conv4(x, edge_index)
-        x = x.relu()
-        x = self.conv5(x, edge_index)
 
         # readout layer
         x = global_mean_pool(x, batch)  # [batch_size, hidden_channels]
