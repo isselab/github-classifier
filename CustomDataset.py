@@ -124,9 +124,3 @@ class RepositoryDataset(Dataset):
                 tut += 1
         counted_elements = [app, exp, frame, lib, tut]
         return counted_elements
-
-    '''DEPRECATED, DELETE LATER, normalize to avoid bias with node types'''
-    def normalize_matrix(self, matrix):
-        norm = np.linalg.norm(matrix)
-        normalized_matrix = matrix/norm
-        return normalized_matrix

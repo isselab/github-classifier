@@ -35,6 +35,15 @@ try:
     print(count_label)
     print(count_features)
     print(count_edges)
+    graph0 = dataset.__getitem__(0)
+    print(graph0.y)
 except Exception as e:
     print(e)
     print('Dataset cannot be loaded.')
+
+loader = DataLoader(dataset, batch_size=32, shuffle=True)
+
+for graph in loader:
+    size = int(len(graph.y)/5)
+    re_label = torch.reshape(graph.y, (size, 5))
+    print(re_label)

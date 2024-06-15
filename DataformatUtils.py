@@ -7,13 +7,13 @@ def convert_edge_dim(edge_tensor):
     return edge_tensor
 
 def convert_list_to_floattensor(list):
-    tensor = torch.FloatTensor(np.array(list))
+    tensor = torch.FloatTensor(np.array(list, dtype=float))
     return tensor
 
 def convert_list_to_longtensor(list):
-    tensor = torch.LongTensor(np.array(list))
+    tensor = torch.LongTensor(np.array(list, dtype=int))
     return tensor
 
 def convert_list_to_inttensor(list):
-    tensor = torch.IntTensor(np.array(list))
+    tensor = torch.IntTensor(np.array(list, dtype=int))
     return tensor

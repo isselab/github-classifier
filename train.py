@@ -11,6 +11,8 @@ from sklearn.model_selection import KFold
 import torch.nn.functional as nn
 import numpy as np
 from torch_geometric.datasets import TUDataset
+from GraphClasses import graph_types
+from sklearn.metrics import f1_score
 
 #repository_directory = 'D:/dataset_repos'  # input repositories
 output_directory = 'D:/labeled_repos_first100'
@@ -23,18 +25,21 @@ figure_output = 'C:/Users/const/Documents/Bachelorarbeit/training_testing_plot'
 
 def train():
         model.train()
-    
+        
+        num_classes = int(len(graph_types))
+
         for graph in trainloader: 
+
             if device == 'cuda':
                 graph.x = graph.x.to(device)
                 graph.edge_index = graph.edge_index.to(device)
                 graph.y = graph.y.to(device)
                 graph.batch = graph.batch.to(device)
+            
+            size = int(len(graph.y)/num_classes)
             graph.x = nn.normalize(graph.x, p=2.0)
-            #graph.edge_index = nn.normalize(graph.edge_index, p=2.0)
+            graph.y = torch.reshape(graph.y, (size, num_classes))
             output = model(graph.x, graph.edge_index, graph.batch)
-            #print(graph.y)
-            #print(output)
             loss_train = criterion(output, graph.y) #graph.y is label
             #backpropagation
             optimizer.zero_grad()
@@ -46,23 +51,42 @@ def test(loader):
         model.eval()
         loss_test = 0
         correct, total = 0, 0
+        num_classes = int(len(graph_types))
+
         for graph in loader:
+
             if device == 'cuda':
                 graph.x = graph.x.to(device)
                 graph.edge_index = graph.edge_index.to(device)
                 graph.y = graph.y.to(device)
                 graph.batch = graph.batch.to(device)
+
+            size = int(len(graph.y)/num_classes)
+            graph.y = torch.reshape(graph.y, (size, num_classes))
             output = model(graph.x, graph.edge_index, graph.batch)
             loss = criterion(output, graph.y)
             loss_test += loss.item()
-            pred = output.argmax(dim=1)
+            #pred = output.argmax(dim=1)
             #print(graph.y.size())
-            #acc = (output.argmax(dim=1) == graph.y.argmax(dim=0)).float().mean()
-            correct += int((pred == graph.y).sum())  
-            total += graph.y.size(0)  
+            #acc = (output.argmax(dim=0) == graph.y.argmax(dim=0)).float().mean()
+            #print(acc)
+            #correct += (output == graph.y).sum().item()
+            total += len(loader.dataset)
+            #results[f] = 100.0 * (correct / total)
+
+            output = output.cpu().detach().numpy()
+            graph.y = graph.y.cpu().detach().numpy()
+            #print(output)
+            prediction = np.argmax(output, axis=1)
+            ground_truth = np.argmax(graph.y, axis=1)
+            acc_train = (prediction == ground_truth).sum()
+            #print(output)
+            #correct = f1_score(graph.y, output, average=None, labels=graph_types)
             results[f] = 100.0 * (correct / total)
         
-        return correct/len(loader.dataset), loss_test/len(loader.dataset)
+        #return correct/len(loader.dataset), loss_test/len(loader.dataset)
+        #return results[f], loss_test/len(loader)
+        return acc_train/total , loss_test/total
 
 
 # create the graph dataset of the repositories
@@ -74,9 +98,9 @@ def test(loader):
 print('--------------load dataset---------------')
 
 try:
-    #dataset = RepositoryDataset(f'{output_directory}/csv_files', labels)
-    dataset_path = "data/TUDataset"
-    dataset = TUDataset(root=dataset_path, name='MUTAG')
+    dataset = RepositoryDataset(f'{output_directory}/csv_files', labels)
+    #dataset_path = "data/TUDataset"
+    #dataset = TUDataset(root=dataset_path, name='MUTAG')
     print(f'Dataset size: {dataset.__len__()}')
 except Exception as e:
     print(e)
@@ -91,7 +115,8 @@ if device == 'cuda':
     model = model.to(device)
 
 optimizer = torch.optim.Adam(model.parameters(), learning_rate) #, weight_decay=1e-3 with Adam, no change
-criterion = torch.nn.NLLLoss() #CrossEntropyLoss
+#criterion = torch.nn.MSELoss() #loss function that can deal with multi-target
+criterion = torch.nn.BCEWithLogitsLoss()
 
 kfold = KFold(n_splits=k_folds, shuffle=True)
 
@@ -121,6 +146,7 @@ for f, fold in enumerate(kfold.split(dataset)):
         plt_test_acc = []
         plt_test_loss = []
         mlflow.log_params(params)
+
         for epoch in range(1, n_epoch):
             print(f'Fold {f}, Epoch {epoch}')
             train()
