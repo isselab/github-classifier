@@ -1,5 +1,5 @@
 import unittest
-from ASTToEcoreConverter import ProjectEcoreGraph
+from AstToEcoreConverter import ProjectEcoreGraph
 from pyecore.resources import ResourceSet
 from NodeFeatures import NodeTypes
 

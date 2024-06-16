@@ -1,6 +1,6 @@
 import os
 from pyecore.resources import ResourceSet, URI
-from ASTToEcoreConverter import ProjectEcoreGraph
+from AstToEcoreConverter import ProjectEcoreGraph
 from EcoreToMatrixConverter import EcoreToMatrixConverter
 import pandas as pd
 from DataformatUtils import convert_edge_dim, convert_list_to_floattensor, convert_list_to_longtensor
