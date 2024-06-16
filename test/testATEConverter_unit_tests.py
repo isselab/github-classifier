@@ -5,7 +5,7 @@ from testUtils import Types
 It checks both the node types and the edges, which cannot be done for arbitrary repositories due to their size.
 Use the tool by running main.py to create the files first.'''
 
-output_directory = '../../output_tests' #output of the tool
+output_directory = 'D:/test_output' #output of the tool
 
 #load xmi file
 rset = ResourceSet()
