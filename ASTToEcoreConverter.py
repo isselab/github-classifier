@@ -84,16 +84,25 @@ class ProjectEcoreGraph:
                         method_name = called_instance[1]
                     if len(called_instance) > 2:
                         del called_instance[0]
-                        method_name = '_'.join(called_instance)
+                        method_name = called_instance[-1]
                     if hasattr(module, 'contains'):
                         find_method = None
-                        for meth_def in module.contains:
-                            if meth_def.eClass.name == NodeTypes.METHOD_DEFINITION.value:
-                                if meth_def.signature.method.tName == method_name:
-                                    find_method = meth_def
-                                    call_check = self.get_calls(caller_node, meth_def)
+                        for contained_obj in module.contains:
+                            if contained_obj.eClass.name == NodeTypes.METHOD_DEFINITION.value:
+                                if contained_obj.signature.method.tName == method_name:
+                                    find_method = contained_obj
+                                    call_check = self.get_calls(caller_node, contained_obj)
                                     if call_check is False:
-                                        self.create_calls(caller_node, meth_def)
+                                        self.create_calls(caller_node, contained_obj)
+                            if contained_obj.eClass.name == NodeTypes.CLASS.value:
+                                if hasattr(contained_obj, 'defines'):
+                                    for meth_obj in contained_obj.defines:
+                                        if meth_obj.eClass.name == NodeTypes.METHOD_DEFINITION.value:
+                                            if meth_obj.signature.method.tName == method_name:
+                                                find_method = meth_obj
+                                                call_check = self.get_calls(caller_node, meth_obj)
+                                                if call_check is False:
+                                                    self.create_calls(caller_node, meth_obj)
                         if find_method is None:
                             method_def = self.create_ecore_instance(NodeTypes.METHOD_DEFINITION)
                             self.create_method_signature(method_def, method_name, [])
