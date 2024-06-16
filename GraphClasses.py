@@ -1,2 +1,2 @@
 #define graph labels
-graph_types = ['Application', 'Experiment', 'Framework', 'Library', 'Tutorial']
+defined_labels = ['Application', 'Experiment', 'Framework', 'Library', 'Tutorial']

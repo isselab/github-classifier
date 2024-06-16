@@ -4,10 +4,9 @@ import os
 import pandas as pd
 import torch
 import numpy as np
-from GraphClasses import graph_types
-from NodeFeatures import NodeTypes
-from Encoder import label_encoding, one_hot_encoding, multiclass_one_hot_encoding
-from DataformatUtils import convert_edge_dim, convert_list_to_floattensor, convert_list_to_longtensor, convert_list_to_inttensor
+from GraphClasses import defined_labels
+from Encoder import multi_hot_encoding
+from DataformatUtils import convert_edge_dim, convert_list_to_floattensor, convert_list_to_longtensor
 
 class RepositoryDataset(Dataset):
     def __init__(self, directory, label_list=None):
@@ -17,7 +16,7 @@ class RepositoryDataset(Dataset):
             except Exception as e:
                 print(e)
         self.num_node_features = 8  # nodes have 8 type as features, one hot encoded
-        self.num_classes = len(graph_types)
+        self.num_classes = len(defined_labels)
         self.directory = directory
         self.node_name = 'Test1'
         self.edge_name = 'Test2'
@@ -101,7 +100,7 @@ class RepositoryDataset(Dataset):
         self.class_elements = self.count_class_elements(graph_labels) #count how many repos are in each class
 
         #encode labels
-        encoded_nodes = multiclass_one_hot_encoding(graph_types, graph_labels)
+        encoded_nodes = multi_hot_encoding(defined_labels, graph_labels)
         file = zip(graph_names, encoded_nodes)
         return file
     

@@ -1,5 +1,5 @@
 from pyecore.resources import ResourceSet
-from Encoder import label_encoding, one_hot_encoding
+from Encoder import one_hot_encoding
 from NodeFeatures import NodeTypes
 
 class EcoreToMatrixConverter:

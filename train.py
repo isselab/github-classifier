@@ -11,7 +11,7 @@ from sklearn.model_selection import KFold
 import torch.nn.functional as nn
 import numpy as np
 from torch_geometric.datasets import TUDataset
-from GraphClasses import graph_types
+from GraphClasses import defined_labels
 from sklearn.metrics import f1_score
 
 #repository_directory = 'D:/dataset_repos'  # input repositories
@@ -26,7 +26,7 @@ figure_output = 'C:/Users/const/Documents/Bachelorarbeit/training_testing_plot'
 def train():
         model.train()
         
-        num_classes = int(len(graph_types))
+        num_classes = int(len(defined_labels))
 
         for graph in trainloader: 
 
@@ -51,7 +51,7 @@ def test(loader):
         model.eval()
         loss_test = 0
         correct, total = 0, 0
-        num_classes = int(len(graph_types))
+        num_classes = int(len(defined_labels))
 
         for graph in loader:
 

@@ -1,11 +1,11 @@
-from sklearn.preprocessing import LabelEncoder, OneHotEncoder
+from sklearn.preprocessing import OneHotEncoder
 import pandas as pd
 
-def label_encoding(labels, matrix):
-    label_encoder = LabelEncoder()
-    label_encoder.fit(labels)
-    enc = label_encoder.transform(matrix)
-    return enc
+#def label_encoding(labels, matrix):
+    #label_encoder = LabelEncoder()
+    #label_encoder.fit(labels)
+    #enc = label_encoder.transform(matrix)
+    #return enc
 
 '''one hot encoding for node features'''
 def one_hot_encoding(labels, matrix):
@@ -21,7 +21,7 @@ def one_hot_encoding(labels, matrix):
 
 '''encodes the not mutually exclusive classes of graphs in the dataset,
    encodes labels ['Application', 'Experiment', 'Framework', 'Library', 'Tutorial']'''
-def multiclass_one_hot_encoding(graph_classes, graph_list):
+def multi_hot_encoding(graph_classes, graph_list):
     num_classes = len(graph_classes)
     enc_labels = []
     for label in graph_list:

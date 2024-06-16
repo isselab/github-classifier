@@ -14,6 +14,6 @@ def convert_list_to_longtensor(list):
     tensor = torch.LongTensor(np.array(list, dtype=int))
     return tensor
 
-def convert_list_to_inttensor(list):
-    tensor = torch.IntTensor(np.array(list, dtype=int))
-    return tensor
+#def convert_list_to_inttensor(list):
+    #tensor = torch.IntTensor(np.array(list, dtype=int))
+    #return tensor
