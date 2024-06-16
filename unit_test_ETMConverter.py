@@ -11,9 +11,12 @@ class TestETMConv(unittest.TestCase):
         graph = ProjectEcoreGraph(resource_set, repo, False)
         ecore_graph = graph.get_graph()
         matrix = EcoreToMatrixConverter(ecore_graph, False)
-        node_features = matrix.get_encoded_node_matrix()
+        node_features = matrix.get_node_matrix()
+        enc_node_features = matrix.get_encoded_node_matrix()
         edges = matrix.get_adjacency_list()
-        #print(node_features, edges)
+
+        #check total number of nodes
+        self.assertEqual(len(enc_node_features), 16, 'total number of nodes wrong')
 
 
 unittest.main()
