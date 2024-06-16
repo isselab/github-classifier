@@ -38,12 +38,12 @@ def download_repositories(repository_directory, repository_list):
     #change working directory back to github-classifier, otherwise cannot load resources from there
     os.chdir(working_directory)
     
-def create_ecore_graphs(repository, output_directory, write_in_file):
+def create_ecore_graphs(repository, write_in_file, output_directory=None):
     skip_counter = 0
     resource_set = ResourceSet()
     if os.path.isdir(repository):
         try:
-            ecore_graph = ProjectEcoreGraph(resource_set, output_directory, repository, write_in_file)
+            ecore_graph = ProjectEcoreGraph(resource_set, repository, write_in_file, output_directory)
         except Exception as e:
             print(e)
             if 'inconsistent use of tabs and spaces in indentation' in str(e):
@@ -53,7 +53,7 @@ def create_ecore_graphs(repository, output_directory, write_in_file):
                 for file_path in python_files:
                         os.system(f'autopep8 --in-place {file_path}')
                 try:
-                    ecore_graph = ProjectEcoreGraph(resource_set, output_directory, repository, write_in_file)
+                    ecore_graph = ProjectEcoreGraph(resource_set, repository, write_in_file, output_directory)
                 except Exception as e:
                     print(e)
                     print(f'Problem with repository {repository}. Skipping.')
@@ -68,7 +68,7 @@ def create_ecore_graphs(repository, output_directory, write_in_file):
     else:
         return None
 
-def create_matrix_structure(output_directory, write_in_file, xmi_file=None, ecore_graph=None):
+def create_matrix_structure(write_in_file, xmi_file=None, ecore_graph=None, output_directory=None):
     skip_xmi = 0
     
     if write_in_file is True:
@@ -91,7 +91,7 @@ def create_matrix_structure(output_directory, write_in_file, xmi_file=None, ecor
             adj_list = matrix.get_adjacency_list()
         except Exception as e:
             print(e)
-    if write_in_file is False:
+    #if write_in_file is False:
         return node_features, adj_list
     else:
         return None, None
@@ -121,7 +121,7 @@ def prepare_dataset(repository_directory, output_directory=None, repository_list
         repo_multiprocess = []
         for repository in repositories:
             current_directory = os.path.join(repository_directory, repository)
-            repo_multiprocess.append((current_directory, output_directory, write_in_file))
+            repo_multiprocess.append((current_directory, write_in_file, output_directory))
 
     print('--convert repositories into ecore metamodels--')
     #convert repositories into ecore metamodels
@@ -129,7 +129,7 @@ def prepare_dataset(repository_directory, output_directory=None, repository_list
         parallel_processing(create_ecore_graphs, repo_multiprocess)
     else:
         single_directory = os.path.join(repository_directory, repositories[0])
-        ecore_graph = create_ecore_graphs(single_directory, output_directory, write_in_file)
+        ecore_graph = create_ecore_graphs(single_directory, write_in_file)
     
     print('---convert ecore graphs to matrix structure---')
     #load xmi instance and convert them to a matrix structure for the gcn
@@ -137,10 +137,10 @@ def prepare_dataset(repository_directory, output_directory=None, repository_list
         list_xmi_files = os.listdir(f'{output_directory}/xmi_files')
         xmi_multiprocess = []
         for xmi_file in list_xmi_files:
-            xmi_multiprocess.append((output_directory, write_in_file, xmi_file))
+            xmi_multiprocess.append((write_in_file, xmi_file, None, output_directory))
         parallel_processing(create_matrix_structure, xmi_multiprocess)
     else:
-        node_features, adj_list = create_matrix_structure(output_directory, write_in_file, None, ecore_graph)
+        node_features, adj_list = create_matrix_structure(write_in_file, None, ecore_graph)
 
     if node_features is not None and adj_list is not None:
         node_features = convert_list_to_floattensor(node_features)

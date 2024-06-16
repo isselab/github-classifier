@@ -5,10 +5,9 @@ from NodeFeatures import NodeTypes
 
 class TestATEConv(unittest.TestCase):
     def test_ateconv(self):
-        output_dir = 'D:/unit_test'
         repo = 'test/unit_test_repo/testRepo1'
         resource_set = ResourceSet()
-        graph = ProjectEcoreGraph(resource_set, output_dir, repo, False)
+        graph = ProjectEcoreGraph(resource_set, repo, False)
         ecore_graph = graph.get_graph()
 
         #check number of obects in the graph

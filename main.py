@@ -39,7 +39,7 @@ if __name__ == '__main__':
 
     print('----------------load dataset------------------')
     try:
-        dataset = RepositoryDataset(f'{output_directory}/csv_files', repository_list)
+        dataset = RepositoryDataset(f'{output_directory}/csv_files')
         print('Dataset size: ')
         print(dataset.__len__())
         print('Number of classes: ')

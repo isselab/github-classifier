@@ -23,8 +23,11 @@ class EcoreToMatrixConverter:
         self.encoded_node_matrix = one_hot_encoding(node_labels, self.node_matrix)
         output_name = self.get_graph_name()
         if write_in_file is True:
-            self.write_csv(output_folder, output_name)
-            print(f'{output_name}')
+            if output_folder is not None:
+                self.write_csv(output_folder, output_name)
+                print(f'{output_name}')
+            else:
+                print('output directory is required!')
 
     def get_node_matrix(self):
         return self.node_matrix

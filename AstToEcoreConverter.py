@@ -4,7 +4,7 @@ from pyecore.resources import ResourceSet, URI
 from NodeFeatures import NodeTypes
 
 class ProjectEcoreGraph:
-    def __init__(self, resource_set: ResourceSet, output_directory, repository, write_in_file):
+    def __init__(self, resource_set: ResourceSet, repository, write_in_file, output_directory=None):
         if repository is None or repository == '':
             raise ValueError('Directory is required')
 
@@ -45,7 +45,10 @@ class ProjectEcoreGraph:
         self.check_missing_calls()
 
         if write_in_file is True:
-            self.write_xmi(resource_set, output_directory, repository)
+            if output_directory is not None:
+                self.write_xmi(resource_set, output_directory, repository)
+            else:
+                print('output directory is required!')
         print(f'{repository}, Number of files skipped: {skipped_files}')
             
 
