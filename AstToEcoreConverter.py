@@ -30,8 +30,33 @@ class ProjectEcoreGraph:
         python_files = [os.path.join(root, file) for root, _, files in os.walk(
             self.root_directory) for file in files if file.endswith('.py')]
         
+        #check for empty directories
+        empty_dir = []
+        for root, dirs, files in os.walk(self.root_directory):
+            if not len(dirs) and not len(files):
+                empty_dir.append(root)
+
         skipped_files = 0
 
+        #create empty package structure
+        if len(python_files)==0 and len(empty_dir)>0:
+            for dir_path in empty_dir:
+                dir_path = dir_path.split('\\')
+                del dir_path[0]
+                parent = None
+                for item in dir_path:
+                    if parent is None:
+                        package_node = self.create_ecore_instance(NodeTypes.PACKAGE)
+                        package_node.tName = item
+                        self.graph.packages.append(package_node)
+                        parent = package_node
+                    else:
+                        package_node = self.create_ecore_instance(NodeTypes.PACKAGE)
+                        package_node.tName = item
+                        package_node.parent = parent
+                        parent = package_node
+        
+        #create and process modules with contained program entities
         for file_path in python_files:
             try:
                self.process_file(file_path)
@@ -240,7 +265,6 @@ class ProjectEcoreGraph:
     the modules are created here and connected to a package, one module per file'''
     def process_file(self, path):
         path = path.replace('\\', '/')
-        
         current_package = self.get_package_by_path(path)
 
         #create module
