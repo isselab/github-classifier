@@ -85,18 +85,41 @@ class ProjectEcoreGraph:
         pass
 
     def set_internal_module_calls(self):
+        class_name = ''
+        method_name = ''
         for item in self.call_in_module:
             module = item[0]
             caller_node = item[1]
             called_node = item[2]
-            #print(module, called_node, caller_node)
+            if '.' in called_node:
+                check_called_name = called_node.split('.')
+                print(check_called_name)
+                if len(check_called_name)==2:
+                    class_name = check_called_name[0]
+                    method_name = check_called_name[1]
             for obj in module.contains:
+                #search for called method
                 if obj.eClass.name == NodeTypes.METHOD_DEFINITION.value:
                     if obj.signature.method.tName == called_node:
                         call_check = self.get_calls(caller_node, obj)
                         if call_check is False:
                             self.create_calls(caller_node, obj)
+                #check for called method in class
+                if obj.eClass.name == NodeTypes.CLASS.value:
+                    found_class = obj
+                    if obj.tName == class_name:
+                        self.create_method_in_class_calls(method_name, obj, caller_node)
+                    #if class name is self because both methods are in same class
+                    if found_class is not None:
+                        self.create_method_in_class_calls(method_name, found_class, caller_node)
 
+    def create_method_in_class_calls(self, method_name, class_node, caller_node):
+        for method in class_node.defines:
+            if method.eClass.name == NodeTypes.METHOD_DEFINITION.value:
+                if method.signature.method.tName == method_name:
+                    call_check = self.get_calls(caller_node, method)
+                    if call_check is False:
+                        self.create_calls(caller_node, method)
 
     '''check_list at start contains all classes with method defs that are created in typegraph,
     then they are compared to the classes with meth defs found in modules at the end,
@@ -445,6 +468,7 @@ class ASTVisitor(ast.NodeVisitor):
 
     def visit_ClassDef(self, node):
         class_name = node.name
+        self.current_module = self.graph_class.get_current_module()
         class_node = self.graph_class.get_class_by_name(class_name, module=self.graph_class.get_current_module())
         self.current_class = class_node
 
@@ -508,8 +532,6 @@ class ASTVisitor(ast.NodeVisitor):
         instance = ""
         instance_node = node.func
 
-        #print(instance_node.id)
-        #see if can be moved here
         #set caller_node
         if self.current_method is not None:
             caller_node = self.current_method
@@ -529,24 +551,28 @@ class ASTVisitor(ast.NodeVisitor):
         #call node can contain different node types
         while isinstance(instance_node, ast.Attribute):
             instance = f"{instance_node.attr}.{instance}"
-            #print(instance)
             instance_node = instance_node.value
-            #print(instance_node)
         if not isinstance(instance_node, ast.Name):
             self.generic_visit(node)
             return
         instance = f"{instance_node.id}.{instance}"
-        #print(instance)
         if instance.endswith('.'):
             instance = instance[:-1]
+
+        #for calls within one module
         self.graph_class.call_in_module.append([self.current_module, caller_node, instance])
+
         print(instance) #keep this saved here to check if called method exists already, or save for end check
+
+        #for calls of imported instances, both custom def in repo and external libraries
         instance_from_graph, type = self.graph_class.get_reference_by_name(instance.replace(f".{instance.split('.')[-1]}", ''))
-        #this is necessary to get all the called methods' names
+
+        #this is necessary to get all the called methods' names correctly
         if instance_from_graph is None:
             self.generic_visit(node)
             return
         instances = instance.split('.')
+        #print(instances)
         instances[0] = instance_from_graph
         instance_name = ".".join(instances)
         method_name = instance_name.split('.')[-1]
@@ -558,47 +584,32 @@ class ASTVisitor(ast.NodeVisitor):
         print(instance_from_graph, type)
 
         # set called_node
-        if type == 1:  # instance from class being called
-            self.graph_class.remove_instance(instance_name)
-            instance_node = self.graph_class.get_class_from_internal_structure(instance_name, None)
-            if instance_node is not None:
-                self.called_node = self.graph_class.get_method_def_in_class(method_name, instance_node)
-                if self.called_node is None:
-                    self.called_node = self.graph_class.get_method_def_from_internal_structure(method_name, instance_node)
-                    if self.called_node is None and instance_node is not None:
-                        self.called_node = self.graph_class.create_ecore_instance(NodeTypes.METHOD_DEFINITION)
-                        self.graph_class.create_method_signature(self.called_node, method_name, [])
-                        instance_node.defines.append(self.called_node)
+        #if type == 1:  # instance from class being called
+            #self.graph_class.remove_instance(instance_name)
+            #instance_node = self.graph_class.get_class_from_internal_structure(instance_name, None)
+           # if instance_node is not None:
+                #self.called_node = self.graph_class.get_method_def_in_class(method_name, instance_node)
+                #if self.called_node is None:
+                   # self.called_node = self.graph_class.get_method_def_from_internal_structure(method_name, instance_node)
+                   # if self.called_node is None and instance_node is not None:
+                       # self.called_node = self.graph_class.create_ecore_instance(NodeTypes.METHOD_DEFINITION)
+                        #self.graph_class.create_method_signature(self.called_node, method_name, [])
+                        #instance_node.defines.append(self.called_node)
 
-        if type == 0:  # instance from module being called
-            module = instance_name.split('.')[0]
-            instance_node = self.graph_class.get_module_by_name(module)
-            if instance_node is not None:
-                self.called_node = self.graph_class.get_method_def_in_module(method_name, instance_node)
-                if self.called_node is None:
-                    self.called_node = self.graph_class.get_method_def_from_internal_structure(method_name, instance_node)
-                    if self.called_node is None and instance_node is not None:
-                        called_node = self.graph_class.create_ecore_instance(NodeTypes.METHOD_DEFINITION)
-                        self.graph_class.create_method_signature(called_node, method_name, [])
-                        instance_node.contains.append(called_node)
-                        self.called_node = called_node
-            if instance_node is None:
-                self.instance_missing = instance_name
-
-        # set caller_node
-        if self.current_method is not None:
-            caller_node = self.current_method
-        else:
-            module_node = self.graph_class.get_module_by_location(self.graph_class.get_current_module().location)
-            method_location = self.graph_class.get_current_module().location
-            method_name = method_location.split('/')[-1]
-            caller_node = self.graph_class.get_method_def_in_module(method_name, module_node)
-            if caller_node is None:
-                caller_node = self.graph_class.get_method_def_from_internal_structure(method_name, module_node)
-                if caller_node is None:
-                    caller_node = self.graph_class.create_ecore_instance(NodeTypes.METHOD_DEFINITION)
-                    self.graph_class.create_method_signature(caller_node, method_name, [])
-                    module_node.contains.append(caller_node)
+        #if type == 0:  # instance from module being called
+            #module = instance_name.split('.')[0]
+           # instance_node = self.graph_class.get_module_by_name(module)
+            #if instance_node is not None:
+                #self.called_node = self.graph_class.get_method_def_in_module(method_name, instance_node)
+               # if self.called_node is None:
+                    #self.called_node = self.graph_class.get_method_def_from_internal_structure(method_name, instance_node)
+                    #if self.called_node is None and instance_node is not None:
+                       # called_node = self.graph_class.create_ecore_instance(NodeTypes.METHOD_DEFINITION)
+                        #self.graph_class.create_method_signature(called_node, method_name, [])
+                       # instance_node.contains.append(called_node)
+                        #self.called_node = called_node
+           # if instance_node is None:
+                #self.instance_missing = instance_name
 
         if self.called_node is not None:
             # check if identical call object already exists
