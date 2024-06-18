@@ -228,10 +228,24 @@ class TestATEConv(unittest.TestCase):
         resource_set = ResourceSet()
         graph = ProjectEcoreGraph(resource_set, repo, False)
         ecore_graph = graph.get_graph()
+        self.assertEqual(ecore_graph.packages[0].tName, 'numpy', 'imported library package is missing')
+        self.assertEqual(ecore_graph.modules[1].namespace.tName, 'numpy', 'imported library module and package edge wrong')
         self.assertEqual(len(ecore_graph.modules), 2, 'wrong number of modules')
         self.assertEqual(ecore_graph.modules[1].location, 'numpy', 'imported library has wrong name')
         self.assertEqual(ecore_graph.modules[0].contains[0].accessing[0].eClass.name, NodeTypes.CALL.value, 'call object is wrong type')
         self.assertEqual(ecore_graph.modules[0].contains[0].accessing[0].target.signature.method.tName, 'array', 'target has wrong name')
         self.assertEqual(ecore_graph.modules[1].contains[0].accessedBy[0].source.signature.method.tName, 'one_method', 'source has wrong name')
+
+    '''multiple packages/subpackages in imported library'''
+    def test_call_external_library_submodule(self):
+        repo = 'tests/unit_tests/test_call_external_library_submodule'
+        resource_set = ResourceSet()
+        graph = ProjectEcoreGraph(resource_set, repo, False)
+        ecore_graph = graph.get_graph()
+        self.assertEqual(len(ecore_graph.packages), 2, 'wrong number of packages')
+        self.assertEqual(ecore_graph.packages[1].tName, 'torch_geometric', 'import with length>2 has wrong package name')
+        self.assertEqual(ecore_graph.modules[2].namespace.tName, 'torch_geometric', 'wrong modules namespace')
+        self.assertEqual(ecore_graph.modules[2].contains[0].signature.method.tName, 'global_mean_pool', 'wrong method name in imported module')
+        self.assertEqual(ecore_graph.modules[2].contains[0].accessedBy[0].eClass.name, NodeTypes.CALL.value, 'wrong object type')
 
 unittest.main()

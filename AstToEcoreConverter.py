@@ -28,7 +28,8 @@ class ProjectEcoreGraph:
         self.call_in_module = [] #entries: [caller_node_module, caller_node, called_function_name] both methods in the same module
         self.call_external_module = []
         self.call_imported_library = [] #entries: [caller_node, imported_instance]
-        self.imported_libraries = []
+        self.imported_libraries = [] #entries: [module_node, module_name, package_node, package_name]
+        self.imported_package = None
 
         python_files = [os.path.join(root, file) for root, _, files in os.walk(
             self.root_directory) for file in files if file.endswith('.py')]
@@ -91,7 +92,84 @@ class ProjectEcoreGraph:
         for item in self.call_imported_library:
             caller_node = item[0]
             imported = item[1]
-            print(imported)
+            split_imported = imported.split('.')
+            package_name = split_imported[0]
+            method_name = split_imported[-1]
+            package_node = self.get_imported_library_package(package_name)
+            if package_node is None:
+                if len(split_imported)==2:
+                    package_node = self.create_ecore_instance(NodeTypes.PACKAGE)
+                    package_node.tName = package_name
+                    module_node = self.create_ecore_instance(NodeTypes.MODULE)
+                    module_node.location = package_name
+                    module_node.namespace = package_node
+                    method_node = self.create_ecore_instance(NodeTypes.METHOD_DEFINITION)
+                    self.create_method_signature(method_node, method_name, [])
+                    module_node.contains.append(method_node)
+                    self.imported_libraries.append([module_node, package_name, package_node, package_name])
+                    self.graph.modules.append(module_node)
+                    self.graph.packages.append(package_node)
+                    call_check = self.get_calls(caller_node, method_node)
+                    if call_check is False:
+                        self.create_calls(caller_node, method_node)
+                if len(split_imported)>2:
+                    obj_name = split_imported[-2]
+                    if obj_name[0].isupper():
+                        class_name = obj_name
+                        module_name = split_imported[-3]
+                    else:
+                        module_name = obj_name
+                    #create package hierarchy
+                    for element in split_imported:
+                        parent = None
+                        if element != module_name:
+                            package_node = self.create_ecore_instance(NodeTypes.PACKAGE)
+                            package_node.tName = element
+                            self.imported_libraries.append([None, None, package_node, element])
+                            if parent is not None:
+                                package_node.parent = parent
+                            else:
+                                self.graph.packages.append(package_node)
+                            parent = package_node
+                            self.imported_package = package_node
+                        if element == module_name:
+                            break
+                    #create module
+                    module_node = self.get_imported_library(module_name)
+                    if module_node is None:
+                        module_node = self.create_ecore_instance(NodeTypes.MODULE)
+                        module_node.location = module_name
+                        module_node.namespace = self.imported_package
+                        self.graph.modules.append(module_node)
+                        package_key = self.get_imported_library_package_key(self.imported_package.tName)
+                        package_key[0] = module_node
+                        package_key[1] = module_name
+                        #create called method
+                        method_node = self.create_ecore_instance(NodeTypes.METHOD_DEFINITION)
+                        self.create_method_signature(method_node, method_name, [])
+                        module_node.contains.append(method_node)
+                        call_check = self.get_calls(caller_node, method_node)
+                        if call_check is False:
+                            self.create_calls(caller_node, method_node)
+
+
+    def get_imported_library_package(self, package_name):
+        for lib in self.imported_libraries:
+            if lib[3] == package_name:
+                return lib[2]
+        return None
+    
+    def get_imported_library_package_key(self, package_name):
+        for lib in self.imported_libraries:
+            if lib[3] == package_name:
+                return lib
+        return None
+
+    def get_imported_library(self, module_name):
+        for lib in self.imported_libraries:
+            if lib[1] == module_name:
+                return lib[0]
+        return None
 
     def set_external_module_calls(self):
         class_name = None
@@ -125,8 +203,9 @@ class ProjectEcoreGraph:
                     module_name = split_import[-3]
                 else:
                     module_name = obj_name
-           # print(class_name)
+            #print(class_name)
             #print(module_name)
+            #print(imported_instance)
             module_node = self.get_module_by_name(module_name)
             if module_node is not None:
                 for obj in module_node.contains:
@@ -137,17 +216,7 @@ class ProjectEcoreGraph:
                     if obj.eClass.name == NodeTypes.METHOD_DEFINITION.value:
                         self.create_method_call(obj, method_name, caller_node)
             if module_node is None:
-                #self.call_imported_library.append([caller_node, imported_instance])
-                module_node = self.create_ecore_instance(NodeTypes.MODULE)
-                module_node.location = module_name
-                method_node = self.create_ecore_instance(NodeTypes.METHOD_DEFINITION)
-                self.create_method_signature(method_node, method_name, [])
-                module_node.contains.append(method_node)
-                self.module_list.append([module_node, module_name])
-                self.graph.modules.append(module_node)
-                call_check = self.get_calls(caller_node, method_node)
-                if call_check is False:
-                    self.create_calls(caller_node, method_node)
+                self.call_imported_library.append([caller_node, imported_instance])
     
     '''this function sets the calls for instances within the same module, no imports'''
     def set_internal_module_calls(self):
