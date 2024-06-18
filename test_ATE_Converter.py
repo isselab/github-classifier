@@ -38,7 +38,7 @@ class TestATEConv(unittest.TestCase):
         graph = ProjectEcoreGraph(resource_set, repo, False)
         ecore_graph = graph.get_graph()
         self.assertEqual(len(ecore_graph.modules), 1, 'wrong number of modules')
-        print(ecore_graph.modules[0].tAnnotation)
+        #print(ecore_graph.modules[0].tAnnotation)
         self.assertEqual(ecore_graph.modules[0].eClass.name, NodeTypes.MODULE.value, 'module is wrong type')
         self.assertEqual(ecore_graph.modules[0].location, 'tests/unit_tests/test_module/my_module', 'wrong module location')
         self.assertIsNone(ecore_graph.modules[0].namespace, 'namespace should be empty')
