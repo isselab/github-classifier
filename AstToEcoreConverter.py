@@ -94,11 +94,15 @@ class ProjectEcoreGraph:
             split_import = imported_instance.split('.')
             module_name = split_import[0]
             method_name = split_import[-1]
+
             if len(split_import)>2:
                 obj_name = split_import[1]
-                if obj_name[0].isupper():
+                if obj_name[0].isupper(): #relies on naming conventions to check the type
                     class_name = obj_name
-            #print(class_name)
+                else:
+                    module_name = obj_name #in this case the first imported instance was a package name
+            print(class_name)
+            print(module_name)
             module_node = self.get_module_by_name(module_name)
             if module_node is not None:
                 for obj in module_node.contains:
