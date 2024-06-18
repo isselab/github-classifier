@@ -228,5 +228,10 @@ class TestATEConv(unittest.TestCase):
         resource_set = ResourceSet()
         graph = ProjectEcoreGraph(resource_set, repo, False)
         ecore_graph = graph.get_graph()
+        self.assertEqual(len(ecore_graph.modules), 2, 'wrong number of modules')
+        self.assertEqual(ecore_graph.modules[1].location, 'numpy', 'imported library has wrong name')
+        self.assertEqual(ecore_graph.modules[0].contains[0].accessing[0].eClass.name, NodeTypes.CALL.value, 'call object is wrong type')
+        self.assertEqual(ecore_graph.modules[0].contains[0].accessing[0].target.signature.method.tName, 'array', 'target has wrong name')
+        self.assertEqual(ecore_graph.modules[1].contains[0].accessedBy[0].source.signature.method.tName, 'one_method', 'source has wrong name')
 
 unittest.main()
