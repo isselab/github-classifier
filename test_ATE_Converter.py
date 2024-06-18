@@ -155,7 +155,8 @@ class TestATEConv(unittest.TestCase):
         self.assertEqual(ecore_graph.modules[1].contains[0].accessing[0].eClass.name, NodeTypes.CALL.value, 'imported method cannot be used, import did not work')
         self.assertEqual(ecore_graph.modules[1].contains[0].accessing[0].target.signature.method.tName, 'one_method', 'imported method name wrong')
         self.assertEqual(ecore_graph.modules[0].contains[0].defines[0].accessedBy[0].source.signature.method.tName, 'method_two', 'source method for call is wrong')
-
+ 
+    #test calling a function from an imported module from another package
     def test_internal_method_imports_package(self):
         repo = 'tests/unit_tests/test_internal_method_imports_package'
         resource_set = ResourceSet()
@@ -165,6 +166,17 @@ class TestATEConv(unittest.TestCase):
         self.assertEqual(ecore_graph.modules[0].contains[0].accessing[0].eClass.name, NodeTypes.CALL.value, 'imported method cannot be used, import did not work')
         self.assertEqual(ecore_graph.modules[0].contains[0].accessing[0].target.signature.method.tName, 'one_method', 'imported method name wrong')
         self.assertEqual(ecore_graph.modules[1].contains[0].accessedBy[0].source.signature.method.tName, 'method_two', 'call source is wrong')
+
+    #test calling a function from an imported class from another package
+    def test_internal_method_class_imports_package(self):
+        repo = 'tests/unit_tests/test_internal_method_class_imports_package'
+        resource_set = ResourceSet()
+        graph = ProjectEcoreGraph(resource_set, repo, False)
+        ecore_graph = graph.get_graph()
+        self.assertEqual(ecore_graph.modules[0].contains[0].signature.method.tName, 'method_two', 'wrong method name using the import')
+        self.assertEqual(ecore_graph.modules[0].contains[0].accessing[0].eClass.name, NodeTypes.CALL.value, 'imported method cannot be used, import did not work')
+        self.assertEqual(ecore_graph.modules[0].contains[0].accessing[0].target.signature.method.tName, 'one_method', 'imported method name wrong')
+        self.assertEqual(ecore_graph.modules[1].contains[0].defines[0].accessedBy[0].source.signature.method.tName, 'method_two', 'call source is wrong')
 
     #check call of method in a class by another method not in the class, both in same module
     def test_module_internal_class_call(self):
@@ -188,5 +200,27 @@ class TestATEConv(unittest.TestCase):
         self.assertEqual(ecore_graph.modules[0].contains[0].defines[1].accessing[0].eClass.name, NodeTypes.CALL.value, 'call is wrong type')
         self.assertEqual(ecore_graph.modules[0].contains[0].defines[1].accessing[0].target.signature.method.tName, 'called_func', 'target has wrong method name')
         self.assertEqual(ecore_graph.modules[0].contains[0].defines[0].accessedBy[0].source.signature.method.tName, 'caller_func', 'source has wrong method name')
+
+    #test call for method in multiple packages(subpackage)
+    def test_internal_method_imports_multiple_packages(self):
+        repo = 'tests/unit_tests/test_internal_method_imports_multiple_packages'
+        resource_set = ResourceSet()
+        graph = ProjectEcoreGraph(resource_set, repo, False)
+        ecore_graph = graph.get_graph()
+        self.assertEqual(ecore_graph.modules[0].contains[0].signature.method.tName, 'method_two', 'wrong method name using the import')
+        self.assertEqual(ecore_graph.modules[0].contains[0].accessing[0].eClass.name, NodeTypes.CALL.value, 'imported method cannot be used, import did not work')
+        self.assertEqual(ecore_graph.modules[0].contains[0].accessing[0].target.signature.method.tName, 'one_method', 'imported method name wrong')
+        self.assertEqual(ecore_graph.modules[2].contains[0].accessedBy[0].source.signature.method.tName, 'method_two', 'call source is wrong')
+
+    #test call for method in class in multiple packages(subpackage)
+    def test_internal_method_class_imports_multiple_packages(self):
+        repo = 'tests/unit_tests/test_internal_method_class_imports_multiple_packages'
+        resource_set = ResourceSet()
+        graph = ProjectEcoreGraph(resource_set, repo, False)
+        ecore_graph = graph.get_graph()
+        self.assertEqual(ecore_graph.modules[0].contains[0].signature.method.tName, 'method_two', 'wrong method name using the import')
+        self.assertEqual(ecore_graph.modules[0].contains[0].accessing[0].eClass.name, NodeTypes.CALL.value, 'imported method cannot be used, import did not work')
+        self.assertEqual(ecore_graph.modules[0].contains[0].accessing[0].target.signature.method.tName, 'one_method', 'imported method name wrong')
+        self.assertEqual(ecore_graph.modules[2].contains[0].defines[0].accessedBy[0].source.signature.method.tName, 'method_two', 'call source is wrong')
 
 unittest.main()

@@ -95,12 +95,27 @@ class ProjectEcoreGraph:
             module_name = split_import[0]
             method_name = split_import[-1]
 
-            if len(split_import)>2:
+            if len(split_import)>2: #structure: package/module, module/class, method
                 obj_name = split_import[1]
                 if obj_name[0].isupper(): #relies on naming conventions to check the type
                     class_name = obj_name
                 else:
                     module_name = obj_name #in this case the first imported instance was a package name
+
+            if len(split_import)>3: #structure: package, subpackage/module, module/class, method
+                obj_name = split_import[2]
+                if obj_name[0].isupper():
+                    class_name = obj_name
+                else:
+                    module_name = obj_name
+
+            if len(split_import)>4: #structure: packages, subpackages...,module, (class,) method
+                obj_name = split_import[-2]
+                if obj_name[0].isupper():
+                    class_name = obj_name
+                    module_name = split_import[-3]
+                else:
+                    module_name = obj_name
             print(class_name)
             print(module_name)
             module_node = self.get_module_by_name(module_name)
