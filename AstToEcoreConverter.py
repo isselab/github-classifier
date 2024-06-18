@@ -85,18 +85,30 @@ class ProjectEcoreGraph:
             
 
     def set_external_module_calls(self):
+        class_name = None
         for item in self.call_external_module:
             imported_instance = item[0]
             type = item[1]
             caller_node = item[2]
             #print(imported_instance, type, caller_node)
-            module_name = imported_instance.split('.')[0]
-            method_name = imported_instance.split('.')[-1]
+            split_import = imported_instance.split('.')
+            module_name = split_import[0]
+            method_name = split_import[-1]
+            if len(split_import)>2:
+                obj_name = split_import[1]
+                if obj_name[0].isupper():
+                    class_name = obj_name
+            #print(class_name)
             module_node = self.get_module_by_name(module_name)
             if module_node is not None:
                 for obj in module_node.contains:
+                    if class_name is not None:
+                        if obj.eClass.name == NodeTypes.CLASS.value:
+                            if obj.tName == class_name:
+                                self.create_method_in_class_call(method_name, obj, caller_node)
                     if obj.eClass.name == NodeTypes.METHOD_DEFINITION.value:
                         self.create_method_call(obj, method_name, caller_node)
+
     
     '''this function sets the calls for instances within the same module, no imports'''
     def set_internal_module_calls(self):
@@ -589,6 +601,7 @@ class ASTVisitor(ast.NodeVisitor):
             return
         instances = instance.split('.')
         #print(instances)
+        #add method name to instance from graph
         instances[0] = instance_from_graph
         instance_name = ".".join(instances)
         method_name = instance_name.split('.')[-1]
@@ -597,8 +610,9 @@ class ASTVisitor(ast.NodeVisitor):
         self.instance_missing = None
         #print(instance)
         #print(instance_node.id)
-        print(instance_from_graph, type)
-        self.graph_class.call_external_module.append([instance_from_graph, type, caller_node])
+        print(instance_name)
+        #print(instance_from_graph, type)
+        self.graph_class.call_external_module.append([instance_name, type, caller_node])
 
         # set called_node
         #if type == 1:  # instance from class being called
