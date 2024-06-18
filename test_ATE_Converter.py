@@ -142,9 +142,9 @@ class TestATEConv(unittest.TestCase):
         resource_set = ResourceSet()
         graph = ProjectEcoreGraph(resource_set, repo, False)
         ecore_graph = graph.get_graph()
-        #self.assertEqual(ecore_graph.modules[1].contains[0].signature.method.tName, 'method_two', 'wrong method name using the import')
-        #self.assertEqual(ecore_graph.modules[1].contains[0].accessing[0].eClass.name, NodeTypes.CALL.value, 'imported method cannot be used, import did not work')
-        #self.assertEqual(ecore_graph.modules[1].contains[0].accessing[0].target.signature.method.tName, 'one_method', 'imported method name wrong')
+        self.assertEqual(ecore_graph.modules[1].contains[0].signature.method.tName, 'method_two', 'wrong method name using the import')
+        self.assertEqual(ecore_graph.modules[1].contains[0].accessing[0].eClass.name, NodeTypes.CALL.value, 'imported method cannot be used, import did not work')
+        self.assertEqual(ecore_graph.modules[1].contains[0].accessing[0].target.signature.method.tName, 'one_method', 'imported method name wrong')
 
     #check call of method in a class by another method not in the class, both in same module
     def test_module_internal_class_call(self):

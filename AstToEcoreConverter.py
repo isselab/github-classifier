@@ -27,6 +27,7 @@ class ProjectEcoreGraph:
         self.call_list = []
         self.check_list = [] # entries: class_node
         self.call_in_module = [] #entries: [caller_node_module, caller_node, called_function_name] both methods in the same module
+        self.call_external_module = []
 
         python_files = [os.path.join(root, file) for root, _, files in os.walk(
             self.root_directory) for file in files if file.endswith('.py')]
@@ -68,10 +69,12 @@ class ProjectEcoreGraph:
 
         self.append_modules()
         self.search_meth_defs()
-        self.check_missing_calls()
+        
+        #set calls
+        if len(self.call_external_module)>0:
+            self.set_external_module_calls()
         if len(self.call_in_module)>0:
             self.set_internal_module_calls()
-        #print(self.call_in_module)
 
         if write_in_file is True:
             if output_directory is not None:
@@ -81,45 +84,58 @@ class ProjectEcoreGraph:
         print(f'{repository}, Number of files skipped: {skipped_files}')
             
 
-    def check_missing_calls(self):
-        pass
-
+    def set_external_module_calls(self):
+        for item in self.call_external_module:
+            imported_instance = item[0]
+            type = item[1]
+            caller_node = item[2]
+            #print(imported_instance, type, caller_node)
+            module_name = imported_instance.split('.')[0]
+            method_name = imported_instance.split('.')[-1]
+            module_node = self.get_module_by_name(module_name)
+            if module_node is not None:
+                for obj in module_node.contains:
+                    if obj.eClass.name == NodeTypes.METHOD_DEFINITION.value:
+                        self.create_method_call(obj, method_name, caller_node)
+    
+    '''this function sets the calls for instances within the same module, no imports'''
     def set_internal_module_calls(self):
         class_name = ''
         method_name = ''
+        found_class = None
         for item in self.call_in_module:
             module = item[0]
             caller_node = item[1]
             called_node = item[2]
             if '.' in called_node:
                 check_called_name = called_node.split('.')
-                print(check_called_name)
                 if len(check_called_name)==2:
                     class_name = check_called_name[0]
                     method_name = check_called_name[1]
             for obj in module.contains:
                 #search for called method
                 if obj.eClass.name == NodeTypes.METHOD_DEFINITION.value:
-                    if obj.signature.method.tName == called_node:
-                        call_check = self.get_calls(caller_node, obj)
-                        if call_check is False:
-                            self.create_calls(caller_node, obj)
+                    self.create_method_call(obj, called_node, caller_node)
+
                 #check for called method in class
                 if obj.eClass.name == NodeTypes.CLASS.value:
                     found_class = obj
                     if obj.tName == class_name:
-                        self.create_method_in_class_calls(method_name, obj, caller_node)
+                        self.create_method_in_class_call(method_name, obj, caller_node)
                     #if class name is self because both methods are in same class
                     if found_class is not None:
-                        self.create_method_in_class_calls(method_name, found_class, caller_node)
+                        self.create_method_in_class_call(method_name, found_class, caller_node)
 
-    def create_method_in_class_calls(self, method_name, class_node, caller_node):
+    def create_method_in_class_call(self, method_name, class_node, caller_node):
         for method in class_node.defines:
             if method.eClass.name == NodeTypes.METHOD_DEFINITION.value:
-                if method.signature.method.tName == method_name:
-                    call_check = self.get_calls(caller_node, method)
-                    if call_check is False:
-                        self.create_calls(caller_node, method)
+                self.create_method_call(method, method_name, caller_node)
+
+    def create_method_call(self, method_node, method_name, caller_node):
+        if method_node.signature.method.tName == method_name:
+            call_check = self.get_calls(caller_node, method_node)
+            if call_check is False:
+                self.create_calls(caller_node, method_node)
 
     '''check_list at start contains all classes with method defs that are created in typegraph,
     then they are compared to the classes with meth defs found in modules at the end,
@@ -562,7 +578,7 @@ class ASTVisitor(ast.NodeVisitor):
         #for calls within one module
         self.graph_class.call_in_module.append([self.current_module, caller_node, instance])
 
-        print(instance) #keep this saved here to check if called method exists already, or save for end check
+        #print(instance) #keep this saved here to check if called method exists already, or save for end check
 
         #for calls of imported instances, both custom def in repo and external libraries
         instance_from_graph, type = self.graph_class.get_reference_by_name(instance.replace(f".{instance.split('.')[-1]}", ''))
@@ -579,9 +595,10 @@ class ASTVisitor(ast.NodeVisitor):
         self.called_node = None
         self.call_check = False
         self.instance_missing = None
-        print(instance)
+        #print(instance)
         #print(instance_node.id)
         print(instance_from_graph, type)
+        self.graph_class.call_external_module.append([instance_from_graph, type, caller_node])
 
         # set called_node
         #if type == 1:  # instance from class being called
