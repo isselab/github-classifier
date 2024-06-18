@@ -16,6 +16,9 @@ class EcoreToMatrixConverter:
 
         self.convert_nodes(self.typegraph_root)
 
+        #added to see if flag ext library is set
+       # print(self.typegraph_root.modules[0].tAnnotation)
+
         self.convert_edges()
 
         node_labels = [NodeTypes.PACKAGE.value, NodeTypes.MODULE.value, NodeTypes.CLASS.value, NodeTypes.METHOD_DEFINITION.value, 

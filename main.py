@@ -11,7 +11,7 @@ import torch
     the graphs are loaded from that file, otherwise the graphs are loaded without labels'''
 
 repository_list = '../dataset_labeled.xlsx'
-repository_directory = 'D:/unit_test'
+repository_directory = 'D:/unit_test_toobig'
 output_directory = 'D:/test_output'
 path_to_model = 'graph_classification_model.pt'
 

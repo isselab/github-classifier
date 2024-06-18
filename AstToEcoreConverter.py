@@ -269,6 +269,9 @@ class ProjectEcoreGraph:
 
         #create module
         self.current_module = self.create_ecore_instance(NodeTypes.MODULE)
+        #self.current_module.external = 'Library'
+        #self.current_module.flag = 'Library'
+        self.current_module.tAnnotation = 'Library' #added to flag the imported external libraries, try if it works
         self.current_module.location = path.removesuffix('.py')
         self.current_module.namespace = current_package
         path_split = self.current_module.location.replace(f"{self.root_directory}/", '').split('/')
