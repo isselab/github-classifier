@@ -114,13 +114,17 @@ class TestATEConv(unittest.TestCase):
         self.assertEqual(ecore_graph.methods[0].signatures[0].parameters[1].eClass.name, NodeTypes.PARAMETER.value, 'parameter is wrong type')
         self.assertEqual(ecore_graph.methods[0].signatures[0].parameters[1].previous.eClass.name, NodeTypes.PARAMETER.value, 'parameter should have previous parameter set')
     
-    #check call later, only seems to work for imported functions?, not one function callig another function in the same file
-    def test_call(self):
-        repo = 'tests/unit_tests/test_call'
+    #check call of method by another method, both in same module
+    def test_module_internal_method_call(self):
+        repo = 'tests/unit_tests/test_module_internal_method_call'
         resource_set = ResourceSet()
         graph = ProjectEcoreGraph(resource_set, repo, False)
         ecore_graph = graph.get_graph()
-        #print(ecore_graph.modules[1].contains[0].accessing) #is this wrong already?? its empty but there should be call
+        self.assertEqual(ecore_graph.modules[0].contains[1].signature.method.tName, 'caller_func', 'caller method has wrong name')
+        self.assertEqual(len(ecore_graph.modules[0].contains[1].accessing), 1, 'call object is missing')
+        self.assertEqual(ecore_graph.modules[0].contains[1].accessing[0].eClass.name, NodeTypes.CALL.value, 'call is wrong type')
+        self.assertIsNotNone(ecore_graph.modules[0].contains[1].accessing[0].target, 'target is missing')
+        self.assertEqual(ecore_graph.modules[0].contains[1].accessing[0].target.signature.method.tName, 'called_func', 'target has wrong method name')
 
     def test_method_in_class(self):
         repo = 'tests/unit_tests/test_method_in_class'

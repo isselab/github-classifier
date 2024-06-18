@@ -26,6 +26,7 @@ class ProjectEcoreGraph:
         self.method_list = []  # entries [method_node, name, module_node]
         self.call_list = []
         self.check_list = [] # entries: class_node
+        self.call_in_module = [] #entries: [caller_node_module, caller_node, called_function_name] both methods in the same module
 
         python_files = [os.path.join(root, file) for root, _, files in os.walk(
             self.root_directory) for file in files if file.endswith('.py')]
@@ -68,6 +69,9 @@ class ProjectEcoreGraph:
         self.append_modules()
         self.search_meth_defs()
         self.check_missing_calls()
+        if len(self.call_in_module)>0:
+            self.set_internal_module_calls()
+        #print(self.call_in_module)
 
         if write_in_file is True:
             if output_directory is not None:
@@ -79,6 +83,19 @@ class ProjectEcoreGraph:
 
     def check_missing_calls(self):
         pass
+
+    def set_internal_module_calls(self):
+        for item in self.call_in_module:
+            module = item[0]
+            caller_node = item[1]
+            called_node = item[2]
+            #print(module, called_node, caller_node)
+            for obj in module.contains:
+                if obj.eClass.name == NodeTypes.METHOD_DEFINITION.value:
+                    if obj.signature.method.tName == called_node:
+                        call_check = self.get_calls(caller_node, obj)
+                        if call_check is False:
+                            self.create_calls(caller_node, obj)
 
 
     '''check_list at start contains all classes with method defs that are created in typegraph,
@@ -388,6 +405,7 @@ class ASTVisitor(ast.NodeVisitor):
         self.current_method = None
         self.current_class = None
         self.current_indentation = 0
+        self.current_module = None
 
     def visit_Import(self, node):
         for name in node.names:
@@ -455,6 +473,7 @@ class ASTVisitor(ast.NodeVisitor):
             self.current_method = self.graph_class.create_ecore_instance(NodeTypes.METHOD_DEFINITION)
             self.graph_class.create_method_signature(self.current_method, node.name, node.args.args)
             module_node = self.graph_class.get_current_module()
+            self.current_module = module_node
             module_node.contains.append(self.current_method)
         self.current_indentation = node.col_offset
         self.generic_visit(node)
@@ -489,17 +508,41 @@ class ASTVisitor(ast.NodeVisitor):
         instance = ""
         instance_node = node.func
 
+        #print(instance_node.id)
+        #see if can be moved here
+        #set caller_node
+        if self.current_method is not None:
+            caller_node = self.current_method
+        else:
+            module_node = self.graph_class.get_module_by_location(self.graph_class.get_current_module().location)
+            self.current_module = module_node
+            method_location = self.graph_class.get_current_module().location
+            method_name = method_location.split('/')[-1]
+            caller_node = self.graph_class.get_method_def_in_module(method_name, module_node)
+            if caller_node is None:
+                caller_node = self.graph_class.get_method_def_from_internal_structure(method_name, module_node)
+                if caller_node is None:
+                    caller_node = self.graph_class.create_ecore_instance(NodeTypes.METHOD_DEFINITION)
+                    self.graph_class.create_method_signature(caller_node, method_name, [])
+                    module_node.contains.append(caller_node)
+
         #call node can contain different node types
         while isinstance(instance_node, ast.Attribute):
             instance = f"{instance_node.attr}.{instance}"
+            #print(instance)
             instance_node = instance_node.value
+            #print(instance_node)
         if not isinstance(instance_node, ast.Name):
             self.generic_visit(node)
             return
         instance = f"{instance_node.id}.{instance}"
+        #print(instance)
         if instance.endswith('.'):
             instance = instance[:-1]
+        self.graph_class.call_in_module.append([self.current_module, caller_node, instance])
+        print(instance) #keep this saved here to check if called method exists already, or save for end check
         instance_from_graph, type = self.graph_class.get_reference_by_name(instance.replace(f".{instance.split('.')[-1]}", ''))
+        #this is necessary to get all the called methods' names
         if instance_from_graph is None:
             self.generic_visit(node)
             return
@@ -510,7 +553,8 @@ class ASTVisitor(ast.NodeVisitor):
         self.called_node = None
         self.call_check = False
         self.instance_missing = None
-
+        print(instance)
+        #print(instance_node.id)
         print(instance_from_graph, type)
 
         # set called_node
