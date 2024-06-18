@@ -24,10 +24,11 @@ class ProjectEcoreGraph:
         self.class_list = []  # entries [class_node, name, module/None]
         self.classes_without_module = []
         self.method_list = []  # entries [method_node, name, module_node]
-        self.call_list = []
+        #self.call_list = []
         self.check_list = [] # entries: class_node
         self.call_in_module = [] #entries: [caller_node_module, caller_node, called_function_name] both methods in the same module
         self.call_external_module = []
+        self.call_imported_library = [] #entries: [caller_node, imported_instance]
 
         python_files = [os.path.join(root, file) for root, _, files in os.walk(
             self.root_directory) for file in files if file.endswith('.py')]
@@ -71,10 +72,12 @@ class ProjectEcoreGraph:
         self.search_meth_defs()
         
         #set calls
-        if len(self.call_external_module)>0:
-            self.set_external_module_calls()
         if len(self.call_in_module)>0:
             self.set_internal_module_calls()
+        if len(self.call_external_module)>0:
+            self.set_external_module_calls()
+        if len(self.call_imported_library)>0:
+            self.set_imported_libraries_calls()
 
         if write_in_file is True:
             if output_directory is not None:
@@ -83,6 +86,11 @@ class ProjectEcoreGraph:
                 print('output directory is required!')
         print(f'{repository}, Number of files skipped: {skipped_files}')
             
+    def set_imported_libraries_calls(self):
+        for item in self.call_imported_library:
+            caller_node = item[0]
+            imported = item[1]
+            print(imported)
 
     def set_external_module_calls(self):
         class_name = None
@@ -116,8 +124,8 @@ class ProjectEcoreGraph:
                     module_name = split_import[-3]
                 else:
                     module_name = obj_name
-            print(class_name)
-            print(module_name)
+           # print(class_name)
+            #print(module_name)
             module_node = self.get_module_by_name(module_name)
             if module_node is not None:
                 for obj in module_node.contains:
@@ -127,7 +135,8 @@ class ProjectEcoreGraph:
                                 self.create_method_in_class_call(method_name, obj, caller_node)
                     if obj.eClass.name == NodeTypes.METHOD_DEFINITION.value:
                         self.create_method_call(obj, method_name, caller_node)
-
+            if module_node is None:
+                self.call_imported_library.append([caller_node, imported_instance])
     
     '''this function sets the calls for instances within the same module, no imports'''
     def set_internal_module_calls(self):
@@ -661,14 +670,14 @@ class ASTVisitor(ast.NodeVisitor):
            # if instance_node is None:
                 #self.instance_missing = instance_name
 
-        if self.called_node is not None:
+       # if self.called_node is not None:
             # check if identical call object already exists
-            self.call_check = self.graph_class.get_calls(caller_node, self.called_node)
-            if self.call_check is False:
-                self.graph_class.create_calls(caller_node, self.called_node)
+            #self.call_check = self.graph_class.get_calls(caller_node, self.called_node)
+            #if self.call_check is False:
+                #self.graph_class.create_calls(caller_node, self.called_node)
 
         # check after all the files are processed if modules and methods called exist then
-        if self.instance_missing is not None:
-            self.graph_class.call_list.append([self.instance_missing, caller_node])
+        #if self.instance_missing is not None:
+            #self.graph_class.call_list.append([self.instance_missing, caller_node])
 
         self.generic_visit(node)

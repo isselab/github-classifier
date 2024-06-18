@@ -223,4 +223,10 @@ class TestATEConv(unittest.TestCase):
         self.assertEqual(ecore_graph.modules[0].contains[0].accessing[0].target.signature.method.tName, 'one_method', 'imported method name wrong')
         self.assertEqual(ecore_graph.modules[2].contains[0].defines[0].accessedBy[0].source.signature.method.tName, 'method_two', 'call source is wrong')
 
+    def test_call_external_library(self):
+        repo = 'tests/unit_tests/test_call_external_library'
+        resource_set = ResourceSet()
+        graph = ProjectEcoreGraph(resource_set, repo, False)
+        ecore_graph = graph.get_graph()
+
 unittest.main()
