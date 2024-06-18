@@ -90,6 +90,7 @@ class ProjectEcoreGraph:
             
     def set_imported_libraries_calls(self):
         for item in self.call_imported_library:
+            class_name = None
             caller_node = item[0]
             imported = item[1]
             split_imported = imported.split('.')
@@ -144,13 +145,14 @@ class ProjectEcoreGraph:
                         package_key = self.get_imported_library_package_key(self.imported_package.tName)
                         package_key[0] = module_node
                         package_key[1] = module_name
-                        #create called method
-                        method_node = self.create_ecore_instance(NodeTypes.METHOD_DEFINITION)
-                        self.create_method_signature(method_node, method_name, [])
-                        module_node.contains.append(method_node)
-                        call_check = self.get_calls(caller_node, method_node)
-                        if call_check is False:
-                            self.create_calls(caller_node, method_node)
+                        if class_name is None:
+                            #create called method
+                            method_node = self.create_ecore_instance(NodeTypes.METHOD_DEFINITION)
+                            self.create_method_signature(method_node, method_name, [])
+                            module_node.contains.append(method_node)
+                            call_check = self.get_calls(caller_node, method_node)
+                            if call_check is False:
+                                self.create_calls(caller_node, method_node)
 
 
     def get_imported_library_package(self, package_name):
