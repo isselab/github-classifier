@@ -2,7 +2,8 @@
 
 **short description**
 
-The unit tests in this folder have to be moved to the same directory as the Pipeline and its components for execution.
+The unit tests test_ATE_Converter.py and test_ETM_Converter.py in this folder have to be moved to the same directory as the Pipeline and its components for execution.
+It is assumed that the unit_tests remain in this folder, otherwise the paths in the different testing functions will have to be manually adjusted.
 
 
 **requirements**

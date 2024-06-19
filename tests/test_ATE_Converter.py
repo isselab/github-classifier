@@ -103,6 +103,32 @@ class TestATEConv(unittest.TestCase):
         self.assertEqual(ecore_graph.modules[0].contains[0].eClass.name, NodeTypes.METHOD_DEFINITION.value, 'method definition is wrong type')
         self.assertEqual(ecore_graph.modules[0].contains[0].signature.method.tName, 'my_test_method', 'edge method def to method wrong')
 
+    #test defining a method inside a class
+    def test_method_in_class(self):
+        repo = 'tests/unit_tests/test_method_in_class'
+        resource_set = ResourceSet()
+        graph = ProjectEcoreGraph(resource_set, repo, False)
+        ecore_graph = graph.get_graph()
+        self.assertEqual(ecore_graph.modules[0].contains[0].eClass.name, NodeTypes.CLASS.value, 'class is wrong type')
+        self.assertEqual(ecore_graph.modules[0].contains[0].tName, 'MyTestClass', 'class name wrong')
+        self.assertEqual(len(ecore_graph.modules[0].contains[0].defines), 1, 'class should define one method')
+        self.assertEqual(ecore_graph.modules[0].contains[0].defines[0].eClass.name, NodeTypes.METHOD_DEFINITION.value, 'method in class is wrong type')
+        self.assertEqual(ecore_graph.modules[0].contains[0].defines[0].signature.method.tName, 'my_test_method', 'wrong method name')
+
+    #test defining multiple methods inside a class
+    def test_multiple_methods_in_class(self):
+        repo = 'tests/unit_tests/test_multiple_methods_in_class'
+        resource_set = ResourceSet()
+        graph = ProjectEcoreGraph(resource_set, repo, False)
+        ecore_graph = graph.get_graph()
+        self.assertEqual(ecore_graph.modules[0].contains[0].eClass.name, NodeTypes.CLASS.value, 'class is wrong type')
+        self.assertEqual(ecore_graph.modules[0].contains[0].tName, 'MyTestClass', 'class name wrong')
+        self.assertEqual(len(ecore_graph.modules[0].contains[0].defines), 2, 'class should define two methods')
+        self.assertEqual(ecore_graph.modules[0].contains[0].defines[0].eClass.name, NodeTypes.METHOD_DEFINITION.value, 'first method in class is wrong type')
+        self.assertEqual(ecore_graph.modules[0].contains[0].defines[0].signature.method.tName, 'my_test_method', 'wrong method name')
+        self.assertEqual(ecore_graph.modules[0].contains[0].defines[1].eClass.name, NodeTypes.METHOD_DEFINITION.value, 'second method in class is wrong type')
+        self.assertEqual(ecore_graph.modules[0].contains[0].defines[1].signature.method.tName, 'my_second_method', 'wrong method name')
+
     def test_parameter(self):
         repo = 'tests/unit_tests/test_parameter'
         resource_set = ResourceSet()
@@ -133,18 +159,6 @@ class TestATEConv(unittest.TestCase):
         self.assertEqual(ecore_graph.modules[0].contains[1].accessing[0].eClass.name, NodeTypes.CALL.value, 'call is wrong type')
         self.assertIsNotNone(ecore_graph.modules[0].contains[1].accessing[0].target, 'target is missing')
         self.assertEqual(ecore_graph.modules[0].contains[1].accessing[0].target.signature.method.tName, 'called_func', 'target has wrong method name')
-
-    #test calling a method inside a class
-    def test_method_in_class(self):
-        repo = 'tests/unit_tests/test_method_in_class'
-        resource_set = ResourceSet()
-        graph = ProjectEcoreGraph(resource_set, repo, False)
-        ecore_graph = graph.get_graph()
-        self.assertEqual(ecore_graph.modules[0].contains[0].eClass.name, NodeTypes.CLASS.value, 'class is wrong type')
-        self.assertEqual(ecore_graph.modules[0].contains[0].tName, 'MyTestClass', 'class ame wrong')
-        self.assertEqual(len(ecore_graph.modules[0].contains[0].defines), 1, 'class should define one method')
-        self.assertEqual(ecore_graph.modules[0].contains[0].defines[0].eClass.name, NodeTypes.METHOD_DEFINITION.value, 'method in class is wrong type')
-        self.assertEqual(ecore_graph.modules[0].contains[0].defines[0].signature.method.tName, 'my_test_method', 'wrong method name')
 
     #test importing a method from another module in the repo
     def test_internal_method_imports(self):
