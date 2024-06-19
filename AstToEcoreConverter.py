@@ -120,7 +120,10 @@ class ProjectEcoreGraph:
                                                 if call_check is False:
                                                     self.create_calls(caller_node, meth)
                                         if found_method is False:
-                                            pass
+                                            method_node = self.create_ecore_instance(NodeTypes.METHOD_DEFINITION)
+                                            self.create_method_signature(method_node, method_name, [])
+                                            obj.defines.append(method_node)
+                                            self.create_calls(caller_node, method_node)
                         if found_class is False:
                             class_node = self.create_ecore_instance(NodeTypes.CLASS)
                             class_node.tName = class_name
@@ -131,7 +134,19 @@ class ProjectEcoreGraph:
                             class_node.defines.append(method_node)
                             self.create_calls(caller_node, method_node)
                     if class_name is None:
-                        pass
+                        found_method = False
+                        for meth_def in module_node.contains:
+                            if meth_def.eClass.name == NodeTypes.METHOD_DEFINITION.value:
+                                if meth_def.signature.method.tName == method_name:
+                                    found_method = True
+                                    call_check = self.get_calls(caller_node, meth)
+                                    if call_check is False:
+                                        self.create_calls(caller_node, meth)
+                        if found_method is False:
+                            method_node = self.create_ecore_instance(NodeTypes.METHOD_DEFINITION)
+                            self.create_method_signature(method_node, method_name, [])
+                            module_node.contains.append(method_node)
+                            self.create_calls(caller_node, method_node)
                 if module_node is None:
                     pass
             if package_node is None:

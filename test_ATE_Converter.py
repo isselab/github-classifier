@@ -268,4 +268,20 @@ class TestATEConv(unittest.TestCase):
         self.assertEqual(ecore_graph.modules[1].contains[1].defines[0].signature.method.tName, '__len__', 'method in class has wrong name')
         self.assertEqual(ecore_graph.modules[1].contains[1].defines[0].accessedBy[0].eClass.name, NodeTypes.CALL.value, 'call is missing')
 
+    def test_call_external_library_class_multiple_methods(self):
+        repo = 'tests/unit_tests/test_call_external_library_class_multiple_methods'
+        resource_set = ResourceSet()
+        graph = ProjectEcoreGraph(resource_set, repo, False)
+        ecore_graph = graph.get_graph()
+        self.assertEqual(ecore_graph.modules[1].contains[1].defines[1].signature.method.tName, '__getitem__', 'second class method has wrong name')
+        self.assertEqual(ecore_graph.modules[1].contains[1].defines[1].accessedBy[0].eClass.name, NodeTypes.CALL.value, 'call is missing')
+
+    def test_call_external_library_multiple_methods(self):
+        repo = 'tests/unit_tests/test_call_external_library_multiple_methods'
+        resource_set = ResourceSet()
+        graph = ProjectEcoreGraph(resource_set, repo, False)
+        ecore_graph = graph.get_graph()
+        self.assertEqual(ecore_graph.modules[1].contains[1].signature.method.tName, 'max', 'second method in imported module wrong name')
+        self.assertEqual(ecore_graph.modules[1].contains[1].accessedBy[0].eClass.name, NodeTypes.CALL.value, 'call is missing')
+
 unittest.main()
