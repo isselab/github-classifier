@@ -248,4 +248,15 @@ class TestATEConv(unittest.TestCase):
         self.assertEqual(ecore_graph.modules[2].contains[0].signature.method.tName, 'global_mean_pool', 'wrong method name in imported module')
         self.assertEqual(ecore_graph.modules[2].contains[0].accessedBy[0].eClass.name, NodeTypes.CALL.value, 'wrong object type')
 
+    def test_call_external_library_class(self):
+        repo = 'tests/unit_tests/test_call_external_library_class'
+        resource_set = ResourceSet()
+        graph = ProjectEcoreGraph(resource_set, repo, False)
+        ecore_graph = graph.get_graph()
+        self.assertEqual(ecore_graph.packages[0].tName, 'torch', 'wrong package name for import')
+        self.assertEqual(len(ecore_graph.packages), 1, 'wrong number of imported packages')
+        self.assertEqual(len(ecore_graph.packages[0].subpackages), 1, 'subpackage wrong number')
+        self.assertEqual(ecore_graph.packages[0].subpackages[0].tName, 'utils', 'subpackages wrong name')
+        self.assertEqual(ecore_graph.packages[0].subpackages[0].parent.tName, 'torch', 'parent package wrong')
+
 unittest.main()

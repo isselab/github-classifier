@@ -90,15 +90,20 @@ class ProjectEcoreGraph:
             
     def set_imported_libraries_calls(self):
         for item in self.call_imported_library:
-            class_name = None
             caller_node = item[0]
             imported = item[1]
-            split_imported = imported.split('.')
-            package_name = split_imported[0]
-            method_name = split_imported[-1]
+            split_import = imported.split('.')
+            print(split_import)
+            
+            package_name, module_name, class_name, method_name = self.set_import_names(split_import)
+            print(package_name)
+            print(module_name)
+            print(class_name)
+            print(method_name)
+
             package_node = self.get_imported_library_package(package_name)
             if package_node is None:
-                if len(split_imported)==2:
+                if len(split_import)==2:
                     package_node = self.create_ecore_instance(NodeTypes.PACKAGE)
                     package_node.tName = package_name
                     module_node = self.create_ecore_instance(NodeTypes.MODULE)
@@ -113,16 +118,10 @@ class ProjectEcoreGraph:
                     call_check = self.get_calls(caller_node, method_node)
                     if call_check is False:
                         self.create_calls(caller_node, method_node)
-                if len(split_imported)>2:
-                    obj_name = split_imported[-2]
-                    if obj_name[0].isupper():
-                        class_name = obj_name
-                        module_name = split_imported[-3]
-                    else:
-                        module_name = obj_name
+                if len(split_import)>2:
                     #create package hierarchy
-                    for element in split_imported:
-                        parent = None
+                    parent = None
+                    for element in split_import:
                         if element != module_name:
                             package_node = self.create_ecore_instance(NodeTypes.PACKAGE)
                             package_node.tName = element
@@ -136,23 +135,28 @@ class ProjectEcoreGraph:
                         if element == module_name:
                             break
                     #create module
-                    module_node = self.get_imported_library(module_name)
-                    if module_node is None:
-                        module_node = self.create_ecore_instance(NodeTypes.MODULE)
-                        module_node.location = module_name
-                        module_node.namespace = self.imported_package
-                        self.graph.modules.append(module_node)
-                        package_key = self.get_imported_library_package_key(self.imported_package.tName)
-                        package_key[0] = module_node
-                        package_key[1] = module_name
-                        if class_name is None:
-                            #create called method
-                            method_node = self.create_ecore_instance(NodeTypes.METHOD_DEFINITION)
-                            self.create_method_signature(method_node, method_name, [])
-                            module_node.contains.append(method_node)
-                            call_check = self.get_calls(caller_node, method_node)
-                            if call_check is False:
-                                self.create_calls(caller_node, method_node)
+                    #print(module_name)
+                    #print(class_name)
+                    module_node = self.create_ecore_instance(NodeTypes.MODULE)
+                    module_node.location = module_name
+                    module_node.namespace = self.imported_package
+                    self.graph.modules.append(module_node)
+                    package_key = self.get_imported_library_package_key(self.imported_package.tName)
+                    package_key[0] = module_node
+                    package_key[1] = module_name
+                    if class_name is None:
+                        #create called method
+                        method_node = self.create_ecore_instance(NodeTypes.METHOD_DEFINITION)
+                        self.create_method_signature(method_node, method_name, [])
+                        module_node.contains.append(method_node)
+                        call_check = self.get_calls(caller_node, method_node)
+                        if call_check is False:
+                            self.create_calls(caller_node, method_node)
+                    if class_name is not None:
+                        pass
+            if package_node is not None:
+                pass
+               # print(package_name)
 
 
     def get_imported_library_package(self, package_name):
@@ -174,40 +178,13 @@ class ProjectEcoreGraph:
         return None
 
     def set_external_module_calls(self):
-        class_name = None
         for item in self.call_external_module:
             imported_instance = item[0]
             type = item[1]
             caller_node = item[2]
-            #print(imported_instance, type, caller_node)
             split_import = imported_instance.split('.')
-            module_name = split_import[0]
-            method_name = split_import[-1]
+            package_name, module_name, class_name, method_name = self.set_import_names(split_import)
 
-            if len(split_import)>2: #structure: package/module, module/class, method
-                obj_name = split_import[1]
-                if obj_name[0].isupper(): #relies on naming conventions to check the type
-                    class_name = obj_name
-                else:
-                    module_name = obj_name #in this case the first imported instance was a package name
-
-            if len(split_import)>3: #structure: package, subpackage/module, module/class, method
-                obj_name = split_import[2]
-                if obj_name[0].isupper():
-                    class_name = obj_name
-                else:
-                    module_name = obj_name
-
-            if len(split_import)>4: #structure: packages, subpackages...,module, (class,) method
-                obj_name = split_import[-2]
-                if obj_name[0].isupper():
-                    class_name = obj_name
-                    module_name = split_import[-3]
-                else:
-                    module_name = obj_name
-            #print(class_name)
-            #print(module_name)
-            #print(imported_instance)
             module_node = self.get_module_by_name(module_name)
             if module_node is not None:
                 for obj in module_node.contains:
@@ -219,6 +196,40 @@ class ProjectEcoreGraph:
                         self.create_method_call(obj, method_name, caller_node)
             if module_node is None:
                 self.call_imported_library.append([caller_node, imported_instance])
+
+    def set_import_names(self, split_import):
+        package_name = split_import[0]
+        method_name = split_import[-1]
+        class_name = None
+        module_name = None
+
+        if len(split_import)==2:
+                module_name = package_name
+            
+        if len(split_import)>2: #structure: package/module, module/class, method
+                obj_name = split_import[1]
+                if obj_name[0].isupper(): #relies on naming conventions to check the type
+                    class_name = obj_name
+                    module_name = split_import[0]
+                else:
+                    module_name = obj_name #in this case the first imported instance was a package name
+
+        if len(split_import)>3: #structure: package, subpackage/module, module/class, method
+                obj_name = split_import[2]
+                if obj_name[0].isupper():
+                    class_name = obj_name
+                    module_name = split_import[1]
+                else:
+                    module_name = obj_name
+
+        if len(split_import)>4: #structure: packages, subpackages...,module, (class,) method
+                obj_name = split_import[-2]
+                if obj_name[0].isupper():
+                    class_name = obj_name
+                    module_name = split_import[-3]
+                else:
+                    module_name = obj_name
+        return package_name, module_name, class_name, method_name
     
     '''this function sets the calls for instances within the same module, no imports'''
     def set_internal_module_calls(self):
