@@ -62,10 +62,12 @@ def create_ecore_graphs(repository, write_in_file, output_directory=None):
                 print(f'Problem with repository {repository}. Skipping.')
                 skip_counter += 1
     else:
+        print(f'Problem with repository {repository}. Skipping.')
         skip_counter += 1
     if write_in_file is False:
         return ecore_graph.get_graph()
     else:
+        #print(f'Number of repositories skipped: {skip_counter}')
         return None
 
 def create_matrix_structure(write_in_file, xmi_file=None, ecore_graph=None, output_directory=None):
