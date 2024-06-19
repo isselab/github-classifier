@@ -88,18 +88,14 @@ class ProjectEcoreGraph:
                 print('output directory is required!')
         print(f'{repository}, Number of files skipped: {skipped_files}')
             
+    '''creates structure of imported external libraries and sets calls to it'''
     def set_imported_libraries_calls(self):
         for item in self.call_imported_library:
             caller_node = item[0]
             imported = item[1]
             split_import = imported.split('.')
-            print(split_import)
             
             package_name, module_name, class_name, method_name = self.set_import_names(split_import)
-            print(package_name)
-            print(module_name)
-            print(class_name)
-            print(method_name)
 
             package_node = self.get_imported_library_package(package_name)
             if package_node is not None:
@@ -145,6 +141,7 @@ class ProjectEcoreGraph:
                         self.create_imported_class_call(module_node, class_name, method_name, caller_node)
                     if class_name is None:
                         self.create_imported_method_call(module_node, method_name, caller_node)
+                    #get package in whose namespace imported module is
                     module_key = None
                     for e, el in enumerate(split_import):
                         if el==module_name:
@@ -155,10 +152,14 @@ class ProjectEcoreGraph:
                     #subpackage exists
                     if current_package_node is not None:
                         module_node.namespace = current_package_node
-                        self.imported_libraries.append([module_node, module_name, package_node, pack_name])
+                        self.imported_libraries.append([module_node, module_name, current_package_node, pack_name])
                     #subpackage does not exist
                     if current_package_node is None:
-                        pass
+                        subpackage_node = self.create_ecore_instance(NodeTypes.PACKAGE)
+                        subpackage_node.tName = pack_name
+                        subpackage_node.parent = package_node
+                        module_node.namespace = subpackage_node
+                        self.imported_libraries.append([module_node, module_name, subpackage_node, pack_name])
             if package_node is None:
                 if len(split_import)==2:
                     package_node = self.create_ecore_instance(NodeTypes.PACKAGE)
@@ -784,8 +785,6 @@ class ASTVisitor(ast.NodeVisitor):
 
         #for calls within one module
         self.graph_class.call_in_module.append([self.current_module, caller_node, instance])
-
-        #print(instance) #keep this saved here to check if called method exists already, or save for end check
 
         #for calls of imported instances, both custom def in repo and external libraries
         instance_from_graph, type = self.graph_class.get_reference_by_name(instance.replace(f".{instance.split('.')[-1]}", ''))

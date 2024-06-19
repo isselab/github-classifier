@@ -83,6 +83,14 @@ class TestATEConv(unittest.TestCase):
         self.assertEqual(len(ecore_graph.modules[0].contains), 1, 'class should be contained in module')
         self.assertEqual(ecore_graph.modules[0].contains[0].eClass.name, NodeTypes.CLASS.value, 'class should be in module, wrong object type')
 
+    def test_child_class(self):
+        repo = 'tests/unit_tests/test_child_class'
+        resource_set = ResourceSet()
+        graph = ProjectEcoreGraph(resource_set, repo, False)
+        ecore_graph = graph.get_graph()
+        self.assertEqual(len(ecore_graph.classes[0].childClasses), 1, 'wrong number of child classes')
+        self.assertEqual(ecore_graph.classes[0].childClasses[0].tName, 'FirstChild', 'wrong name of child class')
+
     def test_method(self):
         repo = 'tests/unit_tests/test_method'
         resource_set = ResourceSet()
@@ -114,7 +122,7 @@ class TestATEConv(unittest.TestCase):
         self.assertEqual(ecore_graph.methods[0].signatures[0].parameters[1].eClass.name, NodeTypes.PARAMETER.value, 'parameter is wrong type')
         self.assertEqual(ecore_graph.methods[0].signatures[0].parameters[1].previous.eClass.name, NodeTypes.PARAMETER.value, 'parameter should have previous parameter set')
     
-    #check call of method by another method, both in same module
+    #test call of method by another method, both in same module
     def test_module_internal_method_call(self):
         repo = 'tests/unit_tests/test_module_internal_method_call'
         resource_set = ResourceSet()
@@ -126,6 +134,7 @@ class TestATEConv(unittest.TestCase):
         self.assertIsNotNone(ecore_graph.modules[0].contains[1].accessing[0].target, 'target is missing')
         self.assertEqual(ecore_graph.modules[0].contains[1].accessing[0].target.signature.method.tName, 'called_func', 'target has wrong method name')
 
+    #test calling a method inside a class
     def test_method_in_class(self):
         repo = 'tests/unit_tests/test_method_in_class'
         resource_set = ResourceSet()
@@ -137,6 +146,7 @@ class TestATEConv(unittest.TestCase):
         self.assertEqual(ecore_graph.modules[0].contains[0].defines[0].eClass.name, NodeTypes.METHOD_DEFINITION.value, 'method in class is wrong type')
         self.assertEqual(ecore_graph.modules[0].contains[0].defines[0].signature.method.tName, 'my_test_method', 'wrong method name')
 
+    #test importing a method from another module in the repo
     def test_internal_method_imports(self):
         repo = 'tests/unit_tests/test_internal_method_imports'
         resource_set = ResourceSet()
@@ -146,6 +156,7 @@ class TestATEConv(unittest.TestCase):
         self.assertEqual(ecore_graph.modules[1].contains[0].accessing[0].eClass.name, NodeTypes.CALL.value, 'imported method cannot be used, import did not work')
         self.assertEqual(ecore_graph.modules[1].contains[0].accessing[0].target.signature.method.tName, 'one_method', 'imported method name wrong')
 
+    #test importing a method from a class in another module in the repo
     def test_internal_class_imports(self):
         repo = 'tests/unit_tests/test_internal_class_imports'
         resource_set = ResourceSet()
@@ -178,7 +189,7 @@ class TestATEConv(unittest.TestCase):
         self.assertEqual(ecore_graph.modules[0].contains[0].accessing[0].target.signature.method.tName, 'one_method', 'imported method name wrong')
         self.assertEqual(ecore_graph.modules[1].contains[0].defines[0].accessedBy[0].source.signature.method.tName, 'method_two', 'call source is wrong')
 
-    #check call of method in a class by another method not in the class, both in same module
+    #test call of method in a class by another method not in the class, both in same module
     def test_module_internal_class_call(self):
         repo = 'tests/unit_tests/test_module_internal_class_call'
         resource_set = ResourceSet()
@@ -191,7 +202,7 @@ class TestATEConv(unittest.TestCase):
         self.assertEqual(ecore_graph.modules[0].contains[1].accessing[0].eClass.name, NodeTypes.CALL.value, 'call is wrong type')
         self.assertIsNotNone(ecore_graph.modules[0].contains[1].accessing[0].target, 'target is missing')
 
-    #check call of method in a class by another method, both in same class
+    #test call of method in a class by another method, both in same class
     def test_class_internal_method_call(self):
         repo = 'tests/unit_tests/test_class_internal_method_call'
         resource_set = ResourceSet()
@@ -223,6 +234,7 @@ class TestATEConv(unittest.TestCase):
         self.assertEqual(ecore_graph.modules[0].contains[0].accessing[0].target.signature.method.tName, 'one_method', 'imported method name wrong')
         self.assertEqual(ecore_graph.modules[2].contains[0].defines[0].accessedBy[0].source.signature.method.tName, 'method_two', 'call source is wrong')
 
+    #test importing external library, one module, one method
     def test_call_external_library(self):
         repo = 'tests/unit_tests/test_call_external_library'
         resource_set = ResourceSet()
@@ -236,7 +248,7 @@ class TestATEConv(unittest.TestCase):
         self.assertEqual(ecore_graph.modules[0].contains[0].accessing[0].target.signature.method.tName, 'array', 'target has wrong name')
         self.assertEqual(ecore_graph.modules[1].contains[0].accessedBy[0].source.signature.method.tName, 'one_method', 'source has wrong name')
 
-    '''multiple packages/subpackages in imported library'''
+    #test importing multiple packages/subpackages from external library
     def test_call_external_library_submodule(self):
         repo = 'tests/unit_tests/test_call_external_library_submodule'
         resource_set = ResourceSet()
@@ -248,6 +260,7 @@ class TestATEConv(unittest.TestCase):
         self.assertEqual(ecore_graph.modules[2].contains[0].signature.method.tName, 'global_mean_pool', 'wrong method name in imported module')
         self.assertEqual(ecore_graph.modules[2].contains[0].accessedBy[0].eClass.name, NodeTypes.CALL.value, 'wrong object type')
 
+    #test importing class with a method (external libraries)
     def test_call_external_library_class(self):
         repo = 'tests/unit_tests/test_call_external_library_class'
         resource_set = ResourceSet()
@@ -268,6 +281,7 @@ class TestATEConv(unittest.TestCase):
         self.assertEqual(ecore_graph.modules[1].contains[1].defines[0].signature.method.tName, '__len__', 'method in class has wrong name')
         self.assertEqual(ecore_graph.modules[1].contains[1].defines[0].accessedBy[0].eClass.name, NodeTypes.CALL.value, 'call is missing')
 
+    #test importing class with multiple methods (external libraries)
     def test_call_external_library_class_multiple_methods(self):
         repo = 'tests/unit_tests/test_call_external_library_class_multiple_methods'
         resource_set = ResourceSet()
@@ -275,7 +289,8 @@ class TestATEConv(unittest.TestCase):
         ecore_graph = graph.get_graph()
         self.assertEqual(ecore_graph.modules[1].contains[1].defines[1].signature.method.tName, '__getitem__', 'second class method has wrong name')
         self.assertEqual(ecore_graph.modules[1].contains[1].defines[1].accessedBy[0].eClass.name, NodeTypes.CALL.value, 'call is missing')
-
+ 
+    #test importing multiple methods in one module (external libraries)
     def test_call_external_library_multiple_methods(self):
         repo = 'tests/unit_tests/test_call_external_library_multiple_methods'
         resource_set = ResourceSet()
@@ -284,7 +299,7 @@ class TestATEConv(unittest.TestCase):
         self.assertEqual(ecore_graph.modules[1].contains[1].signature.method.tName, 'max', 'second method in imported module wrong name')
         self.assertEqual(ecore_graph.modules[1].contains[1].accessedBy[0].eClass.name, NodeTypes.CALL.value, 'call is missing')
 
-    #test imported packages (and subpackages) with multiple modules
+    #test imported packages (and subpackages) with multiple modules (external libraries)
     def test_call_external_library_multiple_modules_same_package(self):
         repo = 'tests/unit_tests/test_call_external_library_multiple_modules_same_package'
         resource_set = ResourceSet()
@@ -295,6 +310,19 @@ class TestATEConv(unittest.TestCase):
         self.assertEqual(ecore_graph.modules[2].namespace.tName, 'utils', 'wrong subpackage name in imported module')
         self.assertEqual(ecore_graph.modules[2].location, 'benchmark', 'wrong name for imported module')
         self.assertEqual(ecore_graph.modules[2].contains[0].signature.method.tName, 'Timer', 'wrong method name in imported module')
+        self.assertEqual(ecore_graph.modules[2].contains[0].accessedBy[0].eClass.name, NodeTypes.CALL.value, 'call is missing')
+
+    #test imported packages with multiple subpackages (external libraries)
+    def test_call_external_library_multiple_subpackages(self):
+        repo = 'tests/unit_tests/test_call_external_library_multiple_subpackages'
+        resource_set = ResourceSet()
+        graph = ProjectEcoreGraph(resource_set, repo, False)
+        ecore_graph = graph.get_graph()
+        self.assertEqual(len(ecore_graph.packages[0].subpackages), 2, 'wrong number of subpackages')
+        self.assertEqual(ecore_graph.packages[0].subpackages[0].tName, 'utils', 'wrong subpackage name')
+        self.assertEqual(ecore_graph.packages[0].subpackages[1].tName, 'cuda', 'wrong subpackage name')
+        self.assertEqual(ecore_graph.modules[2].location, 'random', 'wrong module location in second subpackage')
+        self.assertEqual(ecore_graph.modules[2].contains[0].signature.method.tName, 'Tensor', 'wrong method name in module in second subpackage')
         self.assertEqual(ecore_graph.modules[2].contains[0].accessedBy[0].eClass.name, NodeTypes.CALL.value, 'call is missing')
 
 unittest.main()
