@@ -140,4 +140,23 @@ class TestETMConv(unittest.TestCase):
         self.assertEqual(enc_node_features[1][5], 0.0, 'module node set in encoding')
         self.assertEqual(enc_node_features[1][7], 0.0, 'parameter node set in encoding')
 
+    def test_child_class(self):
+        repo = 'tests/unit_tests/test_child_class'
+        resource_set = ResourceSet()
+        graph = ProjectEcoreGraph(resource_set, repo, False)
+        ecore_graph = graph.get_graph()
+        matrix = EcoreToMatrixConverter(ecore_graph, False)
+        node_features = matrix.get_node_matrix()
+        enc_node_features = matrix.get_encoded_node_matrix()
+        edges = matrix.get_adjacency_list()
+
+        self.assertEqual(len(node_features), 3, 'wrong number of nodes')
+        self.assertEqual(node_features[0], NodeTypes.MODULE.value, 'module is wrong node type')
+        self.assertEqual(node_features[1], NodeTypes.CLASS.value, 'class is wrong node type')
+        self.assertEqual(node_features[2], NodeTypes.CLASS.value, 'class is wrong node type')
+        self.assertEqual(len(edges), 2, 'class should have edge to child class')
+        self.assertEqual(len(enc_node_features), 3, 'wrong number of encoded nodes')
+        self.assertEqual(edges[1], [1, 2], 'error with edge class to child class')
+
+
 unittest.main()

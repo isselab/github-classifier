@@ -72,16 +72,19 @@ class EcoreToMatrixConverter:
                     self.node_dict[self.node_count] = [NodeTypes.MODULE.value, tmodule.location]
                     self.node_count += 1
                 if hasattr(tmodule, 'contains'):
-                    # can contain TContainableElements (TAbstractType and TMember)
+                    #can contain TContainableElements (TAbstractType and TMember)
+                    current_class = None
                     for tobject in tmodule.contains:
                         if tobject.eClass.name == NodeTypes.CLASS.value:
-                            self.node_matrix.append(NodeTypes.CLASS.value)
-                            self.node_dict[self.node_count] = [NodeTypes.CLASS.value, tobject.tName, NodeTypes.MODULE.value, tmodule.location]
-                            self.node_count += 1
-                            if hasattr(tobject, 'childClasses'):
-                                self.convert_childClasses(tobject)
-                            if hasattr(tobject, 'defines'):
-                                self.convert_defined_methods(tobject)
+                            current_class = self.get_node(tobject.tName, NodeTypes.CLASS.value)
+                            if current_class is None:
+                                self.node_matrix.append(NodeTypes.CLASS.value)
+                                self.node_dict[self.node_count] = [NodeTypes.CLASS.value, tobject.tName, NodeTypes.MODULE.value, tmodule.location]
+                                self.node_count += 1
+                                if hasattr(tobject, 'childClasses'):
+                                    self.convert_childClasses(tobject)
+                                if hasattr(tobject, 'defines'):
+                                    self.convert_defined_methods(tobject)
                         if tobject.eClass.name == NodeTypes.METHOD_DEFINITION.value:
                             self.convert_method_definitions(tobject, NodeTypes.MODULE.value, tmodule.location)
 
