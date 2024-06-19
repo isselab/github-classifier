@@ -279,8 +279,8 @@ class EcoreToMatrixConverter:
                     find_key = self.find_connected_node(NodeTypes.PARAMETER.value, next_parameter_name)
                     if find_key is not None:
                         #edges between next/previous parameters of one function
-                        self.adjacency_list.append([find_key, keys])
                         self.adjacency_list.append([keys, find_key])
+                        self.adjacency_list.append([find_key, keys])           
 
             # set edges for calls
             if current_node[0] == NodeTypes.CALL.value:
@@ -288,6 +288,8 @@ class EcoreToMatrixConverter:
                 if find_key is not None:
                     #edge TMethDef to TCall, 'accessing'
                     self.adjacency_list.append([find_key, keys])
+                    #edge TCall to TMethDef, 'source'
+                    self.adjacency_list.append([keys, find_key])
                 if len(current_node) == 6:
                     target_name = current_node[5]
                     target_name += '_definition'

@@ -198,7 +198,7 @@ class TestETMConv(unittest.TestCase):
         self.assertEqual(len(edges), 4, 'wrong number of edges')
         self.assertEqual(edges[3], [3, 4], 'method signature should have edge to parameter')
 
-        #test ohe encoding for node type class
+        #test ohe encoding for node type parameter
         self.assertEqual(enc_node_features[4][6], 0.0, 'package node set in encoding')
         self.assertEqual(enc_node_features[4][0], 0.0, 'call node set in encoding')
         self.assertEqual(enc_node_features[4][1], 0.0, 'class node set in encoding')
@@ -207,6 +207,76 @@ class TestETMConv(unittest.TestCase):
         self.assertEqual(enc_node_features[4][4], 0.0, 'method signature node set in encoding')
         self.assertEqual(enc_node_features[4][5], 0.0, 'module node set in encoding')
         self.assertEqual(enc_node_features[4][7], 1.0, 'parameter node not set in encoding')
+
+    def test_multiple_parameter(self):
+        repo = 'tests/unit_tests/test_multiple_parameter'
+        resource_set = ResourceSet()
+        graph = ProjectEcoreGraph(resource_set, repo, False)
+        ecore_graph = graph.get_graph()
+        matrix = EcoreToMatrixConverter(ecore_graph, False)
+        node_features = matrix.get_node_matrix()
+        enc_node_features = matrix.get_encoded_node_matrix()
+        edges = matrix.get_adjacency_list()
+
+        self.assertEqual(len(node_features), 6, 'wrong number of nodes')
+        self.assertEqual(node_features[5], NodeTypes.PARAMETER.value, 'parameter is wrong node type')
+        self.assertEqual(len(edges), 7, 'wrong number of edges')
+        
+        self.assertEqual(edges[6], [3, 5], 'method signature should have edge to second parameter')
+        self.assertEqual(edges[4], [4, 5], 'parameter should have edge to second parameter')
+        self.assertEqual(edges[5], [5, 4], 'second parameter should have edge to parameter')
+
+    def test_module_internal_method_call(self):
+        repo = 'tests/unit_tests/test_module_internal_method_call'
+        resource_set = ResourceSet()
+        graph = ProjectEcoreGraph(resource_set, repo, False)
+        ecore_graph = graph.get_graph()
+        matrix = EcoreToMatrixConverter(ecore_graph, False)
+        node_features = matrix.get_node_matrix()
+        enc_node_features = matrix.get_encoded_node_matrix()
+        edges = matrix.get_adjacency_list()
+
+        self.assertEqual(len(node_features), 9, 'wrong number of nodes')
+        self.assertEqual(node_features[3], NodeTypes.CALL.value, 'call is wrong node type')
+
+        self.assertEqual(edges[2], [2, 3], 'method definition should have edge to call, accessing')
+        self.assertEqual(edges[3], [3, 2], 'call should have edge to method definition, source')
+        self.assertEqual(edges[4], [1, 3], 'method definition should have edge to call, accessedBy')
+        self.assertEqual(edges[5], [3, 1], 'call should have edge to method definition, target')
+
+    def test_method_in_class(self):
+        repo = 'tests/unit_tests/test_method_in_class'
+        resource_set = ResourceSet()
+        graph = ProjectEcoreGraph(resource_set, repo, False)
+        ecore_graph = graph.get_graph()
+        matrix = EcoreToMatrixConverter(ecore_graph, False)
+        node_features = matrix.get_node_matrix()
+        enc_node_features = matrix.get_encoded_node_matrix()
+        edges = matrix.get_adjacency_list()
+
+        self.assertEqual(len(node_features), 5, 'wrong number of nodes')
+        self.assertEqual(len(enc_node_features), 5, 'wrong number of encoded nodes')
+        self.assertEqual(len(edges), 4, 'wrong number of edges')
+        self.assertEqual(edges[1], [1, 2], 'class should have edge to method definition')
+
+    def test_internal_method_imports(self):
+        repo = 'tests/unit_tests/test_internal_method_imports'
+        resource_set = ResourceSet()
+        graph = ProjectEcoreGraph(resource_set, repo, False)
+        ecore_graph = graph.get_graph()
+        matrix = EcoreToMatrixConverter(ecore_graph, False)
+        node_features = matrix.get_node_matrix()
+        enc_node_features = matrix.get_encoded_node_matrix()
+        edges = matrix.get_adjacency_list()
+
+        self.assertEqual(len(node_features), 9, 'wrong number of nodes')
+        self.assertEqual(len(enc_node_features), 9, 'wrong number of encoded nodes')
+        self.assertEqual(node_features[4], NodeTypes.CALL.value, 'call is missing')
+        self.assertEqual(len(edges), 10, 'wrong number of edges')
+        self.assertEqual(edges[2], [3, 4], 'method definition should have edge to call, accessing')
+        self.assertEqual(edges[3], [4, 3], 'call should have edge to method definition, source')
+        self.assertEqual(edges[4], [1, 4], 'method definition should have edge to call, accessedBy')
+        self.assertEqual(edges[5], [4, 1], 'call should have edge to method definition, target')
 
 
 unittest.main()
