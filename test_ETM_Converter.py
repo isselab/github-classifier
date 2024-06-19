@@ -158,5 +158,55 @@ class TestETMConv(unittest.TestCase):
         self.assertEqual(len(enc_node_features), 3, 'wrong number of encoded nodes')
         self.assertEqual(edges[1], [1, 2], 'error with edge class to child class')
 
+    def test_method(self):
+        repo = 'tests/unit_tests/test_method'
+        resource_set = ResourceSet()
+        graph = ProjectEcoreGraph(resource_set, repo, False)
+        ecore_graph = graph.get_graph()
+        matrix = EcoreToMatrixConverter(ecore_graph, False)
+        node_features = matrix.get_node_matrix()
+        enc_node_features = matrix.get_encoded_node_matrix()
+        edges = matrix.get_adjacency_list()
+
+        self.assertEqual(len(node_features), 4, 'wrong number of nodes')
+        self.assertEqual(node_features[1], NodeTypes.METHOD_DEFINITION.value, 'method definition is wrong node type')
+        self.assertEqual(node_features[2], NodeTypes.METHOD.value, 'method is wrong node type')
+        self.assertEqual(node_features[3], NodeTypes.METHOD_SIGNATURE.value, 'method signature is wrong node type')
+
+        #test ohe encoding for node type method, method definition and method signature
+        self.assertEqual(enc_node_features[2][2], 1.0, 'method node not set in encoding')
+        self.assertEqual(enc_node_features[1][3], 1.0, 'method definition node not set in encoding')
+        self.assertEqual(enc_node_features[3][4], 1.0, 'method signature node not set in encoding')
+
+        self.assertEqual(len(edges), 3, 'wrong number of edges')
+        self.assertEqual(edges[0], [0, 1], 'module should have edge to method definition')
+        self.assertEqual(edges[1], [2, 1], 'method should have edge to method definition')
+        self.assertEqual(edges[2], [2, 3], 'method should have edge to method signature')
+        
+    def test_parameter(self):
+        repo = 'tests/unit_tests/test_parameter'
+        resource_set = ResourceSet()
+        graph = ProjectEcoreGraph(resource_set, repo, False)
+        ecore_graph = graph.get_graph()
+        matrix = EcoreToMatrixConverter(ecore_graph, False)
+        node_features = matrix.get_node_matrix()
+        enc_node_features = matrix.get_encoded_node_matrix()
+        edges = matrix.get_adjacency_list()
+
+        self.assertEqual(len(node_features), 5, 'wrong number of nodes')
+        self.assertEqual(node_features[4], NodeTypes.PARAMETER.value, 'parameter is wrong node type')
+        self.assertEqual(len(edges), 4, 'wrong number of edges')
+        self.assertEqual(edges[3], [3, 4], 'method signature should have edge to parameter')
+
+        #test ohe encoding for node type class
+        self.assertEqual(enc_node_features[4][6], 0.0, 'package node set in encoding')
+        self.assertEqual(enc_node_features[4][0], 0.0, 'call node set in encoding')
+        self.assertEqual(enc_node_features[4][1], 0.0, 'class node set in encoding')
+        self.assertEqual(enc_node_features[4][2], 0.0, 'method node set in encoding')
+        self.assertEqual(enc_node_features[4][3], 0.0, 'method definition node set in encoding')
+        self.assertEqual(enc_node_features[4][4], 0.0, 'method signature node set in encoding')
+        self.assertEqual(enc_node_features[4][5], 0.0, 'module node set in encoding')
+        self.assertEqual(enc_node_features[4][7], 1.0, 'parameter node not set in encoding')
+
 
 unittest.main()
