@@ -125,14 +125,7 @@ class ProjectEcoreGraph:
                                             obj.defines.append(method_node)
                                             self.create_calls(caller_node, method_node)
                         if found_class is False:
-                            class_node = self.create_ecore_instance(NodeTypes.CLASS)
-                            class_node.tName = class_name
-                            self.graph.classes.append(class_node)
-                            module_node.contains.append(class_node)
-                            method_node = self.create_ecore_instance(NodeTypes.METHOD_DEFINITION)
-                            self.create_method_signature(method_node, method_name, [])
-                            class_node.defines.append(method_node)
-                            self.create_calls(caller_node, method_node)
+                            self.create_imported_class_call(module_node, class_name, method_name, caller_node)
                     if class_name is None:
                         found_method = False
                         for meth_def in module_node.contains:
@@ -143,12 +136,29 @@ class ProjectEcoreGraph:
                                     if call_check is False:
                                         self.create_calls(caller_node, meth)
                         if found_method is False:
-                            method_node = self.create_ecore_instance(NodeTypes.METHOD_DEFINITION)
-                            self.create_method_signature(method_node, method_name, [])
-                            module_node.contains.append(method_node)
-                            self.create_calls(caller_node, method_node)
+                            self.create_imported_method_call(module_node, method_name, caller_node)
                 if module_node is None:
-                    pass
+                    module_node = self.create_ecore_instance(NodeTypes.MODULE)
+                    module_node.location = module_name
+                    self.graph.modules.append(module_node)
+                    if class_name is not None:
+                        self.create_imported_class_call(module_node, class_name, method_name, caller_node)
+                    if class_name is None:
+                        self.create_imported_method_call(module_node, method_name, caller_node)
+                    module_key = None
+                    for e, el in enumerate(split_import):
+                        if el==module_name:
+                            module_key = e
+                    if module_key>=1:
+                        pack_name = split_import[module_key-1]
+                    current_package_node = self.get_imported_library_package(pack_name)
+                    #subpackage exists
+                    if current_package_node is not None:
+                        module_node.namespace = current_package_node
+                        self.imported_libraries.append([module_node, module_name, package_node, pack_name])
+                    #subpackage does not exist
+                    if current_package_node is None:
+                        pass
             if package_node is None:
                 if len(split_import)==2:
                     package_node = self.create_ecore_instance(NodeTypes.PACKAGE)
@@ -185,8 +195,9 @@ class ProjectEcoreGraph:
                     module_node.namespace = self.imported_package
                     self.graph.modules.append(module_node)
                     package_key = self.get_imported_library_package_key(self.imported_package.tName)
-                    package_key[0] = module_node
-                    package_key[1] = module_name
+                    import_entry = self.imported_libraries[package_key]
+                    import_entry[0] = module_node
+                    import_entry[1] = module_name
                     #create called method
                     method_node = self.create_ecore_instance(NodeTypes.METHOD_DEFINITION)
                     self.create_method_signature(method_node, method_name, [])
@@ -200,6 +211,24 @@ class ProjectEcoreGraph:
                     #set call
                     self.create_calls(caller_node, method_node)
 
+    '''creates method from imported module from external library'''
+    def create_imported_method_call(self, module_node, method_name, caller_node):
+        method_node = self.create_ecore_instance(NodeTypes.METHOD_DEFINITION)
+        self.create_method_signature(method_node, method_name, [])
+        module_node.contains.append(method_node)
+        self.create_calls(caller_node, method_node)
+
+    '''creates class and method from imported module from external library'''
+    def create_imported_class_call(self, module_node, class_name, method_name, caller_node):
+        class_node = self.create_ecore_instance(NodeTypes.CLASS)
+        class_node.tName = class_name
+        self.graph.classes.append(class_node)
+        module_node.contains.append(class_node)
+        method_node = self.create_ecore_instance(NodeTypes.METHOD_DEFINITION)
+        self.create_method_signature(method_node, method_name, [])
+        class_node.defines.append(method_node)
+        self.create_calls(caller_node, method_node)
+
     def get_imported_library_package(self, package_name):
         for lib in self.imported_libraries:
             if lib[3] == package_name:
@@ -207,9 +236,9 @@ class ProjectEcoreGraph:
         return None
     
     def get_imported_library_package_key(self, package_name):
-        for lib in self.imported_libraries:
+        for key, lib in enumerate(self.imported_libraries):
             if lib[3] == package_name:
-                return lib
+                return key
         return None
 
     def get_imported_library(self, module_name):
@@ -274,7 +303,7 @@ class ProjectEcoreGraph:
                     module_name = obj_name
         return package_name, module_name, class_name, method_name
     
-    '''this function sets the calls for instances within the same module, no imports'''
+    '''sets the calls for instances within the same module, no imports'''
     def set_internal_module_calls(self):
         class_name = ''
         method_name = ''

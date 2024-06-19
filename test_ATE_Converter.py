@@ -284,4 +284,17 @@ class TestATEConv(unittest.TestCase):
         self.assertEqual(ecore_graph.modules[1].contains[1].signature.method.tName, 'max', 'second method in imported module wrong name')
         self.assertEqual(ecore_graph.modules[1].contains[1].accessedBy[0].eClass.name, NodeTypes.CALL.value, 'call is missing')
 
+    #test imported packages (and subpackages) with multiple modules
+    def test_call_external_library_multiple_modules_same_package(self):
+        repo = 'tests/unit_tests/test_call_external_library_multiple_modules_same_package'
+        resource_set = ResourceSet()
+        graph = ProjectEcoreGraph(resource_set, repo, False)
+        ecore_graph = graph.get_graph()
+        self.assertEqual(len(ecore_graph.modules), 3, 'wrong number of modules')
+        self.assertEqual(ecore_graph.modules[1].namespace.tName, 'utils', 'wrong subpackage name in imported module')
+        self.assertEqual(ecore_graph.modules[2].namespace.tName, 'utils', 'wrong subpackage name in imported module')
+        self.assertEqual(ecore_graph.modules[2].location, 'benchmark', 'wrong name for imported module')
+        self.assertEqual(ecore_graph.modules[2].contains[0].signature.method.tName, 'Timer', 'wrong method name in imported module')
+        self.assertEqual(ecore_graph.modules[2].contains[0].accessedBy[0].eClass.name, NodeTypes.CALL.value, 'call is missing')
+
 unittest.main()
