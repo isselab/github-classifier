@@ -102,6 +102,38 @@ class ProjectEcoreGraph:
             print(method_name)
 
             package_node = self.get_imported_library_package(package_name)
+            if package_node is not None:
+                module_node = self.get_imported_library(module_name)
+                if module_node is not None:
+                    if class_name is not None:
+                        found_class = False
+                        for obj in module_node.contains:
+                            if obj.eClass.name == NodeTypes.CLASS.value:
+                                if obj.tName == class_name:
+                                    found_class = True
+                                    for meth in obj.defines:
+                                        found_method = False
+                                        if meth.eClass.name == NodeTypes.METHOD_DEFINITION.value:
+                                            if meth.signature.method.tName == method_name:
+                                                found_method = True
+                                                call_check = self.get_calls(caller_node, meth)
+                                                if call_check is False:
+                                                    self.create_calls(caller_node, meth)
+                                        if found_method is False:
+                                            pass
+                        if found_class is False:
+                            class_node = self.create_ecore_instance(NodeTypes.CLASS)
+                            class_node.tName = class_name
+                            self.graph.classes.append(class_node)
+                            module_node.contains.append(class_node)
+                            method_node = self.create_ecore_instance(NodeTypes.METHOD_DEFINITION)
+                            self.create_method_signature(method_node, method_name, [])
+                            class_node.defines.append(method_node)
+                            self.create_calls(caller_node, method_node)
+                    if class_name is None:
+                        pass
+                if module_node is None:
+                    pass
             if package_node is None:
                 if len(split_import)==2:
                     package_node = self.create_ecore_instance(NodeTypes.PACKAGE)
@@ -115,9 +147,7 @@ class ProjectEcoreGraph:
                     self.imported_libraries.append([module_node, package_name, package_node, package_name])
                     self.graph.modules.append(module_node)
                     self.graph.packages.append(package_node)
-                    call_check = self.get_calls(caller_node, method_node)
-                    if call_check is False:
-                        self.create_calls(caller_node, method_node)
+                    self.create_calls(caller_node, method_node)
                 if len(split_import)>2:
                     #create package hierarchy
                     parent = None
@@ -135,8 +165,6 @@ class ProjectEcoreGraph:
                         if element == module_name:
                             break
                     #create module
-                    #print(module_name)
-                    #print(class_name)
                     module_node = self.create_ecore_instance(NodeTypes.MODULE)
                     module_node.location = module_name
                     module_node.namespace = self.imported_package
@@ -144,20 +172,18 @@ class ProjectEcoreGraph:
                     package_key = self.get_imported_library_package_key(self.imported_package.tName)
                     package_key[0] = module_node
                     package_key[1] = module_name
-                    if class_name is None:
-                        #create called method
-                        method_node = self.create_ecore_instance(NodeTypes.METHOD_DEFINITION)
-                        self.create_method_signature(method_node, method_name, [])
-                        module_node.contains.append(method_node)
-                        call_check = self.get_calls(caller_node, method_node)
-                        if call_check is False:
-                            self.create_calls(caller_node, method_node)
+                    #create called method
+                    method_node = self.create_ecore_instance(NodeTypes.METHOD_DEFINITION)
+                    self.create_method_signature(method_node, method_name, [])
                     if class_name is not None:
-                        pass
-            if package_node is not None:
-                pass
-               # print(package_name)
-
+                        class_node = self.create_ecore_instance(NodeTypes.CLASS)
+                        class_node.tName = class_name
+                        class_node.defines.append(method_node)
+                        self.graph.classes.append(class_node)
+                    if class_name is None:
+                        module_node.contains.append(method_node)
+                    #set call
+                    self.create_calls(caller_node, method_node)
 
     def get_imported_library_package(self, package_name):
         for lib in self.imported_libraries:
@@ -176,7 +202,9 @@ class ProjectEcoreGraph:
             if lib[1] == module_name:
                 return lib[0]
         return None
-
+    
+    '''sets calls for inside the repo imported objects, objects already exist 
+    because they are defined in the repo, but in different modules/packages'''
     def set_external_module_calls(self):
         for item in self.call_external_module:
             imported_instance = item[0]
@@ -259,16 +287,18 @@ class ProjectEcoreGraph:
                     if found_class is not None:
                         self.create_method_in_class_call(method_name, found_class, caller_node)
 
+    '''creates calls only for in the structure already existing entities'''
     def create_method_in_class_call(self, method_name, class_node, caller_node):
         for method in class_node.defines:
             if method.eClass.name == NodeTypes.METHOD_DEFINITION.value:
                 self.create_method_call(method, method_name, caller_node)
 
+    '''creates calls only for in the structure already existing entities'''
     def create_method_call(self, method_node, method_name, caller_node):
         if method_node.signature.method.tName == method_name:
             call_check = self.get_calls(caller_node, method_node)
             if call_check is False:
-                self.create_calls(caller_node, method_node)
+                self.create_calls(caller_node, method_node)        
 
     '''check_list at start contains all classes with method defs that are created in typegraph,
     then they are compared to the classes with meth defs found in modules at the end,
