@@ -64,10 +64,6 @@ class ProjectEcoreGraph:
                         package_node.parent = parent
                         parent = package_node
 
-        #logger = logging.getLogger(__name__)
-       # logging.basicConfig(filename='skipped_files.log', level=logging.WARNING, filemode='w')
-        #logger.info(f'converting: {repository}')
-
         #create and process modules with contained program entities
         for file_path in python_files:
             try:
@@ -160,6 +156,7 @@ class ProjectEcoreGraph:
                             module_key = e
                             break
                     if module_key is not None:
+                        pack_name = ''
                         if module_key>=1:
                             pack_name = split_import[module_key-1]
                         current_package_node = self.get_imported_library_package(pack_name)
@@ -174,6 +171,8 @@ class ProjectEcoreGraph:
                             subpackage_node.parent = package_node
                             module_node.namespace = subpackage_node
                             self.imported_libraries.append([module_node, module_name, subpackage_node, pack_name])
+                    if module_key is None:
+                        self.imported_libraries.append([module_node, module_name, None, None])
             if package_node is None:
                 if len(split_import)==2:
                     package_node = self.create_ecore_instance(NodeTypes.PACKAGE)
@@ -207,12 +206,20 @@ class ProjectEcoreGraph:
                     #create module
                     module_node = self.create_ecore_instance(NodeTypes.MODULE)
                     module_node.location = module_name
-                    module_node.namespace = self.imported_package
                     self.graph.modules.append(module_node)
-                    package_key = self.get_imported_library_package_key(self.imported_package.tName)
-                    import_entry = self.imported_libraries[package_key]
-                    import_entry[0] = module_node
-                    import_entry[1] = module_name
+                    if self.imported_package is not None:
+                        module_node.namespace = self.imported_package
+                        package_key = self.get_imported_library_package_key(self.imported_package.tName)
+                        import_entry = self.imported_libraries[package_key]
+                        import_entry[0] = module_node
+                        import_entry[1] = module_name
+                    else:
+                        #self.imported_package can be None (very rarely) due to complex import possibilities
+                        package_node = self.create_ecore_instance(NodeTypes.PACKAGE)
+                        package_node.tName = module_name
+                        module_node.namespace = package_node
+                        self.graph.packages.append(package_node)
+                        self.imported_libraries.append([module_node, module_name, package_node, module_name])
                     #create called method
                     method_node = self.create_ecore_instance(NodeTypes.METHOD_DEFINITION)
                     self.create_method_signature(method_node, method_name, [])
@@ -221,6 +228,7 @@ class ProjectEcoreGraph:
                         class_node.tName = class_name
                         class_node.defines.append(method_node)
                         self.graph.classes.append(class_node)
+                        module_node.contains.append(class_node)
                     if class_name is None:
                         module_node.contains.append(method_node)
                     #set call
