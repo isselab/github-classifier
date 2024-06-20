@@ -2,6 +2,10 @@ import ast
 import os
 from pyecore.resources import ResourceSet, URI
 from NodeFeatures import NodeTypes
+import logging
+
+logger = logging.getLogger(__name__)
+logging.basicConfig(filename='skipped_files.log', level=logging.WARNING, filemode='a')
 
 class ProjectEcoreGraph:
     def __init__(self, resource_set: ResourceSet, repository, write_in_file, output_directory=None):
@@ -59,13 +63,18 @@ class ProjectEcoreGraph:
                         package_node.tName = item
                         package_node.parent = parent
                         parent = package_node
-        
+
+        #logger = logging.getLogger(__name__)
+       # logging.basicConfig(filename='skipped_files.log', level=logging.WARNING, filemode='w')
+        #logger.info(f'converting: {repository}')
+
         #create and process modules with contained program entities
         for file_path in python_files:
             try:
                self.process_file(file_path)
             except Exception as e:
                 if 'invalid syntax' in str(e):
+                    logger.warning(f'skipped: {file_path}')
                     skipped_files += 1
                     continue #skip file
 
@@ -103,18 +112,20 @@ class ProjectEcoreGraph:
                 if module_node is not None:
                     if class_name is not None:
                         found_class = False
-                        for obj in module_node.contains:
-                            if obj.eClass.name == NodeTypes.CLASS.value:
-                                if obj.tName == class_name:
-                                    found_class = True
-                                    for meth in obj.defines:
+                        if hasattr(module_node, 'contains'):
+                            for obj in module_node.contains:
+                                if obj.eClass.name == NodeTypes.CLASS.value:
+                                    if obj.tName == class_name:
+                                        found_class = True
                                         found_method = False
-                                        if meth.eClass.name == NodeTypes.METHOD_DEFINITION.value:
-                                            if meth.signature.method.tName == method_name:
-                                                found_method = True
-                                                call_check = self.get_calls(caller_node, meth)
-                                                if call_check is False:
-                                                    self.create_calls(caller_node, meth)
+                                        if hasattr(obj, 'defines'):
+                                            for meth in obj.defines:
+                                                if meth.eClass.name == NodeTypes.METHOD_DEFINITION.value:
+                                                    if meth.signature.method.tName == method_name:
+                                                        found_method = True
+                                                        call_check = self.get_calls(caller_node, meth)
+                                                        if call_check is False:
+                                                            self.create_calls(caller_node, meth)
                                         if found_method is False:
                                             method_node = self.create_ecore_instance(NodeTypes.METHOD_DEFINITION)
                                             self.create_method_signature(method_node, method_name, [])
@@ -124,13 +135,14 @@ class ProjectEcoreGraph:
                             self.create_imported_class_call(module_node, class_name, method_name, caller_node)
                     if class_name is None:
                         found_method = False
-                        for meth_def in module_node.contains:
-                            if meth_def.eClass.name == NodeTypes.METHOD_DEFINITION.value:
-                                if meth_def.signature.method.tName == method_name:
-                                    found_method = True
-                                    call_check = self.get_calls(caller_node, meth)
-                                    if call_check is False:
-                                        self.create_calls(caller_node, meth)
+                        if hasattr(module_node, 'contains'):
+                            for meth_def in module_node.contains:
+                                if meth_def.eClass.name == NodeTypes.METHOD_DEFINITION.value:
+                                    if meth_def.signature.method.tName == method_name:
+                                        found_method = True
+                                        call_check = self.get_calls(caller_node, meth_def)
+                                        if call_check is False:
+                                            self.create_calls(caller_node, meth_def)
                         if found_method is False:
                             self.create_imported_method_call(module_node, method_name, caller_node)
                 if module_node is None:
@@ -146,20 +158,22 @@ class ProjectEcoreGraph:
                     for e, el in enumerate(split_import):
                         if el==module_name:
                             module_key = e
-                    if module_key>=1:
-                        pack_name = split_import[module_key-1]
-                    current_package_node = self.get_imported_library_package(pack_name)
-                    #subpackage exists
-                    if current_package_node is not None:
-                        module_node.namespace = current_package_node
-                        self.imported_libraries.append([module_node, module_name, current_package_node, pack_name])
-                    #subpackage does not exist
-                    if current_package_node is None:
-                        subpackage_node = self.create_ecore_instance(NodeTypes.PACKAGE)
-                        subpackage_node.tName = pack_name
-                        subpackage_node.parent = package_node
-                        module_node.namespace = subpackage_node
-                        self.imported_libraries.append([module_node, module_name, subpackage_node, pack_name])
+                            break
+                    if module_key is not None:
+                        if module_key>=1:
+                            pack_name = split_import[module_key-1]
+                        current_package_node = self.get_imported_library_package(pack_name)
+                        #subpackage exists
+                        if current_package_node is not None:
+                            module_node.namespace = current_package_node
+                            self.imported_libraries.append([module_node, module_name, current_package_node, pack_name])
+                        #subpackage does not exist
+                        if current_package_node is None:
+                            subpackage_node = self.create_ecore_instance(NodeTypes.PACKAGE)
+                            subpackage_node.tName = pack_name
+                            subpackage_node.parent = package_node
+                            module_node.namespace = subpackage_node
+                            self.imported_libraries.append([module_node, module_name, subpackage_node, pack_name])
             if package_node is None:
                 if len(split_import)==2:
                     package_node = self.create_ecore_instance(NodeTypes.PACKAGE)
