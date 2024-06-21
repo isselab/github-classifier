@@ -22,11 +22,18 @@ class EcoreToMatrixConverter:
         self.convert_nodes(self.typegraph_root)
         self.convert_edges()
 
-        print(self.edge_attributes)
-
         node_labels = [NodeTypes.PACKAGE.value, NodeTypes.MODULE.value, NodeTypes.CLASS.value, NodeTypes.METHOD_DEFINITION.value, 
                        NodeTypes.METHOD.value, NodeTypes.METHOD_SIGNATURE.value, NodeTypes.PARAMETER.value, NodeTypes.CALL.value]
+        
+        edge_labels = [EdgeTypes.ACCESSEDBY.value, EdgeTypes.ACCESSING.value, EdgeTypes.CHILDCLASSES.value, EdgeTypes.CONTAINS.value,
+                       EdgeTypes.DEFINES.value, EdgeTypes.DEFINITIONS.value, EdgeTypes.MODULES.value, EdgeTypes.NAMESPACE.value, EdgeTypes.NEXT.value,
+                       EdgeTypes.PARAMETERS.value, EdgeTypes.PREVIOUS.value, EdgeTypes.SIGNATURES.value, EdgeTypes.SOURCE.value, EdgeTypes.SUBPACKAGE.value, 
+                       EdgeTypes.TARGET.value]
+        
         self.encoded_node_matrix = one_hot_encoding(node_labels, self.node_matrix)
+
+        if len(self.edge_attributes)>0:
+            self.encoded_edge_attributes = one_hot_encoding(edge_labels, self.edge_attributes)
 
         features = zip(self.encoded_node_matrix, self.hashed_names)
         self.node_features = self.combine_node_features(features)
@@ -43,6 +50,10 @@ class EcoreToMatrixConverter:
     def get_node_matrix(self):
         return self.node_matrix
     
+    '''returns sparse matrix containing the one hot encoded node types'''
+    def get_encoded_node_matrix(self):
+        return self.encoded_node_matrix
+    
     '''returns node names hashed with sha 256, utf-8 encoded'''
     def get_hashed_names(self):
         return self.hashed_names
@@ -54,11 +65,15 @@ class EcoreToMatrixConverter:
     '''returns sparse adjacency matrix, [node_id, node_id]'''
     def get_adjacency_list(self):
         return self.adjacency_list
-
-    '''returns sparse matrix containing the one hot encoded node types'''
-    def get_encoded_node_matrix(self):
-        return self.encoded_node_matrix
-
+    
+    '''returns list of edge attributes'''
+    def get_edge_attributes(self):
+        return self.edge_attributes
+    
+    '''returns list of one hot encoded edge attributes'''
+    def get_encoded_edge_attributes(self):
+        return self.encoded_edge_attributes
+    
     def get_graph_name(self):
         return self.typegraph_root.tName
     
@@ -418,6 +433,20 @@ class EcoreToMatrixConverter:
                 else:
                     new_resource_edges.write("%s" % item)
             new_resource_edges.write("\n")
+        
+        if hasattr(self, 'encoded_edge_attributes'):
+            new_resource_edge_attr = open(f"{output_folder}/{output_name}_edge_attributes.csv", "w+")
+            for attr in self.encoded_edge_attributes:
+                attr_counter = 1
+                for item in attr:
+                    if attr_counter < len(attr):
+                        new_resource_edge_attr.write("%s, " % item)
+                        attr_counter += 1
+                    else:
+                        new_resource_edge_attr.write("%s" % item)
+                new_resource_edge_attr.write("\n")
+            new_resource_edge_attr.close()
 
         new_resource_nodes.close()
         new_resource_edges.close()
+        

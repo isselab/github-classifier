@@ -1,11 +1,11 @@
 from enum import Enum
 
 class EdgeTypes(Enum):
-    PARENT = "parent"
+    #PARENT = "parent"
     SUBPACKAGE = "subpackage"
     MODULES = "modules"
     NAMESPACE = "namespace"
-    PARENTCLASSES = "parentClasses"
+    #PARENTCLASSES = "parentClasses"
     CHILDCLASSES = "childClasses"
     CONTAINS = "contains"
     DEFINES = "defines"
