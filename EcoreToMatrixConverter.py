@@ -363,9 +363,9 @@ class EcoreToMatrixConverter:
                     find_key = self.find_connected_node(NodeTypes.PARAMETER.value, next_parameter_name)
                     if find_key is not None:
                         #edges between next/previous parameters of one function
-                        self.edge_attributes.append(EdgeTypes.PREVIOUS.value)
-                        self.adjacency_list.append([keys, find_key])
                         self.edge_attributes.append(EdgeTypes.NEXT.value)
+                        self.adjacency_list.append([keys, find_key])
+                        self.edge_attributes.append(EdgeTypes.PREVIOUS.value)
                         self.adjacency_list.append([find_key, keys])           
 
             #set edges for calls

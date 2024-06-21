@@ -3,10 +3,10 @@ from AstToEcoreConverter import ProjectEcoreGraph
 from pyecore.resources import ResourceSet
 from NodeFeatures import NodeTypes
 from EcoreToMatrixConverter import EcoreToMatrixConverter
+from EdgeAttributes import EdgeTypes
 
-'''(hashed) name not a feature right now, therefore it is missing in tests, 
-might chage later,
-the tests for the second converter are the same as for the first'''
+'''the tests for the second converter are the same as for the first,
+the hashed node names have their own test, and edge attributes are added and tested'''
 
 class TestETMConv(unittest.TestCase):
 
@@ -19,10 +19,12 @@ class TestETMConv(unittest.TestCase):
         node_features = matrix.get_node_matrix()
         enc_node_features = matrix.get_encoded_node_matrix()
         edges = matrix.get_adjacency_list()
+        edge_attributes = matrix.get_edge_attributes()
 
         self.assertEqual(len(node_features), 1, 'wrong number of nodes')
         self.assertEqual(node_features[0], NodeTypes.PACKAGE.value, 'package is wrong node type')
         self.assertEqual(len(edges), 0, 'single package should not have edge')
+        self.assertEqual(len(edge_attributes), 0, 'wrong number of edge attributes')
         self.assertEqual(len(enc_node_features), 1, 'wrong number of encoded nodes')
         self.assertEqual(len(enc_node_features[0]), 8, 'error in ohe encoding, total number of node types wrong')
 
@@ -45,13 +47,16 @@ class TestETMConv(unittest.TestCase):
         node_features = matrix.get_node_matrix()
         enc_node_features = matrix.get_encoded_node_matrix()
         edges = matrix.get_adjacency_list()
+        edge_attributes = matrix.get_edge_attributes()
 
         self.assertEqual(len(node_features), 2, 'wrong number of nodes')
         self.assertEqual(node_features[0], NodeTypes.PACKAGE.value, 'package is wrong node type')
         self.assertEqual(node_features[1], NodeTypes.PACKAGE.value, 'package is wrong node type')
-        self.assertEqual(len(edges), 1, 'single package should not have edge')
+        self.assertEqual(len(edges), 1, 'package should have edge to subpackage')
         self.assertEqual(len(enc_node_features), 2, 'wrong number of encoded nodes')
         self.assertEqual(edges[0], [0, 1], 'edge between package and subpackage wrong')
+        self.assertEqual(len(edge_attributes), 1, 'wrong number of edge attributes')
+        self.assertEqual(edge_attributes[0], EdgeTypes.SUBPACKAGE.value, 'subpackage attribute is missing/wrong')
 
     def test_module(self):
         repo = 'tests/unit_tests/test_module'
@@ -62,11 +67,13 @@ class TestETMConv(unittest.TestCase):
         node_features = matrix.get_node_matrix()
         enc_node_features = matrix.get_encoded_node_matrix()
         edges = matrix.get_adjacency_list()
+        edge_attributes = matrix.get_edge_attributes()
 
         self.assertEqual(len(node_features), 1, 'wrong number of nodes')
         self.assertEqual(node_features[0], NodeTypes.MODULE.value, 'module is wrong node type')
         self.assertEqual(len(edges), 0, 'single module should not have edge')
         self.assertEqual(len(enc_node_features), 1, 'wrong number of encoded nodes')
+        self.assertEqual(len(edge_attributes), 0, 'wrong number of edge attributes')
 
         #test ohe encoding for node type module
         self.assertEqual(enc_node_features[0][6], 0.0, 'package node set in encoding')
@@ -87,11 +94,13 @@ class TestETMConv(unittest.TestCase):
         node_features = matrix.get_node_matrix()
         enc_node_features = matrix.get_encoded_node_matrix()
         edges = matrix.get_adjacency_list()
+        edge_attributes = matrix.get_edge_attributes()
 
         self.assertEqual(len(node_features), 2, 'wrong number of nodes')
         self.assertEqual(node_features[0], NodeTypes.MODULE.value, 'module is wrong node type')
         self.assertEqual(node_features[1], NodeTypes.MODULE.value, 'module is wrong node type')
         self.assertEqual(len(edges), 0, 'module should not have edge to another module')
+        self.assertEqual(len(edge_attributes), 0, 'wrong number of edge attributes')
         self.assertEqual(len(enc_node_features), 2, 'wrong number of encoded nodes')
 
     def test_module_in_package(self):
@@ -103,14 +112,18 @@ class TestETMConv(unittest.TestCase):
         node_features = matrix.get_node_matrix()
         enc_node_features = matrix.get_encoded_node_matrix()
         edges = matrix.get_adjacency_list()
+        edge_attributes = matrix.get_edge_attributes()
 
         self.assertEqual(len(node_features), 2, 'wrong number of nodes')
         self.assertEqual(node_features[0], NodeTypes.PACKAGE.value, 'package is wrong node type')
         self.assertEqual(node_features[1], NodeTypes.MODULE.value, 'module is wrong node type')
         self.assertEqual(len(edges), 2, 'module should have edge to package and vice versa')
+        self.assertEqual(len(edge_attributes), 2, 'wrong number of edge attributes')
         self.assertEqual(len(enc_node_features), 2, 'wrong number of encoded nodes')
         self.assertEqual(edges[0], [0, 1], 'error with edge package to module')
         self.assertEqual(edges[1], [1, 0], 'error with edge module to package')
+        self.assertEqual(edge_attributes[0], EdgeTypes.MODULES.value, 'attribute for edge package to module is wrong')
+        self.assertEqual(edge_attributes[1], EdgeTypes.NAMESPACE.value, 'attribute for edge module to package is wrong')
 
     def test_class(self):
         repo = 'tests/unit_tests/test_class'
@@ -121,13 +134,16 @@ class TestETMConv(unittest.TestCase):
         node_features = matrix.get_node_matrix()
         enc_node_features = matrix.get_encoded_node_matrix()
         edges = matrix.get_adjacency_list()
+        edge_attributes = matrix.get_edge_attributes()
 
         self.assertEqual(len(node_features), 2, 'wrong number of nodes')
         self.assertEqual(node_features[0], NodeTypes.MODULE.value, 'module is wrong node type')
         self.assertEqual(node_features[1], NodeTypes.CLASS.value, 'class is wrong node type')
         self.assertEqual(len(edges), 1, 'module should have edge to class')
+        self.assertEqual(len(edge_attributes), 1, 'wrong number of edge attributes')
         self.assertEqual(len(enc_node_features), 2, 'wrong number of encoded nodes')
         self.assertEqual(edges[0], [0, 1], 'error with edge module to class')
+        self.assertEqual(edge_attributes[0], EdgeTypes.CONTAINS.value, 'attribute for edge module to class is wrong')
 
         #test ohe encoding for node type class
         self.assertEqual(enc_node_features[1][6], 0.0, 'package node set in encoding')
@@ -148,14 +164,17 @@ class TestETMConv(unittest.TestCase):
         node_features = matrix.get_node_matrix()
         enc_node_features = matrix.get_encoded_node_matrix()
         edges = matrix.get_adjacency_list()
+        edge_attributes = matrix.get_edge_attributes()
 
         self.assertEqual(len(node_features), 3, 'wrong number of nodes')
         self.assertEqual(node_features[0], NodeTypes.MODULE.value, 'module is wrong node type')
         self.assertEqual(node_features[1], NodeTypes.CLASS.value, 'class is wrong node type')
         self.assertEqual(node_features[2], NodeTypes.CLASS.value, 'class is wrong node type')
         self.assertEqual(len(edges), 2, 'class should have edge to child class')
+        self.assertEqual(len(edge_attributes), 2, 'wrong number of edge attributes')
         self.assertEqual(len(enc_node_features), 3, 'wrong number of encoded nodes')
         self.assertEqual(edges[1], [1, 2], 'error with edge class to child class')
+        self.assertEqual(edge_attributes[1], EdgeTypes.CHILDCLASSES.value, 'attribute for edge class to child class is wrong')
 
     def test_method(self):
         repo = 'tests/unit_tests/test_method'
@@ -166,6 +185,7 @@ class TestETMConv(unittest.TestCase):
         node_features = matrix.get_node_matrix()
         enc_node_features = matrix.get_encoded_node_matrix()
         edges = matrix.get_adjacency_list()
+        edge_attributes = matrix.get_edge_attributes()
 
         self.assertEqual(len(node_features), 4, 'wrong number of nodes')
         self.assertEqual(node_features[1], NodeTypes.METHOD_DEFINITION.value, 'method definition is wrong node type')
@@ -178,9 +198,13 @@ class TestETMConv(unittest.TestCase):
         self.assertEqual(enc_node_features[3][4], 1.0, 'method signature node not set in encoding')
 
         self.assertEqual(len(edges), 3, 'wrong number of edges')
+        self.assertEqual(len(edge_attributes), 3, 'wrong number of edge attributes')
         self.assertEqual(edges[0], [0, 1], 'module should have edge to method definition')
         self.assertEqual(edges[1], [2, 1], 'method should have edge to method definition')
         self.assertEqual(edges[2], [2, 3], 'method should have edge to method signature')
+        self.assertEqual(edge_attributes[0], EdgeTypes.CONTAINS.value, 'attribute for edge module to method definition is wrong')
+        self.assertEqual(edge_attributes[1], EdgeTypes.DEFINITIONS.value, 'attribute for edge method to method definition is wrong')
+        self.assertEqual(edge_attributes[2], EdgeTypes.SIGNATURES.value, 'attribute for edge method to method signature is wrong')
 
     #test defining a method inside a class
     def test_method_in_class(self):
@@ -192,13 +216,16 @@ class TestETMConv(unittest.TestCase):
         node_features = matrix.get_node_matrix()
         enc_node_features = matrix.get_encoded_node_matrix()
         edges = matrix.get_adjacency_list()
+        edge_attributes = matrix.get_edge_attributes()
 
         self.assertEqual(len(node_features), 5, 'wrong number of nodes')
         self.assertEqual(len(enc_node_features), 5, 'wrong number of encoded nodes')
         self.assertEqual(node_features[1], NodeTypes.CLASS.value, 'class is wrong node type')
         self.assertEqual(node_features[2], NodeTypes.METHOD_DEFINITION.value, 'method definition is wrong node type')
         self.assertEqual(len(edges), 4, 'wrong number of edges')
+        self.assertEqual(len(edge_attributes), 4, 'wrong number of edge attributes')
         self.assertEqual(edges[1], [1, 2], 'class should have edge to method definition')
+        self.assertEqual(edge_attributes[1], EdgeTypes.DEFINES.value, 'attribute for edge class to method definition is wrong')
 
     #test defining multiple methods inside a class
     def test_multiple_methods_in_class(self):
@@ -210,6 +237,7 @@ class TestETMConv(unittest.TestCase):
         node_features = matrix.get_node_matrix()
         enc_node_features = matrix.get_encoded_node_matrix()
         edges = matrix.get_adjacency_list()
+        edge_attributes = matrix.get_edge_attributes()
 
         self.assertEqual(len(node_features), 8, 'wrong number of nodes')
         self.assertEqual(len(enc_node_features), 8, 'wrong number of encoded nodes')
@@ -217,6 +245,7 @@ class TestETMConv(unittest.TestCase):
         self.assertEqual(node_features[2], NodeTypes.METHOD_DEFINITION.value, 'first method definition is wrong node type')
         self.assertEqual(node_features[3], NodeTypes.METHOD_DEFINITION.value, 'second method definition is wrong node type')
         self.assertEqual(len(edges), 7, 'wrong number of edges')
+        self.assertEqual(len(edge_attributes), 7, 'wrong number of edge attributes')
         self.assertEqual(edges[1], [1, 2], 'class should have edge to first method definition')
         self.assertEqual(edges[2], [1, 3], 'class should have edge to second method definition')
         
@@ -229,11 +258,14 @@ class TestETMConv(unittest.TestCase):
         node_features = matrix.get_node_matrix()
         enc_node_features = matrix.get_encoded_node_matrix()
         edges = matrix.get_adjacency_list()
+        edge_attributes = matrix.get_edge_attributes()
 
         self.assertEqual(len(node_features), 5, 'wrong number of nodes')
         self.assertEqual(node_features[4], NodeTypes.PARAMETER.value, 'parameter is wrong node type')
         self.assertEqual(len(edges), 4, 'wrong number of edges')
+        self.assertEqual(len(edge_attributes), 4, 'wrong number of edge attributes')
         self.assertEqual(edges[3], [3, 4], 'method signature should have edge to parameter')
+        self.assertEqual(edge_attributes[3], EdgeTypes.PARAMETERS.value, 'attribute for edge method signature to parameter is wrong')
 
         #test ohe encoding for node type parameter
         self.assertEqual(enc_node_features[4][6], 0.0, 'package node set in encoding')
@@ -254,14 +286,19 @@ class TestETMConv(unittest.TestCase):
         node_features = matrix.get_node_matrix()
         enc_node_features = matrix.get_encoded_node_matrix()
         edges = matrix.get_adjacency_list()
+        edge_attributes = matrix.get_edge_attributes()
 
         self.assertEqual(len(node_features), 6, 'wrong number of nodes')
         self.assertEqual(node_features[5], NodeTypes.PARAMETER.value, 'parameter is wrong node type')
         self.assertEqual(len(edges), 7, 'wrong number of edges')
+        self.assertEqual(len(edge_attributes), 7, 'wrong number of edge attributes')
         
         self.assertEqual(edges[6], [3, 5], 'method signature should have edge to second parameter')
         self.assertEqual(edges[4], [4, 5], 'parameter should have edge to second parameter')
         self.assertEqual(edges[5], [5, 4], 'second parameter should have edge to parameter')
+        self.assertEqual(edge_attributes[4], EdgeTypes.NEXT.value, 'attribute for edge parameter to second parameter is wrong')
+        self.assertEqual(edge_attributes[5], EdgeTypes.PREVIOUS.value, 'attribute for edge second parameter to parameter is wrong')
+        self.assertEqual(edge_attributes[6], EdgeTypes.PARAMETERS.value, 'attribute for edge method signature to second parameter is wrong')
 
     #test call of method by another method, both in same module
     def test_module_internal_method_call(self):
@@ -273,6 +310,7 @@ class TestETMConv(unittest.TestCase):
         node_features = matrix.get_node_matrix()
         enc_node_features = matrix.get_encoded_node_matrix()
         edges = matrix.get_adjacency_list()
+        edge_attributes = matrix.get_edge_attributes()
 
         self.assertEqual(len(node_features), 9, 'wrong number of nodes')
         self.assertEqual(node_features[3], NodeTypes.CALL.value, 'call is wrong node type')
@@ -283,6 +321,10 @@ class TestETMConv(unittest.TestCase):
         self.assertEqual(edges[3], [3, 2], 'call should have edge to method definition, source')
         self.assertEqual(edges[4], [1, 3], 'method definition should have edge to call, accessedBy')
         self.assertEqual(edges[5], [3, 1], 'call should have edge to method definition, target')
+        self.assertEqual(edge_attributes[2], EdgeTypes.ACCESSING.value, 'attribute for edge method definition to call is wrong')
+        self.assertEqual(edge_attributes[3], EdgeTypes.SOURCE.value, 'attribute for edge call to method definition is wrong')
+        self.assertEqual(edge_attributes[4], EdgeTypes.ACCESSEDBY.value, 'attribute for edge method definition to call is wrong')
+        self.assertEqual(edge_attributes[5], EdgeTypes.TARGET.value, 'attribute for edge call to method definition is wrong')
  
     #test importing a method from another module in the repo
     def test_internal_method_imports(self):
@@ -294,6 +336,7 @@ class TestETMConv(unittest.TestCase):
         node_features = matrix.get_node_matrix()
         enc_node_features = matrix.get_encoded_node_matrix()
         edges = matrix.get_adjacency_list()
+        edge_attributes = matrix.get_edge_attributes()
 
         self.assertEqual(len(node_features), 9, 'wrong number of nodes')
         self.assertEqual(len(enc_node_features), 9, 'wrong number of encoded nodes')
@@ -302,6 +345,7 @@ class TestETMConv(unittest.TestCase):
         self.assertEqual(node_features[1], NodeTypes.METHOD_DEFINITION.value, 'method definition is missing')
 
         self.assertEqual(len(edges), 10, 'wrong number of edges')
+        self.assertEqual(len(edge_attributes), 10, 'wrong number of edge attributes')
         self.assertEqual(edges[2], [3, 4], 'method definition should have edge to call, accessing')
         self.assertEqual(edges[3], [4, 3], 'call should have edge to method definition, source')
         self.assertEqual(edges[4], [1, 4], 'method definition should have edge to call, accessedBy')
@@ -317,6 +361,7 @@ class TestETMConv(unittest.TestCase):
         node_features = matrix.get_node_matrix()
         enc_node_features = matrix.get_encoded_node_matrix()
         edges = matrix.get_adjacency_list()
+        edge_attributes = matrix.get_edge_attributes()
 
         self.assertEqual(len(node_features), 10, 'wrong number of nodes')
         self.assertEqual(len(enc_node_features), 10, 'wrong number of encoded nodes')
@@ -326,6 +371,7 @@ class TestETMConv(unittest.TestCase):
         self.assertEqual(node_features[1], NodeTypes.CLASS.value, 'class is missing')
 
         self.assertEqual(len(edges), 11, 'wrong number of edges')
+        self.assertEqual(len(edge_attributes), 11, 'wrong number of edge attributes')
         self.assertEqual(edges[3], [4, 5], 'method definition should have edge to call, accessing')
         self.assertEqual(edges[4], [5, 4], 'call should have edge to method definition, source')
         self.assertEqual(edges[5], [2, 5], 'method definition should have edge to call, accessedBy')
@@ -341,6 +387,7 @@ class TestETMConv(unittest.TestCase):
         node_features = matrix.get_node_matrix()
         enc_node_features = matrix.get_encoded_node_matrix()
         edges = matrix.get_adjacency_list()
+        edge_attributes = matrix.get_edge_attributes()
 
         self.assertEqual(node_features[3], NodeTypes.CALL.value, 'call is missing')
         self.assertEqual(node_features[2], NodeTypes.METHOD_DEFINITION.value, 'method definition is missing')
@@ -361,6 +408,7 @@ class TestETMConv(unittest.TestCase):
         node_features = matrix.get_node_matrix()
         enc_node_features = matrix.get_encoded_node_matrix()
         edges = matrix.get_adjacency_list()
+        edge_attributes = matrix.get_edge_attributes()
 
         self.assertEqual(node_features[3], NodeTypes.CALL.value, 'call is missing')
         self.assertEqual(node_features[2], NodeTypes.METHOD_DEFINITION.value, 'method definition is missing')
@@ -382,6 +430,7 @@ class TestETMConv(unittest.TestCase):
         node_features = matrix.get_node_matrix()
         enc_node_features = matrix.get_encoded_node_matrix()
         edges = matrix.get_adjacency_list()
+        edge_attributes = matrix.get_edge_attributes()
 
         self.assertEqual(node_features[4], NodeTypes.CALL.value, 'call is missing')
         self.assertEqual(node_features[1], NodeTypes.CLASS.value, 'class is missing')
@@ -403,6 +452,7 @@ class TestETMConv(unittest.TestCase):
         node_features = matrix.get_node_matrix()
         enc_node_features = matrix.get_encoded_node_matrix()
         edges = matrix.get_adjacency_list()
+        edge_attributes = matrix.get_edge_attributes()
 
         self.assertEqual(node_features[4], NodeTypes.CALL.value, 'call is missing')
         self.assertEqual(node_features[1], NodeTypes.CLASS.value, 'class is missing')
@@ -424,6 +474,7 @@ class TestETMConv(unittest.TestCase):
         node_features = matrix.get_node_matrix()
         enc_node_features = matrix.get_encoded_node_matrix()
         edges = matrix.get_adjacency_list()
+        edge_attributes = matrix.get_edge_attributes()
 
         self.assertEqual(node_features[4], NodeTypes.CALL.value, 'call is missing')
         self.assertEqual(node_features[0], NodeTypes.PACKAGE.value, 'package is missing')
@@ -447,6 +498,7 @@ class TestETMConv(unittest.TestCase):
         node_features = matrix.get_node_matrix()
         enc_node_features = matrix.get_encoded_node_matrix()
         edges = matrix.get_adjacency_list()
+        edge_attributes = matrix.get_edge_attributes()
 
         self.assertEqual(node_features[4], NodeTypes.CALL.value, 'call is missing')
         self.assertEqual(node_features[0], NodeTypes.PACKAGE.value, 'package is missing')
@@ -471,6 +523,7 @@ class TestETMConv(unittest.TestCase):
         node_features = matrix.get_node_matrix()
         enc_node_features = matrix.get_encoded_node_matrix()
         edges = matrix.get_adjacency_list()
+        edge_attributes = matrix.get_edge_attributes()
 
         self.assertEqual(node_features[3], NodeTypes.CALL.value, 'call is missing')
         self.assertEqual(node_features[0], NodeTypes.PACKAGE.value, 'imported package is missing')
@@ -493,6 +546,7 @@ class TestETMConv(unittest.TestCase):
         node_features = matrix.get_node_matrix()
         enc_node_features = matrix.get_encoded_node_matrix()
         edges = matrix.get_adjacency_list()
+        edge_attributes = matrix.get_edge_attributes()
 
         self.assertEqual(node_features[4], NodeTypes.CALL.value, 'call is missing')
         self.assertEqual(node_features[5], NodeTypes.CALL.value, 'call is missing')
@@ -526,6 +580,7 @@ class TestETMConv(unittest.TestCase):
         node_features = matrix.get_node_matrix()
         enc_node_features = matrix.get_encoded_node_matrix()
         edges = matrix.get_adjacency_list()
+        edge_attributes = matrix.get_edge_attributes()
 
         self.assertEqual(node_features[0], NodeTypes.PACKAGE.value, 'imported package is missing')
         self.assertEqual(node_features[1], NodeTypes.PACKAGE.value, 'imported subpackage is missing')
@@ -549,6 +604,7 @@ class TestETMConv(unittest.TestCase):
         node_features = matrix.get_node_matrix()
         enc_node_features = matrix.get_encoded_node_matrix()
         edges = matrix.get_adjacency_list()
+        edge_attributes = matrix.get_edge_attributes()
 
         self.assertEqual(node_features[9], NodeTypes.CLASS.value, 'imported class is missing')
         self.assertEqual(node_features[10], NodeTypes.METHOD_DEFINITION.value, 'imported method definition is missing')
@@ -578,6 +634,7 @@ class TestETMConv(unittest.TestCase):
         node_features = matrix.get_node_matrix()
         enc_node_features = matrix.get_encoded_node_matrix()
         edges = matrix.get_adjacency_list()
+        edge_attributes = matrix.get_edge_attributes()
 
         self.assertEqual(node_features[5], NodeTypes.MODULE.value, 'imported module is missing')
         self.assertEqual(node_features[6], NodeTypes.METHOD_DEFINITION.value, 'imported method definition is missing')
@@ -607,6 +664,7 @@ class TestETMConv(unittest.TestCase):
         node_features = matrix.get_node_matrix()
         enc_node_features = matrix.get_encoded_node_matrix()
         edges = matrix.get_adjacency_list()
+        edge_attributes = matrix.get_edge_attributes()
 
         self.assertEqual(node_features[1], NodeTypes.PACKAGE.value, 'imported subpackage is missing')
         self.assertEqual(node_features[6], NodeTypes.MODULE.value, 'imported module is missing')
@@ -644,6 +702,7 @@ class TestETMConv(unittest.TestCase):
         node_features = matrix.get_node_matrix()
         enc_node_features = matrix.get_encoded_node_matrix()
         edges = matrix.get_adjacency_list()
+        edge_attributes = matrix.get_edge_attributes()
         
         self.assertEqual(node_features[0], NodeTypes.PACKAGE.value, 'imported parent package is missing')
         self.assertEqual(node_features[1], NodeTypes.PACKAGE.value, 'imported first subpackage is missing')
@@ -677,6 +736,7 @@ class TestETMConv(unittest.TestCase):
         self.assertEqual(edges[9], [10, 6], 'method definition should have edge to call, accessedBy')
         self.assertEqual(edges[10], [6, 10], 'call should have edge to method definition, target')
 
+    #test if hashed node names exist, are the right number, and are zipped with node type into one array
     def test_hashed_names(self):
         repo = 'tests/unit_tests/test_hashed_names'
         resource_set = ResourceSet()
@@ -687,6 +747,8 @@ class TestETMConv(unittest.TestCase):
         enc_node_features = matrix.get_encoded_node_matrix()
         full_features = matrix.get_node_features()
         edges = matrix.get_adjacency_list()
+        edge_attributes = matrix.get_edge_attributes()
+
         self.assertEqual(len(node_features), len(full_features), 'number of nodes in type and type+hash is not equal')
         for item in full_features:
             self.assertEqual(len(item), 9, 'number of node features is wrong')
