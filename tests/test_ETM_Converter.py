@@ -677,4 +677,18 @@ class TestETMConv(unittest.TestCase):
         self.assertEqual(edges[9], [10, 6], 'method definition should have edge to call, accessedBy')
         self.assertEqual(edges[10], [6, 10], 'call should have edge to method definition, target')
 
+    def test_hashed_names(self):
+        repo = 'tests/unit_tests/test_hashed_names'
+        resource_set = ResourceSet()
+        graph = ProjectEcoreGraph(resource_set, repo, False)
+        ecore_graph = graph.get_graph()
+        matrix = EcoreToMatrixConverter(ecore_graph, False)
+        node_features = matrix.get_node_matrix()
+        enc_node_features = matrix.get_encoded_node_matrix()
+        full_features = matrix.get_node_features()
+        edges = matrix.get_adjacency_list()
+        self.assertEqual(len(node_features), len(full_features), 'number of nodes in type and type+hash is not equal')
+        for item in full_features:
+            self.assertEqual(len(item), 9, 'number of node features is wrong')
+
 unittest.main()

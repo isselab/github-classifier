@@ -1,6 +1,8 @@
 from pyecore.resources import ResourceSet
 from Encoder import one_hot_encoding
 from NodeFeatures import NodeTypes
+import hashlib
+import numpy as np
 
 class EcoreToMatrixConverter:
     def __init__(self, resource: ResourceSet, write_in_file, output_folder=None):
@@ -8,22 +10,23 @@ class EcoreToMatrixConverter:
             self.typegraph_root = resource.contents[0]
         else:
             self.typegraph_root = resource
-        # nxc feature matrix with n nodes and c features for each node: node type and identifier (e.g. name or location)
+        #nxc feature matrix with n nodes and c features for each node: node type and identifier (e.g. name or location)
         self.node_matrix = []
         self.adjacency_list = []
-        self.node_dict = {}  # internal structure to set edges later, node_id as key, value is list with type, name, object name, that's connected by edge
-        self.node_count = 0  # to create id for nodes, keys in node_dict
+        self.node_dict = {}  #internal structure to set edges later, node_id as key, value is list with type, name, object name, that's connected by edge
+        self.node_count = 0  #to create id for nodes, keys in node_dict
+        self.hashed_names = []
 
         self.convert_nodes(self.typegraph_root)
-
-        #added to see if flag ext library is set
-       # print(self.typegraph_root.modules[0].tAnnotation)
-
         self.convert_edges()
 
         node_labels = [NodeTypes.PACKAGE.value, NodeTypes.MODULE.value, NodeTypes.CLASS.value, NodeTypes.METHOD_DEFINITION.value, 
                        NodeTypes.METHOD.value, NodeTypes.METHOD_SIGNATURE.value, NodeTypes.PARAMETER.value, NodeTypes.CALL.value]
         self.encoded_node_matrix = one_hot_encoding(node_labels, self.node_matrix)
+
+        features = zip(self.encoded_node_matrix, self.hashed_names)
+        self.node_features = self.combine_node_features(features)
+
         output_name = self.get_graph_name()
         if write_in_file is True:
             if output_folder is not None:
@@ -31,18 +34,38 @@ class EcoreToMatrixConverter:
                 print(f'{output_name}')
             else:
                 print('output directory is required!')
-
+ 
+    '''returns sparse matrix containing the node types'''
     def get_node_matrix(self):
         return self.node_matrix
+    
+    '''returns node names hashed with sha 256, utf-8 encoded'''
+    def get_hashed_names(self):
+        return self.hashed_names
+    
+    '''returns all of the node features: (ohe enc) node types and hashed names'''
+    def get_node_features(self):
+        return self.node_features
 
+    '''returns sparse adjacency matrix, [node_id, node_id]'''
     def get_adjacency_list(self):
         return self.adjacency_list
 
+    '''returns sparse matrix containing the one hot encoded node types'''
     def get_encoded_node_matrix(self):
         return self.encoded_node_matrix
 
     def get_graph_name(self):
         return self.typegraph_root.tName
+    
+    '''adds enc node types and hashes in one feature array per node'''
+    def combine_node_features(self, features):
+        feature_list = list(features)
+        combined_list = []
+        for arr, hash in feature_list:
+            arr = np.append(arr, hash)
+            combined_list.append(arr)
+        return combined_list
 
     '''this is the main function, that converts the nodes in the ecore graph into a matrix structure'''
     def convert_nodes(self, typegraph):
@@ -55,6 +78,8 @@ class EcoreToMatrixConverter:
             if current_package is None or len(current_package) == 4:
                 self.node_matrix.append(NodeTypes.PACKAGE.value)
                 self.node_dict[self.node_count] = [NodeTypes.PACKAGE.value, tpackage.tName]
+                hashed_name = hashlib.sha256(tpackage.tName.encode('utf-8'))
+                self.hashed_names.append(hashed_name.hexdigest())
                 self.node_count += 1
                 if hasattr(tpackage, 'subpackages'):
                     self.convert_subpackages_recursive(tpackage)
@@ -63,13 +88,18 @@ class EcoreToMatrixConverter:
         for tmodule in typegraph.modules:
             current_module = None
             current_module = self.get_node(tmodule.location, NodeTypes.MODULE.value)
+            
             if current_module is None:
                 self.node_matrix.append(NodeTypes.MODULE.value)
                 if tmodule.namespace is not None:
                     self.node_dict[self.node_count] = [NodeTypes.MODULE.value, tmodule.location, NodeTypes.PACKAGE.value, tmodule.namespace.tName]  # name of TPackage object
+                    hashed_name = hashlib.sha256(tmodule.location.encode('utf-8'))
+                    self.hashed_names.append(hashed_name.hexdigest())
                     self.node_count += 1
                 else:
                     self.node_dict[self.node_count] = [NodeTypes.MODULE.value, tmodule.location]
+                    hashed_name = hashlib.sha256(tmodule.location.encode('utf-8'))
+                    self.hashed_names.append(hashed_name.hexdigest())
                     self.node_count += 1
                 if hasattr(tmodule, 'contains'):
                     #can contain TContainableElements (TAbstractType and TMember)
@@ -80,6 +110,8 @@ class EcoreToMatrixConverter:
                             if current_class is None:
                                 self.node_matrix.append(NodeTypes.CLASS.value)
                                 self.node_dict[self.node_count] = [NodeTypes.CLASS.value, tobject.tName, NodeTypes.MODULE.value, tmodule.location]
+                                hashed_name = hashlib.sha256(tobject.tName.encode('utf-8'))
+                                self.hashed_names.append(hashed_name.hexdigest())
                                 self.node_count += 1
                                 if hasattr(tobject, 'childClasses'):
                                     self.convert_childClasses(tobject)
@@ -92,6 +124,8 @@ class EcoreToMatrixConverter:
         for tmethod in typegraph.methods:
             self.node_matrix.append(NodeTypes.METHOD.value)
             self.node_dict[self.node_count] = [NodeTypes.METHOD.value, tmethod.tName]
+            hashed_name = hashlib.sha256(tmethod.tName.encode('utf-8'))
+            self.hashed_names.append(hashed_name.hexdigest())
             self.node_count += 1
             node_name = tmethod.tName
             for tobject in tmethod.signatures:
@@ -99,6 +133,8 @@ class EcoreToMatrixConverter:
                 signature_name = node_name
                 self.node_matrix.append(NodeTypes.METHOD_SIGNATURE.value)
                 self.node_dict[self.node_count] = [NodeTypes.METHOD_SIGNATURE.value, node_name, NodeTypes.METHOD.value, tmethod.tName]
+                hashed_name = hashlib.sha256(node_name.encode('utf-8'))
+                self.hashed_names.append(hashed_name.hexdigest())
                 self.node_count += 1
                 if hasattr(tobject, 'parameters'):
                     node_name += '_param'
@@ -111,6 +147,8 @@ class EcoreToMatrixConverter:
                         if tparam.next is None:
                             self.node_matrix.append(NodeTypes.PARAMETER.value)
                             self.node_dict[self.node_count] = [NodeTypes.PARAMETER.value, param_name, NodeTypes.METHOD_SIGNATURE.value, signature_name]
+                            hashed_name = hashlib.sha256(param_name.encode('utf-8'))
+                            self.hashed_names.append(hashed_name.hexdigest())
                             self.node_count += 1
 
                         if tparam.next is not None:
@@ -120,6 +158,8 @@ class EcoreToMatrixConverter:
                             next_param_name = node_name + next_param
                             self.node_matrix.append(NodeTypes.PARAMETER.value)
                             self.node_dict[self.node_count] = [NodeTypes.PARAMETER.value, param_name, NodeTypes.METHOD_SIGNATURE.value, signature_name, 'Next', next_param_name]
+                            hashed_name = hashlib.sha256(param_name.encode('utf-8'))
+                            self.hashed_names.append(hashed_name.hexdigest())
                             self.node_count += 1
 
         # convert classes and contained objects
@@ -129,6 +169,8 @@ class EcoreToMatrixConverter:
             if current_class is None:
                 self.node_matrix.append(NodeTypes.CLASS.value)
                 self.node_dict[self.node_count] = [NodeTypes.CLASS.value, tclass.tName]
+                hashed_name = hashlib.sha256(tclass.tName.encode('utf-8'))
+                self.hashed_names.append(hashed_name.hexdigest())
                 self.node_count += 1
                 if hasattr(tclass, 'childClasses'):
                     self.convert_childClasses(tclass)
@@ -141,6 +183,8 @@ class EcoreToMatrixConverter:
             if current_subpackage is None:
                 self.node_matrix.append(NodeTypes.PACKAGE.value)
                 self.node_dict[self.node_count] = [NodeTypes.PACKAGE.value, tsubpackage.tName, NodeTypes.PACKAGE.value, tpackage.tName]  # save type and name for edge info
+                hashed_name = hashlib.sha256(tsubpackage.tName.encode('utf-8'))
+                self.hashed_names.append(hashed_name.hexdigest())
                 self.node_count += 1
                 if hasattr(tsubpackage, 'subpackages'):
                     self.convert_subpackages_recursive(tsubpackage)
@@ -151,6 +195,8 @@ class EcoreToMatrixConverter:
         for child in tclass.childClasses:
             self.node_matrix.append(NodeTypes.CLASS.value)
             self.node_dict[self.node_count] = [NodeTypes.CLASS.value, child.tName, NodeTypes.CLASS.value, tclass.tName]
+            hashed_name = hashlib.sha256(child.tName.encode('utf-8'))
+            self.hashed_names.append(hashed_name.hexdigest())
             self.node_count += 1
             if hasattr(child, 'defines'):
                 self.convert_defined_methods(child)
@@ -167,6 +213,8 @@ class EcoreToMatrixConverter:
         tobject_name += '_definition'
         self.node_matrix.append(NodeTypes.METHOD_DEFINITION.value)
         self.node_dict[self.node_count] = [NodeTypes.METHOD_DEFINITION.value, tobject_name, container_type, tcontainer_name]
+        hashed_name = hashlib.sha256(tobject_name.encode('utf-8'))
+        self.hashed_names.append(hashed_name.hexdigest())
         self.node_count += 1
         if hasattr(t_meth_def, 'accessing'):
             self.convert_call(t_meth_def, tobject_name)
@@ -186,6 +234,8 @@ class EcoreToMatrixConverter:
                 current_call = tmethod_def_name + calls
                 self.node_matrix.append(NodeTypes.CALL.value)
                 self.node_dict[self.node_count] = [NodeTypes.CALL.value, current_call, 'Source', call_source, 'Target', target_name]
+                hashed_name = hashlib.sha256(current_call.encode('utf-8'))
+                self.hashed_names.append(hashed_name.hexdigest())
                 self.node_count += 1
 
     '''checks if a node already exists by comparing node type and name'''
@@ -323,7 +373,7 @@ class EcoreToMatrixConverter:
         new_resource_nodes = open(f"{output_folder}/{output_name}_nodefeatures.csv", "w+")
         new_resource_edges = open(f"{output_folder}/{output_name}_A.csv", "w+")
 
-        for node in self.encoded_node_matrix:
+        for node in self.node_features:
             node_counter = 1
             for item in node:
                 if node_counter < len(node):
