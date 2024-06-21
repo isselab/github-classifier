@@ -3,7 +3,7 @@ from Encoder import one_hot_encoding
 from NodeFeatures import NodeTypes
 import hashlib
 import numpy as np
-
+from EdgeAttributes import EdgeTypes
 
 class EcoreToMatrixConverter:
     def __init__(self, resource: ResourceSet, write_in_file, output_folder=None):
@@ -16,11 +16,13 @@ class EcoreToMatrixConverter:
         self.adjacency_list = []
         self.node_dict = {}  #internal structure to set edges later, node_id as key, value is list with type, name, object name, that's connected by edge
         self.node_count = 0  #to create id for nodes, keys in node_dict
-        self.hashed_names = []
-        self.edge_attributes = []
+        self.hashed_names = [] #contains hashed node names
+        self.edge_attributes = [] #contains type of relationship between nodes
 
         self.convert_nodes(self.typegraph_root)
         self.convert_edges()
+
+        print(self.edge_attributes)
 
         node_labels = [NodeTypes.PACKAGE.value, NodeTypes.MODULE.value, NodeTypes.CLASS.value, NodeTypes.METHOD_DEFINITION.value, 
                        NodeTypes.METHOD.value, NodeTypes.METHOD_SIGNATURE.value, NodeTypes.PARAMETER.value, NodeTypes.CALL.value]
@@ -272,6 +274,7 @@ class EcoreToMatrixConverter:
                 if len(current_node) == 4:
                     find_key = self.find_key_of_connected_node(NodeTypes.PACKAGE.value, current_node)  # search for key of the parent package
                     if find_key is not None:
+                        self.edge_attributes.append(EdgeTypes.SUBPACKAGE.value)
                         self.adjacency_list.append([find_key, keys])
 
             #set edges between modules and packages
@@ -281,7 +284,11 @@ class EcoreToMatrixConverter:
                         find_key = self.find_key_of_connected_node(NodeTypes.PACKAGE.value, current_node)
                         if find_key is not None:
                             #edge in both directions
+                            #package to module
+                            self.edge_attributes.append(EdgeTypes.MODULES.value)
                             self.adjacency_list.append([find_key, keys])
+                            #module to package
+                            self.edge_attributes.append(EdgeTypes.NAMESPACE.value)
                             self.adjacency_list.append([keys, find_key])
 
             #set edges between classes and modules/child classes
@@ -290,11 +297,13 @@ class EcoreToMatrixConverter:
                     if current_node[2] == NodeTypes.MODULE.value:
                         find_key = self.find_key_of_connected_node(NodeTypes.MODULE.value, current_node)
                         if find_key is not None:
+                            self.edge_attributes.append(EdgeTypes.CONTAINS.value)
                             self.adjacency_list.append([find_key, keys])
                     if current_node[2] == NodeTypes.CLASS.value:
                         find_key = self.find_key_of_connected_node(NodeTypes.CLASS.value, current_node)
                         if find_key is not None:
                             #edge from class to child class
+                            self.edge_attributes.append(EdgeTypes.CHILDCLASSES.value)
                             self.adjacency_list.append([find_key, keys])
 
             #set edges between classes/modules and method definitions
@@ -303,10 +312,12 @@ class EcoreToMatrixConverter:
                     if current_node[2] == NodeTypes.MODULE.value:
                         find_key = self.find_key_of_connected_node(NodeTypes.MODULE.value, current_node)
                         if find_key is not None:
+                            self.edge_attributes.append(EdgeTypes.CONTAINS.value)
                             self.adjacency_list.append([find_key, keys])
                     if current_node[2] == NodeTypes.CLASS.value:
                         find_key = self.find_key_of_connected_node(NodeTypes.CLASS.value, current_node)
                         if find_key is not None:
+                            self.edge_attributes.append(EdgeTypes.DEFINES.value)
                             self.adjacency_list.append([find_key, keys])
 
             #set edges for TMethod objects
@@ -314,6 +325,7 @@ class EcoreToMatrixConverter:
                 find_key = self.find_key_of_connected_node(NodeTypes.METHOD.value, current_node)
                 if find_key is not None:
                     #edge from TMethod to TMethodSignature object
+                    self.edge_attributes.append(EdgeTypes.SIGNATURES.value)
                     self.adjacency_list.append([find_key, keys])
             if current_node[0] == NodeTypes.METHOD.value:
                 method_name = current_node[1]
@@ -321,6 +333,7 @@ class EcoreToMatrixConverter:
                 find_key = self.find_connected_node(NodeTypes.METHOD_DEFINITION.value, method_name)
                 if find_key is not None:
                     #edge from TMethod to TMethodDef object
+                    self.edge_attributes.append(EdgeTypes.DEFINITIONS.value)
                     self.adjacency_list.append([keys, find_key])
 
             #set edges for parameters
@@ -328,13 +341,16 @@ class EcoreToMatrixConverter:
                 find_key = self.find_key_of_connected_node(NodeTypes.METHOD_SIGNATURE.value, current_node)
                 if find_key is not None:
                     #edge from TMethodSignature to TParameter
+                    self.edge_attributes.append(EdgeTypes.PARAMETERS.value)
                     self.adjacency_list.append([find_key, keys])
                 if len(current_node) == 6:
                     next_parameter_name = current_node[5]
                     find_key = self.find_connected_node(NodeTypes.PARAMETER.value, next_parameter_name)
                     if find_key is not None:
                         #edges between next/previous parameters of one function
+                        self.edge_attributes.append(EdgeTypes.PREVIOUS.value)
                         self.adjacency_list.append([keys, find_key])
+                        self.edge_attributes.append(EdgeTypes.NEXT.value)
                         self.adjacency_list.append([find_key, keys])           
 
             #set edges for calls
@@ -342,8 +358,10 @@ class EcoreToMatrixConverter:
                 find_key = self.find_key_of_connected_node(NodeTypes.METHOD_DEFINITION.value, current_node)
                 if find_key is not None:
                     #edge TMethDef to TCall, 'accessing'
+                    self.edge_attributes.append(EdgeTypes.ACCESSING.value)
                     self.adjacency_list.append([find_key, keys])
                     #edge TCall to TMethDef, 'source'
+                    self.edge_attributes.append(EdgeTypes.SOURCE.value)
                     self.adjacency_list.append([keys, find_key])
                 if len(current_node) == 6:
                     target_name = current_node[5]
@@ -351,8 +369,10 @@ class EcoreToMatrixConverter:
                     find_key = self.find_connected_node(NodeTypes.METHOD_DEFINITION.value, target_name)
                     if find_key is not None:
                         #edge TMethDef to TCall, 'accessedBy'
+                        self.edge_attributes.append(EdgeTypes.ACCESSEDBY.value)
                         self.adjacency_list.append([find_key, keys])
                         #edge TCall to TMethDef, 'target'
+                        self.edge_attributes.append(EdgeTypes.TARGET.value)
                         self.adjacency_list.append([keys, find_key])
 
     '''find number of node (key), name explicitly saved in current_node'''
