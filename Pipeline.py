@@ -67,7 +67,6 @@ def create_ecore_graphs(repository, write_in_file, output_directory=None):
     if write_in_file is False:
         return ecore_graph.get_graph()
     else:
-        #print(f'Number of repositories skipped: {skip_counter}')
         return None
 
 def create_matrix_structure(write_in_file, xmi_file=None, ecore_graph=None, output_directory=None):
@@ -89,11 +88,10 @@ def create_matrix_structure(write_in_file, xmi_file=None, ecore_graph=None, outp
     if write_in_file is False:
         try:
             matrix = EcoreToMatrixConverter(ecore_graph, write_in_file)
-            node_features = matrix.get_encoded_node_matrix()
+            node_features = matrix.get_encoded_node_matrix() #adjust this get all node features instead!
             adj_list = matrix.get_adjacency_list()
         except Exception as e:
             print(e)
-    #if write_in_file is False:
         return node_features, adj_list
     else:
         return None, None

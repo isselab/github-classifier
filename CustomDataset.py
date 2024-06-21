@@ -6,7 +6,7 @@ import torch
 import numpy as np
 from GraphClasses import defined_labels
 from Encoder import multi_hot_encoding
-from DataformatUtils import convert_edge_dim, convert_list_to_floattensor, convert_list_to_longtensor
+from DataformatUtils import convert_edge_dim, convert_list_to_floattensor, convert_list_to_longtensor, convert_hashed_names_to_float
 
 class RepositoryDataset(Dataset):
     def __init__(self, directory, label_list=None):
@@ -15,31 +15,25 @@ class RepositoryDataset(Dataset):
                 self.encoded_labels = self.convert_labeled_graphs(label_list)
             except Exception as e:
                 print(e)
-        self.num_node_features = 9  #nodes have 8 types as features, one hot encoded, and their hashed names
+        self.num_node_features = 9  #nodes have 9 types as features, one hot encoded, and their hashed names
         self.num_classes = len(defined_labels)
         self.directory = directory
-        self.node_name = 'Test1'
-        self.edge_name = 'Test2'
         self.graph_names = []
         self.graph_dir = os.listdir(directory)
         for g, graph in enumerate(self.graph_dir):
-            try:
-                if '_nodefeatures' in graph:
-                    self.node_name = graph.removesuffix('_nodefeatures.csv')
-                if '_A' in graph:
-                    self.edge_name = graph.removesuffix('_A.csv')
-                # create list of graphs to load graph via index and look up name to load graph from file
-                if self.node_name == self.edge_name and self.node_name not in self.graph_names:
-                    self.graph_names.append(self.node_name)
-            except Exception as e:
-                print(e)
-                print(f'There is a problem loading {graph}')
+            if '_nodefeatures.csv' in graph:
+                graph_name = graph.removesuffix('_nodefeatures.csv')
+                if graph_name not in self.graph_names:
+                    self.graph_names.append(graph_name)
+        
+        self.check_dataset() #check if every graph can be loaded
+
         # load labels for graphs in correct order and return them in tensor
         if hasattr(self, 'encoded_labels'):
             self.y = self.sort_labels()
             print(f'Number of Applications: {self.class_elements[0]}, Experiments: {self.class_elements[1]}, Frameworks: {self.class_elements[2]}, Libraries: {self.class_elements[3]}, Tutorials: {self.class_elements[4]}')
 
-    # returns number of samples (graphs) in the dataset
+    #returns number of samples (graphs) in the dataset
     def __len__(self):
         size = len(self.graph_names)
         return size
@@ -50,19 +44,25 @@ class RepositoryDataset(Dataset):
         graph_name = self.graph_names[index]
         for g,graph in enumerate(self.graph_dir):
             try:
-                if f'{graph_name}_nodefeatures' in graph:
-                    node_features = pd.read_csv(f'{self.directory}/{graph}', header=None)  # load csv file
-                    self.x = convert_list_to_floattensor(node_features)
-                if f'{graph_name}_A' in graph:
+                if f'{graph_name}_nodefeatures.csv' == graph:
+                    node_features = pd.read_csv(f'{self.directory}/{graph}', header=None)  #load csv file
+                    self.x = convert_hashed_names_to_float(node_features)
+                if f'{graph_name}_A.csv' == graph:
                     adjacency = pd.read_csv(f'{self.directory}/{graph}', header=None)
                     edge_tensor = convert_list_to_longtensor(adjacency)
                     self.edge_index = convert_edge_dim(edge_tensor)
+                if f'{graph_name}_edge_attributes.csv' == graph:
+                    edge_attributes = pd.read_csv(f'{self.directory}/{graph}', header=None)
+                    self.edge_attr = convert_list_to_floattensor(edge_attributes)
             except Exception as e:
-                print(e)
-        graph = Data(x=self.x, edge_index=self.edge_index)
+                print(graph, e)
+        if hasattr(self, 'x') and hasattr(self, 'edge_index'):
+            graph = Data(x=self.x, edge_index=self.edge_index)
         if hasattr(self, 'y'):
             label = self.y[index]
             graph.y = label
+        if hasattr(self, 'edge_attr'):
+            graph.edge_attr = self.edge_attr
         return graph
 
     def sort_labels(self):
@@ -123,3 +123,21 @@ class RepositoryDataset(Dataset):
                 tut += 1
         counted_elements = [app, exp, frame, lib, tut]
         return counted_elements
+    
+    '''check if the graphs in the dataset can be loaded, if not, for example because a file is empty, 
+    the graph cannot be loaded and is removed from the dataset'''
+    def check_dataset(self):
+        for i, item in enumerate(self.graph_names):
+            graph_name = self.graph_names[i]
+            for g,graph in enumerate(self.graph_dir):
+                try:
+                    if f'{graph_name}_nodefeatures.csv' == graph:
+                        node_features = pd.read_csv(f'{self.directory}/{graph}', header=None)
+                    if f'{graph_name}_A.csv' == graph:
+                        adjacency = pd.read_csv(f'{self.directory}/{graph}', header=None)
+                    if f'{graph_name}_edge_attributes.csv' == graph:
+                        edge_attributes = pd.read_csv(f'{self.directory}/{graph}', header=None)
+                except Exception as e:
+                    if graph_name in self.graph_names:
+                        self.graph_names.remove(graph_name)
+                        print(f'{graph}, {e}, removing {graph_name} from dataset')
