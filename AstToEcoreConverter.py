@@ -297,9 +297,12 @@ class ProjectEcoreGraph:
         method_name = split_import[-1]
         class_name = None
         module_name = None
+        
+        if len(split_import)==1: #extra case in dataset repositories, maybe remove these cases? append only imported instances containing '.' to call_imported_library?
+            module_name = split_import[0]
 
         if len(split_import)==2:
-                module_name = package_name
+                module_name = split_import[0]
             
         if len(split_import)>2: #structure: package/module, module/class, method
                 obj_name = split_import[1]
