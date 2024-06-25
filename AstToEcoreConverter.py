@@ -101,6 +101,10 @@ class ProjectEcoreGraph:
             split_import = imported.split('.')
             
             package_name, module_name, class_name, method_name = self.set_import_names(split_import)
+            #flag tLib only works for classes, use name for other types
+            package_name += '_ExternalLibrary'
+            module_name += '_ExternalLibrary'
+            method_name += '_ExternalLibrary'
 
             package_node = self.get_imported_library_package(package_name)
             if package_node is not None:
@@ -152,13 +156,15 @@ class ProjectEcoreGraph:
                     #get package in whose namespace imported module is
                     module_key = None
                     for e, el in enumerate(split_import):
-                        if el==module_name:
+                        el_lib = el + '_ExternalLibrary'
+                        if el_lib==module_name:
                             module_key = e
                             break
                     if module_key is not None:
                         pack_name = ''
                         if module_key>=1:
                             pack_name = split_import[module_key-1]
+                            pack_name += '_ExternalLibrary'
                         current_package_node = self.get_imported_library_package(pack_name)
                         #subpackage exists
                         if current_package_node is not None:
@@ -191,17 +197,18 @@ class ProjectEcoreGraph:
                     #create package hierarchy
                     parent = None
                     for element in split_import:
-                        if element != module_name:
+                        element_lib = element + '_ExternalLibrary'
+                        if element_lib != module_name:
                             package_node = self.create_ecore_instance(NodeTypes.PACKAGE)
-                            package_node.tName = element
-                            self.imported_libraries.append([None, None, package_node, element])
+                            package_node.tName = element_lib
+                            self.imported_libraries.append([None, None, package_node, element_lib])
                             if parent is not None:
                                 package_node.parent = parent
                             else:
                                 self.graph.packages.append(package_node)
                             parent = package_node
                             self.imported_package = package_node
-                        if element == module_name:
+                        if element_lib == module_name:
                             break
                     #create module
                     module_node = self.create_ecore_instance(NodeTypes.MODULE)
@@ -226,6 +233,7 @@ class ProjectEcoreGraph:
                     if class_name is not None:
                         class_node = self.create_ecore_instance(NodeTypes.CLASS)
                         class_node.tName = class_name
+                        class_node.tLib = True
                         class_node.defines.append(method_node)
                         self.graph.classes.append(class_node)
                         module_node.contains.append(class_node)
@@ -245,6 +253,7 @@ class ProjectEcoreGraph:
     def create_imported_class_call(self, module_node, class_name, method_name, caller_node):
         class_node = self.create_ecore_instance(NodeTypes.CLASS)
         class_node.tName = class_name
+        class_node.tLib = True #flag for external libraries, only works for classes
         self.graph.classes.append(class_node)
         module_node.contains.append(class_node)
         method_node = self.create_ecore_instance(NodeTypes.METHOD_DEFINITION)
@@ -290,16 +299,14 @@ class ProjectEcoreGraph:
                     if obj.eClass.name == NodeTypes.METHOD_DEFINITION.value:
                         self.create_method_call(obj, method_name, caller_node)
             if module_node is None:
-                self.call_imported_library.append([caller_node, imported_instance])
+                if len(split_import)>1: #extra case in dataset repositories, left out (for now)
+                    self.call_imported_library.append([caller_node, imported_instance])
 
     def set_import_names(self, split_import):
         package_name = split_import[0]
         method_name = split_import[-1]
         class_name = None
         module_name = None
-        
-        if len(split_import)==1: #extra case in dataset repositories, maybe remove these cases? append only imported instances containing '.' to call_imported_library?
-            module_name = split_import[0]
 
         if len(split_import)==2:
                 module_name = split_import[0]
