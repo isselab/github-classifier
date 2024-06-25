@@ -18,6 +18,7 @@ class EcoreToMatrixConverter:
         self.node_count = 0  #to create id for nodes, keys in node_dict
         self.hashed_names = [] #contains hashed node names
         self.edge_attributes = [] #contains type of relationship between nodes
+        self.library_flag = [] #True if object is from external library, False when from repository
 
         self.convert_nodes(self.typegraph_root)
         self.convert_edges()
@@ -57,6 +58,10 @@ class EcoreToMatrixConverter:
     '''returns node names hashed with sha 256, utf-8 encoded'''
     def get_hashed_names(self):
         return self.hashed_names
+    
+    '''returns flags for external libraries'''
+    def get_external_library_flags(self):
+        return self.library_flag
     
     '''returns all of the node features: (ohe enc) node types and hashed names'''
     def get_node_features(self):
@@ -98,6 +103,10 @@ class EcoreToMatrixConverter:
             if current_package is None or len(current_package) == 4:
                 self.node_matrix.append(NodeTypes.PACKAGE.value)
                 self.node_dict[self.node_count] = [NodeTypes.PACKAGE.value, tpackage.tName]
+                if '_ExternalLibrary' in tpackage.tName:
+                    self.library_flag.append('true')
+                else:
+                    self.library_flag.append('false')
                 hashed_name = hashlib.md5(tpackage.tName.encode('utf-8'))
                 self.hashed_names.append(hashed_name.hexdigest())
                 self.node_count += 1
@@ -111,16 +120,17 @@ class EcoreToMatrixConverter:
             
             if current_module is None:
                 self.node_matrix.append(NodeTypes.MODULE.value)
+                if '_ExternalLibrary' in tmodule.location:
+                    self.library_flag.append('true')
+                else:
+                    self.library_flag.append('false')
+                hashed_name = hashlib.md5(tmodule.location.encode('utf-8'))
+                self.hashed_names.append(hashed_name.hexdigest())
                 if tmodule.namespace is not None:
                     self.node_dict[self.node_count] = [NodeTypes.MODULE.value, tmodule.location, NodeTypes.PACKAGE.value, tmodule.namespace.tName]  # name of TPackage object
-                    hashed_name = hashlib.md5(tmodule.location.encode('utf-8'))
-                    self.hashed_names.append(hashed_name.hexdigest())
-                    self.node_count += 1
                 else:
                     self.node_dict[self.node_count] = [NodeTypes.MODULE.value, tmodule.location]
-                    hashed_name = hashlib.md5(tmodule.location.encode('utf-8'))
-                    self.hashed_names.append(hashed_name.hexdigest())
-                    self.node_count += 1
+                self.node_count += 1
                 if hasattr(tmodule, 'contains'):
                     #can contain TContainableElements (TAbstractType and TMember)
                     current_class = None
@@ -130,6 +140,13 @@ class EcoreToMatrixConverter:
                             if current_class is None:
                                 self.node_matrix.append(NodeTypes.CLASS.value)
                                 self.node_dict[self.node_count] = [NodeTypes.CLASS.value, tobject.tName, NodeTypes.MODULE.value, tmodule.location]
+                                if hasattr(tobject, 'tLib'):
+                                    if tobject.tLib is True:
+                                        self.library_flag.append('true')
+                                    else:
+                                        self.library_flag.append('false')
+                                else:
+                                    self.library_flag.append('false')
                                 hashed_name = hashlib.md5(tobject.tName.encode('utf-8'))
                                 self.hashed_names.append(hashed_name.hexdigest())
                                 self.node_count += 1
@@ -144,6 +161,10 @@ class EcoreToMatrixConverter:
         for tmethod in typegraph.methods:
             self.node_matrix.append(NodeTypes.METHOD.value)
             self.node_dict[self.node_count] = [NodeTypes.METHOD.value, tmethod.tName]
+            if '_ExternalLibrary' in tmethod.tName:
+                self.library_flag.append('true')
+            else:
+                self.library_flag.append('false')
             hashed_name = hashlib.md5(tmethod.tName.encode('utf-8'))
             self.hashed_names.append(hashed_name.hexdigest())
             self.node_count += 1
@@ -153,6 +174,10 @@ class EcoreToMatrixConverter:
                 signature_name = node_name
                 self.node_matrix.append(NodeTypes.METHOD_SIGNATURE.value)
                 self.node_dict[self.node_count] = [NodeTypes.METHOD_SIGNATURE.value, node_name, NodeTypes.METHOD.value, tmethod.tName]
+                if '_ExternalLibrary' in node_name:
+                    self.library_flag.append('true')
+                else:
+                    self.library_flag.append('false')
                 hashed_name = hashlib.md5(node_name.encode('utf-8'))
                 self.hashed_names.append(hashed_name.hexdigest())
                 self.node_count += 1
@@ -167,6 +192,11 @@ class EcoreToMatrixConverter:
                         if tparam.next is None:
                             self.node_matrix.append(NodeTypes.PARAMETER.value)
                             self.node_dict[self.node_count] = [NodeTypes.PARAMETER.value, param_name, NodeTypes.METHOD_SIGNATURE.value, signature_name]
+                            #if signature was from an imported external library, its parameters are too
+                            if '_ExternalLibrary' in param_name:
+                                self.library_flag.append('true')
+                            else:
+                                self.library_flag.append('false')
                             hashed_name = hashlib.md5(param_name.encode('utf-8'))
                             self.hashed_names.append(hashed_name.hexdigest())
                             self.node_count += 1
@@ -178,6 +208,10 @@ class EcoreToMatrixConverter:
                             next_param_name = node_name + next_param
                             self.node_matrix.append(NodeTypes.PARAMETER.value)
                             self.node_dict[self.node_count] = [NodeTypes.PARAMETER.value, param_name, NodeTypes.METHOD_SIGNATURE.value, signature_name, 'Next', next_param_name]
+                            if '_ExternalLibrary' in param_name:
+                                self.library_flag.append('true')
+                            else:
+                                self.library_flag.append('false')
                             hashed_name = hashlib.md5(param_name.encode('utf-8'))
                             self.hashed_names.append(hashed_name.hexdigest())
                             self.node_count += 1
@@ -189,6 +223,14 @@ class EcoreToMatrixConverter:
             if current_class is None:
                 self.node_matrix.append(NodeTypes.CLASS.value)
                 self.node_dict[self.node_count] = [NodeTypes.CLASS.value, tclass.tName]
+                #TClass objects have extra flag, instead of checking via name
+                if hasattr(tclass, 'tLib'):
+                    if tclass.tLib is True:
+                        self.library_flag.append('true')
+                    else:
+                        self.library_flag.append('false')
+                else:
+                    self.library_flag.append('false')
                 hashed_name = hashlib.md5(tclass.tName.encode('utf-8'))
                 self.hashed_names.append(hashed_name.hexdigest())
                 self.node_count += 1
@@ -203,6 +245,10 @@ class EcoreToMatrixConverter:
             if current_subpackage is None:
                 self.node_matrix.append(NodeTypes.PACKAGE.value)
                 self.node_dict[self.node_count] = [NodeTypes.PACKAGE.value, tsubpackage.tName, NodeTypes.PACKAGE.value, tpackage.tName]  # save type and name for edge info
+                if '_ExternalLibrary' in tsubpackage.tName:
+                    self.library_flag.append('true')
+                else:
+                    self.library_flag.append('false')
                 hashed_name = hashlib.md5(tsubpackage.tName.encode('utf-8'))
                 self.hashed_names.append(hashed_name.hexdigest())
                 self.node_count += 1
@@ -215,6 +261,13 @@ class EcoreToMatrixConverter:
         for child in tclass.childClasses:
             self.node_matrix.append(NodeTypes.CLASS.value)
             self.node_dict[self.node_count] = [NodeTypes.CLASS.value, child.tName, NodeTypes.CLASS.value, tclass.tName]
+            if hasattr(child, 'tLib'):
+                if child.tLib is True:
+                    self.library_flag.append('true')
+                else:
+                    self.library_flag.append('false')
+            else:
+                self.library_flag.append('false')
             hashed_name = hashlib.md5(child.tName.encode('utf-8'))
             self.hashed_names.append(hashed_name.hexdigest())
             self.node_count += 1
@@ -233,6 +286,10 @@ class EcoreToMatrixConverter:
         tobject_name += '_definition'
         self.node_matrix.append(NodeTypes.METHOD_DEFINITION.value)
         self.node_dict[self.node_count] = [NodeTypes.METHOD_DEFINITION.value, tobject_name, container_type, tcontainer_name]
+        if '_ExternalLibrary' in tobject_name:
+            self.library_flag.append('true')
+        else:
+            self.library_flag.append('false')
         hashed_name = hashlib.md5(tobject_name.encode('utf-8'))
         self.hashed_names.append(hashed_name.hexdigest())
         self.node_count += 1
@@ -254,6 +311,11 @@ class EcoreToMatrixConverter:
                 current_call = tmethod_def_name + calls
                 self.node_matrix.append(NodeTypes.CALL.value)
                 self.node_dict[self.node_count] = [NodeTypes.CALL.value, current_call, 'Source', call_source, 'Target', target_name]
+                #if the target is imported from an external library, set flag for call object to true
+                if '_ExternalLibrary' in target_name:
+                    self.library_flag.append('true')
+                else:
+                    self.library_flag.append('false')
                 hashed_name = hashlib.md5(current_call.encode('utf-8'))
                 self.hashed_names.append(hashed_name.hexdigest())
                 self.node_count += 1
