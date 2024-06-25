@@ -910,6 +910,6 @@ class TestETMConv(unittest.TestCase):
 
         self.assertEqual(len(node_features), len(full_features), 'number of nodes in type and type+hash is not equal')
         for item in full_features:
-            self.assertEqual(len(item), 9, 'number of node features is wrong')
+            self.assertEqual(len(item), 11, 'number of node features is wrong')
 
 unittest.main()

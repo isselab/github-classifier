@@ -22,6 +22,8 @@ class EcoreToMatrixConverter:
 
         self.convert_nodes(self.typegraph_root)
         self.convert_edges()
+        
+        library_flags = ['true', 'false']
 
         node_labels = [NodeTypes.PACKAGE.value, NodeTypes.MODULE.value, NodeTypes.CLASS.value, NodeTypes.METHOD_DEFINITION.value, 
                        NodeTypes.METHOD.value, NodeTypes.METHOD_SIGNATURE.value, NodeTypes.PARAMETER.value, NodeTypes.CALL.value]
@@ -32,11 +34,12 @@ class EcoreToMatrixConverter:
                        EdgeTypes.TARGET.value]
         
         self.encoded_node_matrix = one_hot_encoding(node_labels, self.node_matrix)
+        self.encoded_lib_flags = one_hot_encoding(library_flags, self.library_flag)
 
         if len(self.edge_attributes)>0:
             self.encoded_edge_attributes = one_hot_encoding(edge_labels, self.edge_attributes)
 
-        features = zip(self.encoded_node_matrix, self.hashed_names)
+        features = zip(self.encoded_node_matrix, self.hashed_names, self.encoded_lib_flags)
         self.node_features = self.combine_node_features(features)
 
         output_name = self.get_graph_name()
@@ -63,6 +66,10 @@ class EcoreToMatrixConverter:
     def get_external_library_flags(self):
         return self.library_flag
     
+    '''returns one hot encoded flags for external libraries'''
+    def get_encoded_library_flags(self):
+        return self.encoded_lib_flags
+    
     '''returns all of the node features: (ohe enc) node types and hashed names'''
     def get_node_features(self):
         return self.node_features
@@ -82,12 +89,13 @@ class EcoreToMatrixConverter:
     def get_graph_name(self):
         return self.typegraph_root.tName
     
-    '''adds enc node types and hashes in one feature array per node'''
+    '''adds enc node types, hashed names, and library flags in one feature array per node'''
     def combine_node_features(self, features):
         feature_list = list(features)
         combined_list = []
-        for arr, hash in feature_list:
+        for arr, hash, flag in feature_list:
             arr = np.append(arr, hash)
+            arr = np.append(arr, flag)
             combined_list.append(arr)
         return combined_list
 
