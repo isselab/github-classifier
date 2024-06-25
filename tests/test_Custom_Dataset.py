@@ -19,7 +19,7 @@ class TestCustomDataset(unittest.TestCase):
     def test_number_of_nodefeatures(self):
         dataset = RepositoryDataset(f'{output_directory}/csv_files')
 
-        self.assertEqual(dataset.num_node_features, 9, 'wrong number of node features')
+        self.assertEqual(dataset.num_node_features, 11, 'wrong number of node features')
 
     def test_dimension_of_nodefeatures(self):
         dataset = RepositoryDataset(f'{output_directory}/csv_files')
@@ -33,13 +33,13 @@ class TestCustomDataset(unittest.TestCase):
 
         for g, graph in enumerate(dataset):
             element = dataset.__getitem__(g)
-            self.assertEqual(element.edge_index.dim(), 2, 'node tensor has wrong dimension')
+            self.assertEqual(element.edge_index.dim(), 2, 'edge tensor has wrong dimension')
 
     def test_edge_attribute_dimension(self):
         dataset = RepositoryDataset(f'{output_directory}/csv_files')
 
         for g, graph in enumerate(dataset):
             element = dataset.__getitem__(g)
-            self.assertEqual(element.edge_attr.dim(), 2, 'node tensor has wrong dimension')
+            self.assertEqual(element.edge_attr.dim(), 2, 'edge attribute tensor has wrong dimension')
 
 unittest.main()

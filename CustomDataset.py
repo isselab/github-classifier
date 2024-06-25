@@ -15,7 +15,7 @@ class RepositoryDataset(Dataset):
                 self.encoded_labels = self.convert_labeled_graphs(label_list)
             except Exception as e:
                 print(e)
-        self.num_node_features = 9  #nodes have 9 types as features, one hot encoded, and their hashed names
+        self.num_node_features = 11  #nodes have 11 features, their one hot encoded node type, hashed name, and one hot encoded library flag
         self.num_classes = len(defined_labels)
         self.directory = directory
         self.graph_names = []
