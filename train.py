@@ -114,7 +114,7 @@ except Exception as e:
 
 device = 'cuda' if torch.cuda.is_available() else 'cpu'
 
-model = GCN(dataset.num_node_features, dataset.num_classes, hidden_channels=64) #in paper K=10
+model = GCN(dataset.num_node_features, dataset.num_classes, hidden_channels=32) #in paper K=10
 
 if device == 'cuda':
     model = model.to(device)
