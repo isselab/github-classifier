@@ -16,8 +16,7 @@ class GCN(torch.nn.Module):
         # number of classes we want to predict
         #self.lin = Linear(hidden_channels, num_classes) 
 
-    '''add self-loop to edge info? keeps appearing in tutorials
-       x=[N, 1] N=number of nodes, x is feature vector
+    '''x=[N, 1] N=number of nodes, x is feature vector
        edge_index=[2, E] E=number of edges, edge_index is adjacency list'''
     def forward(self, x, edge_index, batch):  # runs sigle iteration of a forward pass
         # obtain node embeddings
@@ -35,6 +34,6 @@ class GCN(torch.nn.Module):
         # dropout for regularization
         x = F.dropout(x, p=0.5, training=self.training)
         #x = self.lin(x) #maybe softmax instead?
-        x = F.log_softmax(x, dim=1)
+        x = F.log_softmax(x, dim=1) #log_softmax without dim= is deprecated
 
         return x

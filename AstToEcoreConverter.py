@@ -30,7 +30,7 @@ class ProjectEcoreGraph:
         self.method_list = []  # entries [method_node, name, module_node]
         self.check_list = [] # entries: class_node
         self.call_in_module = [] #entries: [caller_node_module, caller_node, called_function_name] both methods in the same module
-        self.call_external_module = []
+        self.call_external_module = [] #entries: [imported instance, caller node]
         self.call_imported_library = [] #entries: [caller_node, imported_instance]
         self.imported_libraries = [] #entries: [module_node, module_name, package_node, package_name]
         self.imported_package = None
@@ -284,8 +284,7 @@ class ProjectEcoreGraph:
     def set_external_module_calls(self):
         for item in self.call_external_module:
             imported_instance = item[0]
-            type = item[1]
-            caller_node = item[2]
+            caller_node = item[1]
             split_import = imported_instance.split('.')
             package_name, module_name, class_name, method_name = self.set_import_names(split_import)
 
@@ -377,7 +376,7 @@ class ProjectEcoreGraph:
             if call_check is False:
                 self.create_calls(caller_node, method_node)        
 
-    '''check_list at start contains all classes with method defs that are created in typegraph,
+    '''check_list at start contains all classes with method defs that are created in type graph,
     then they are compared to the classes with meth defs found in modules at the end,
     those not found need to be appended to a module, otherwise the meth defs are missing'''
     def search_meth_defs(self):
@@ -829,6 +828,6 @@ class ASTVisitor(ast.NodeVisitor):
         instance_name = ".".join(instances)
         method_name = instance_name.split('.')[-1]
 
-        self.graph_class.call_external_module.append([instance_name, type, caller_node])
+        self.graph_class.call_external_module.append([instance_name, caller_node])
 
         self.generic_visit(node)

@@ -10,15 +10,16 @@ import matplotlib.pylab as plt
 from sklearn.model_selection import KFold
 import torch.nn.functional as nn
 import numpy as np
-from torch_geometric.datasets import TUDataset
 from GraphClasses import defined_labels
 from sklearn.metrics import f1_score
 
 #repository_directory = 'D:/dataset_repos'  # input repositories
+#output_directory = 'D:/testing'
 output_directory = 'D:/labeled_repos_first100'
 #labels = '../random_sample_icse_CO.xls' # labeled repositories for the training dataset
 labels = '../labeled_repos_first100.xlsx'
-n_epoch = 50
+#labels = 'D:/testing.xlsx'
+n_epoch = 5
 k_folds = 4
 learning_rate = 0.001
 figure_output = 'C:/Users/const/Documents/Bachelorarbeit/training_testing_plot'
@@ -33,17 +34,23 @@ def train():
             if device == 'cuda':
                 graph.x = graph.x.to(device)
                 graph.edge_index = graph.edge_index.to(device)
+                #graph.edge_attr = graph.edge_attr.to(device)
                 graph.y = graph.y.to(device)
                 graph.batch = graph.batch.to(device)
             
+            #prepare input
             size = int(len(graph.y)/num_classes)
             graph.x = nn.normalize(graph.x, p=2.0)
+            #graph.edge_attr = nn.normalize(graph.edge_attr, p=2.0)
             graph.y = torch.reshape(graph.y, (size, num_classes))
+
             output = model(graph.x, graph.edge_index, graph.batch)
             loss_train = criterion(output, graph.y) #graph.y is label
+
             #backpropagation
             optimizer.zero_grad()
             loss_train.backward()
+
             #update weights
             optimizer.step()
 
@@ -58,6 +65,7 @@ def test(loader):
             if device == 'cuda':
                 graph.x = graph.x.to(device)
                 graph.edge_index = graph.edge_index.to(device)
+                #graph.edge_attr = graph.edge_attr.to(device)
                 graph.y = graph.y.to(device)
                 graph.batch = graph.batch.to(device)
 
@@ -89,7 +97,7 @@ def test(loader):
         return acc_train/total , loss_test/total
 
 
-# create the graph dataset of the repositories
+# create the graph dataset of the repositories, already done
 #try:
    # prepare_dataset(repository_directory, output_directory)
 #except Exception as e:
@@ -99,13 +107,10 @@ print('--------------load dataset---------------')
 
 try:
     dataset = RepositoryDataset(f'{output_directory}/csv_files', labels)
-    #dataset_path = "data/TUDataset"
-    #dataset = TUDataset(root=dataset_path, name='MUTAG')
     print(f'Dataset size: {dataset.__len__()}')
 except Exception as e:
     print(e)
     print('Dataset cannot be loaded.')
-
 
 device = 'cuda' if torch.cuda.is_available() else 'cpu'
 
@@ -114,9 +119,8 @@ model = GCN(dataset.num_node_features, dataset.num_classes, hidden_channels=64) 
 if device == 'cuda':
     model = model.to(device)
 
-optimizer = torch.optim.Adam(model.parameters(), learning_rate) #, weight_decay=1e-3 with Adam, no change
-#criterion = torch.nn.MSELoss() #loss function that can deal with multi-target
-criterion = torch.nn.BCEWithLogitsLoss()
+optimizer = torch.optim.Adam(model.parameters(), learning_rate)
+criterion = torch.nn.BCEWithLogitsLoss() #loss function that can deal with multilabel
 
 kfold = KFold(n_splits=k_folds, shuffle=True)
 
@@ -126,6 +130,7 @@ results = {}
 #initialize overall performance with negative infinity
 best_acc = - np.inf
 
+#training loop
 for f, fold in enumerate(kfold.split(dataset)):
     # split into train and testset, this is for training the tool, not using finished tool
     trainset, testset = random_split(dataset, [0.9, 0.1]) #more training data
@@ -167,7 +172,6 @@ for f, fold in enumerate(kfold.split(dataset)):
             #save trained model with best performance
             if test_acc > best_acc:
                 best_acc = test_acc
-                #save_path = f'./graph_classification_model_fold{f}.pt'
                 torch.save(model, 'graph_classification_model.pt')
     
         #visualization of accuracy and loss from testing

@@ -19,7 +19,6 @@ def convert_hashed_names_to_float(features):
     for h, hash in enumerate(features):
         helper = hash[8]
         dec_hash = int(str(helper), 16)
-        #dec_hash = dec_hash%16
         hash[8] = dec_hash
     tensor = torch.FloatTensor(np.array(features, dtype=float))
     return tensor
