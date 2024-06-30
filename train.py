@@ -11,21 +11,21 @@ from sklearn.model_selection import KFold
 import torch.nn.functional as nn
 import numpy as np
 from GraphClasses import defined_labels
-from sklearn.metrics import f1_score
-from sklearn.metrics import accuracy_score
-from sklearn.metrics import multilabel_confusion_matrix, classification_report
+from sklearn.metrics import accuracy_score, multilabel_confusion_matrix, classification_report
 
 #repository_directory = 'D:/dataset_repos'  # input repositories
 #output_directory = 'D:/testing'
-output_directory = 'D:/labeled_repos_first100'
+output_directory = 'D:/labeled_repos_less_bias_library'
 #labels = '../random_sample_icse_CO.xls' # labeled repositories for the training dataset
-labels = '../labeled_repos_first100.xlsx'
+labels = '../labeled_repos_less_bias_library.xlsx'
 #labels = 'D:/testing.xlsx'
-n_epoch = 4
-k_folds = 4
+n_epoch = 100
+k_folds = 2 #has to be at least 2
 learning_rate = 0.001
 figure_output = 'C:/Users/const/Documents/Bachelorarbeit/training_testing_plot'
 threshold = 0.5 #value above which label is considered to be predicted by model
+save_classification_reports = 'classification_reports_less_libraries.txt'
+experiment_name = 'less_libraries'
 
 def train():
         model.train()
@@ -60,7 +60,7 @@ def train():
 def test(loader):
         model.eval()
         loss_test = 0
-        correct, total = 0, 0
+        total = 0
         num_classes = int(len(defined_labels))
 
         for graph in loader:
@@ -84,35 +84,29 @@ def test(loader):
 
             output = output.cpu().detach().numpy()
             graph.y = graph.y.cpu().detach().numpy()
-            #results in matrix containing True/False instead of floats...also possible with multilabel except accuracy_score
-            #output = (output > 0.5) 
-            #graph.y = (graph.y > 0.5)
             
             #transform output, if value above threshold label is considered to be predicted
             trafo_output = []
             for slice in output:
                 new_item = []
                 for item in slice:
-                    if item>threshold:
+                    if item>=threshold:
                         new_item.append(1.0)
                     else:
                         new_item.append(0.0)
                 trafo_output.append(new_item)
             trafo_output = np.reshape(trafo_output, (size, num_classes))
 
-            #only for accuracy score different input data format
-            #acc_output = np.argmax(output, axis=1)
-            #acc_ground_truth = np.argmax(graph.y, axis=1)
-            #i think useless for multilabel, accuracy is in report and conf matrix
-            #acc = accuracy_score(acc_ground_truth, acc_output) 
+            #for multilabel not good/reliable metric
+            #either 1 (all labels correct) or 0 (at least 1 label not correct predicted)
+            acc = accuracy_score(graph.y, trafo_output)
 
+            #better metrics for multilabel: precision, recall, f1_score
             confusion_matrix = multilabel_confusion_matrix(graph.y, trafo_output)
-            #print(classification_report(graph.y, output, target_names=defined_labels)) #confused about 5 target labels vs 4 found
-            #print(classification_report(graph.y, output, target_names=['Application', 'Experiment', 'Framework', 'Library']))
-            #print(classification_report(graph.y, trafo_output, target_names=defined_labels))
+            #report is string, could be changed to dict
             class_report = classification_report(graph.y, trafo_output, target_names=defined_labels)
 
-        return loss_test/total, confusion_matrix, class_report
+        return acc, loss_test/total, confusion_matrix, class_report
 
 
 # create the graph dataset of the repositories, already done
@@ -140,16 +134,24 @@ if device == 'cuda':
 optimizer = torch.optim.Adam(model.parameters(), learning_rate)
 criterion = torch.nn.MultiLabelSoftMarginLoss()
 
+#set our tracking server uri for logging
+#mlflow.set_tracking_uri(uri="https://community.cloud.databricks.com/ml/experiments?o=286453794264191")
+
+#create a new MLflow Experiment
+mlflow.create_experiment(experiment_name)
+mlflow.set_experiment(experiment_name)
+
 #k fold cross validation
 kfold = KFold(n_splits=k_folds, shuffle=True)
 
 #fold results for n epochs
 results = {}
 
+#for classification reports
 reports = {}
 
 #initialize overall model performance with negative infinity
-best_acc = - np.inf
+#best_acc = - np.inf
 
 #training loop
 for f, fold in enumerate(kfold.split(dataset)):
@@ -176,12 +178,8 @@ for f, fold in enumerate(kfold.split(dataset)):
         for epoch in range(n_epoch):
             print(f'Fold {f}, Epoch {epoch}')
             train()
-            train_loss, train_conf, train_report = test(trainloader)
-            test_loss, test_conf, test_report = test(testloader)
-
-            #compute accuracy over all classes
-            train_acc = 0.0
-            test_acc = 0.0
+            train_acc, train_loss, train_conf, train_report = test(trainloader)
+            test_acc, test_loss, test_conf, test_report = test(testloader)
             
             metrics = {"training accuracy":train_acc, "training loss":train_loss, "test accuracy":test_acc, "test loss":test_loss}
             results[f'{f}_epoch_{epoch}'] = metrics
@@ -202,10 +200,20 @@ for f, fold in enumerate(kfold.split(dataset)):
             print(test_report)
             print('==============================================')
 
-            #save trained model with best performance
-            if test_acc > best_acc:
-                best_acc = test_acc
-                torch.save(model, 'graph_classification_model.pt')
+            #save trained model with best performance, cannot use this with acc for multilabel, save every model for now
+            #if test_acc > best_acc:
+                #best_acc = test_acc
+                #maybe use test_loss instead? or find a way to somehow compute accuracy? gets ugh
+        torch.save(model, f'graph_classification_model_fold{f}.pt')
+
+        #write classification reports in file
+        report_file = open(save_classification_reports, 'a')
+        for key, value in reports.items():
+            report_file.write(f'{key}:')
+            report_file.write('\n')
+            report_file.write(f'{value}')
+            report_file.write('\n')
+        report_file.close()
 
         #visualization of accuracy and loss from testing
         fig = plt.figure(f)
@@ -223,14 +231,23 @@ for f, fold in enumerate(kfold.split(dataset)):
 
         plt.savefig(f'{figure_output}/fig_{f}.pdf', bbox_inches='tight')
 
-#write classification reports in file
-#tbd
+mlflow.end_run()
 
-#print fold results
-print(f'K-FOLD CROSS VALIDATION RESULTS FOR {k_folds} FOLDS')
-print('--------------------------------')
-sum = 0.0
-for key, value in results.items():
-    print(f'Fold {key}: {value} %')
+#write classification reports in file
+#report_file = open(save_classification_reports, 'a')
+#for key, value in reports.items():
+    #report_file.write(f'{key}:')
+    #report_file.write('\n')
+    #report_file.write(f'{value}')
+    #report_file.write('\n')
+#report_file.close()
+
+
+#print fold results, does not make sense without usable accuracy
+#print(f'K-FOLD CROSS VALIDATION RESULTS FOR {k_folds} FOLDS')
+#print('--------------------------------')
+#sum = 0.0
+#for key, value in results.items():
+    #print(f'Fold {key}: {value} %')
     #sum += value
 #print(f'Average: {sum/len(results.items())} %')

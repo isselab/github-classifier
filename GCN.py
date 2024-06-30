@@ -13,8 +13,6 @@ class GCN(torch.nn.Module):
         self.conv1 = GCNConv(num_node_features, hidden_channels)
         self.conv2 = GCNConv(hidden_channels, hidden_channels)
         self.conv3 = GCNConv(hidden_channels, num_classes)
-        #self.conv3 = GCNConv(hidden_channels, hidden_channels)
-        #number of classes we want to predict
         #self.lin = Linear(hidden_channels, num_classes) #try adding back the linear layer and compare?
 
     '''x=[N, 1] N=number of nodes, x is feature vector
@@ -27,7 +25,6 @@ class GCN(torch.nn.Module):
         x = x.relu()
         x = self.conv3(x, edge_index)
         x = x.relu()
-        #x = self.lin(x) #dont know if this even makes sense
 
         # readout layer
         x = global_mean_pool(x, batch)

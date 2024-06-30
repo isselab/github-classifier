@@ -29,6 +29,7 @@ if __name__ == '__main__':
            # print(model)
            # print(nodes, nodes.size())
            # print(edges, edges.size())
+           #trafo for dimensions?!
             #if device == 'cuda':
                # nodes.to(device)
                 #edges.to(device)

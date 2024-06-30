@@ -110,17 +110,21 @@ class RepositoryDataset(Dataset):
         frame = 0
         exp = 0
         tut = 0
-        for element in labels:
-            if 'Application' in element:
-                app += 1
-            if 'Library' in element:
-                lib += 1
-            if 'Framework' in element:
-                frame += 1
-            if 'Experiment' in element:
-                exp += 1
-            if 'Tutorial' in element:
-                tut += 1
+        try:
+            for element in labels:
+                if 'Application' in element:
+                    app += 1
+                if 'Library' in element:
+                    lib += 1
+                if 'Framework' in element:
+                    frame += 1
+                if 'Experiment' in element:
+                    exp += 1
+                if 'Tutorial' in element:
+                    tut += 1
+        except Exception as e:
+            print(e)
+            print('Problem with the Labels')
         counted_elements = [app, exp, frame, lib, tut]
         return counted_elements
     
