@@ -59,11 +59,13 @@ class TestETMConv(unittest.TestCase):
         self.assertEqual(node_features[1], NodeTypes.PACKAGE.value, 'package is wrong node type')
         self.assertEqual(lib_flags[0], 'false', 'library flag for internal object is wrong')
         self.assertEqual(lib_flags[1], 'false', 'library flag for internal object is wrong')
-        self.assertEqual(len(edges), 1, 'package should have edge to subpackage')
+        self.assertEqual(len(edges), 2, 'package should have edge to subpackage and vice versa')
         self.assertEqual(len(enc_node_features), 2, 'wrong number of encoded nodes')
         self.assertEqual(edges[0], [0, 1], 'edge between package and subpackage wrong')
-        self.assertEqual(len(edge_attributes), 1, 'wrong number of edge attributes')
+        self.assertEqual(edges[1], [1, 0], 'edge between subpackage and parent package wrong')
+        self.assertEqual(len(edge_attributes), 2, 'wrong number of edge attributes')
         self.assertEqual(edge_attributes[0], EdgeTypes.SUBPACKAGE.value, 'subpackage attribute is missing/wrong')
+        self.assertEqual(edge_attributes[1], EdgeTypes.PARENT.value, 'parent package attribute is missing/wrong')
 
     def test_module(self):
         repo = 'tests/unit_tests/test_module'
@@ -197,11 +199,13 @@ class TestETMConv(unittest.TestCase):
         self.assertEqual(lib_flags[0], 'false', 'library flag for internal object is wrong')
         self.assertEqual(lib_flags[1], 'false', 'library flag for internal object is wrong')
         self.assertEqual(lib_flags[2], 'false', 'library flag for internal object is wrong')
-        self.assertEqual(len(edges), 2, 'class should have edge to child class')
-        self.assertEqual(len(edge_attributes), 2, 'wrong number of edge attributes')
+        self.assertEqual(len(edges), 3, 'class should have edge to child class')
+        self.assertEqual(len(edge_attributes), 3, 'wrong number of edge attributes')
         self.assertEqual(len(enc_node_features), 3, 'wrong number of encoded nodes')
         self.assertEqual(edges[1], [1, 2], 'error with edge class to child class')
+        self.assertEqual(edges[2], [2, 1], 'error with edge child class to parent class')
         self.assertEqual(edge_attributes[1], EdgeTypes.CHILDCLASSES.value, 'attribute for edge class to child class is wrong')
+        self.assertEqual(edge_attributes[2], EdgeTypes.PARENTCLASSES.value, 'attribute for edge child class to parent class is wrong')
 
     def test_method(self):
         repo = 'tests/unit_tests/test_method'
@@ -572,10 +576,10 @@ class TestETMConv(unittest.TestCase):
         self.assertEqual(node_features[3], NodeTypes.METHOD_DEFINITION.value, 'method definition is missing')
         self.assertEqual(node_features[7], NodeTypes.METHOD_DEFINITION.value, 'method definition is missing')
 
-        self.assertEqual(edges[2], [3, 4], 'method definition should have edge to call, accessing')
-        self.assertEqual(edges[3], [4, 3], 'call should have edge to method definition, source')
-        self.assertEqual(edges[4], [7, 4], 'method definition should have edge to call, accessedBy')
-        self.assertEqual(edges[5], [4, 7], 'call should have edge to method definition, target')
+        self.assertEqual(edges[3], [3, 4], 'method definition should have edge to call, accessing')
+        self.assertEqual(edges[4], [4, 3], 'call should have edge to method definition, source')
+        self.assertEqual(edges[5], [7, 4], 'method definition should have edge to call, accessedBy')
+        self.assertEqual(edges[6], [4, 7], 'call should have edge to method definition, target')
 
     #test call for method in class in multiple packages(subpackage)
     def test_internal_method_class_imports_multiple_packages(self):
@@ -605,10 +609,10 @@ class TestETMConv(unittest.TestCase):
         self.assertEqual(node_features[7], NodeTypes.CLASS.value, 'class is missing')
         self.assertEqual(node_features[8], NodeTypes.METHOD_DEFINITION.value, 'method definition is missing')
 
-        self.assertEqual(edges[2], [3, 4], 'method definition should have edge to call, accessing')
-        self.assertEqual(edges[3], [4, 3], 'call should have edge to method definition, source')
-        self.assertEqual(edges[4], [8, 4], 'method definition should have edge to call, accessedBy')
-        self.assertEqual(edges[5], [4, 8], 'call should have edge to method definition, target')
+        self.assertEqual(edges[3], [3, 4], 'method definition should have edge to call, accessing')
+        self.assertEqual(edges[4], [4, 3], 'call should have edge to method definition, source')
+        self.assertEqual(edges[5], [8, 4], 'method definition should have edge to call, accessedBy')
+        self.assertEqual(edges[6], [4, 8], 'call should have edge to method definition, target')
 
     #test importing external library, one module, one method   
     def test_call_external_library(self):
@@ -715,10 +719,10 @@ class TestETMConv(unittest.TestCase):
         self.assertEqual(node_features[9], NodeTypes.METHOD_DEFINITION.value, 'imported method definition is missing')
         self.assertEqual(node_features[5], NodeTypes.CALL.value, 'call is missing')
 
-        self.assertEqual(edges[6], [3, 5], 'method definition should have edge to call, accessing')
-        self.assertEqual(edges[7], [5, 3], 'call should have edge to method definition, source')
-        self.assertEqual(edges[8], [9, 5], 'method definition should have edge to call, accessedBy')
-        self.assertEqual(edges[9], [5, 9], 'call should have edge to method definition, target')
+        self.assertEqual(edges[7], [3, 5], 'method definition should have edge to call, accessing')
+        self.assertEqual(edges[8], [5, 3], 'call should have edge to method definition, source')
+        self.assertEqual(edges[9], [9, 5], 'method definition should have edge to call, accessedBy')
+        self.assertEqual(edges[10], [5, 9], 'call should have edge to method definition, target')
 
     #test importing class with multiple methods (external libraries)
     def test_call_external_library_class_multiple_methods(self):
@@ -746,16 +750,16 @@ class TestETMConv(unittest.TestCase):
         self.assertEqual(node_features[6], NodeTypes.CALL.value, 'call is missing')
         
         #edges for call of first method in class
-        self.assertEqual(edges[6], [3, 5], 'method definition should have edge to call, accessing')
-        self.assertEqual(edges[7], [5, 3], 'call should have edge to method definition, source')
-        self.assertEqual(edges[8], [10, 5], 'method definition should have edge to call, accessedBy')
-        self.assertEqual(edges[9], [5, 10], 'call should have edge to method definition, target')
+        self.assertEqual(edges[7], [3, 5], 'method definition should have edge to call, accessing')
+        self.assertEqual(edges[8], [5, 3], 'call should have edge to method definition, source')
+        self.assertEqual(edges[9], [10, 5], 'method definition should have edge to call, accessedBy')
+        self.assertEqual(edges[10], [5, 10], 'call should have edge to method definition, target')
         
         #edges for call of second method in class
-        self.assertEqual(edges[10], [3, 6], 'method definition should have edge to call, accessing')
-        self.assertEqual(edges[11], [6, 3], 'call should have edge to method definition, source')
-        self.assertEqual(edges[12], [11, 6], 'method definition should have edge to call, accessedBy')
-        self.assertEqual(edges[13], [6, 11], 'call should have edge to method definition, target')
+        self.assertEqual(edges[11], [3, 6], 'method definition should have edge to call, accessing')
+        self.assertEqual(edges[12], [6, 3], 'call should have edge to method definition, source')
+        self.assertEqual(edges[13], [11, 6], 'method definition should have edge to call, accessedBy')
+        self.assertEqual(edges[14], [6, 11], 'call should have edge to method definition, target')
 
     #test importing multiple methods in one module (external libraries)
     def test_call_external_library_multiple_methods(self):
@@ -823,22 +827,22 @@ class TestETMConv(unittest.TestCase):
         self.assertEqual(node_features[5], NodeTypes.CALL.value, 'call is missing')
 
         #modules share same subpackage as namespace
-        self.assertEqual(edges[10], [1, 6], 'error with edge subpackage to first imported module')
-        self.assertEqual(edges[11], [6, 1], 'error with edge first imported module to subpackage')
-        self.assertEqual(edges[13], [1, 8], 'error with edge subpackage to second imported module')
-        self.assertEqual(edges[14], [8, 1], 'error with edge second imported module to subpackage')
+        self.assertEqual(edges[11], [1, 6], 'error with edge subpackage to first imported module')
+        self.assertEqual(edges[12], [6, 1], 'error with edge first imported module to subpackage')
+        self.assertEqual(edges[14], [1, 8], 'error with edge subpackage to second imported module')
+        self.assertEqual(edges[15], [8, 1], 'error with edge second imported module to subpackage')
 
         #edges for call of method in first module
-        self.assertEqual(edges[2], [3, 4], 'method definition should have edge to call, accessing')
-        self.assertEqual(edges[3], [4, 3], 'call should have edge to method definition, source')
-        self.assertEqual(edges[4], [7, 4], 'method definition should have edge to call, accessedBy')
-        self.assertEqual(edges[5], [4, 7], 'call should have edge to method definition, target')
+        self.assertEqual(edges[3], [3, 4], 'method definition should have edge to call, accessing')
+        self.assertEqual(edges[4], [4, 3], 'call should have edge to method definition, source')
+        self.assertEqual(edges[5], [7, 4], 'method definition should have edge to call, accessedBy')
+        self.assertEqual(edges[6], [4, 7], 'call should have edge to method definition, target')
         
         #edges for call of method in second module
-        self.assertEqual(edges[6], [3, 5], 'method definition should have edge to call, accessing')
-        self.assertEqual(edges[7], [5, 3], 'call should have edge to method definition, source')
-        self.assertEqual(edges[8], [9, 5], 'method definition should have edge to call, accessedBy')
-        self.assertEqual(edges[9], [5, 9], 'call should have edge to method definition, target')
+        self.assertEqual(edges[7], [3, 5], 'method definition should have edge to call, accessing')
+        self.assertEqual(edges[8], [5, 3], 'call should have edge to method definition, source')
+        self.assertEqual(edges[9], [9, 5], 'method definition should have edge to call, accessedBy')
+        self.assertEqual(edges[10], [5, 9], 'call should have edge to method definition, target')
 
     #test imported packages with multiple subpackages (external libraries)
     def test_call_external_library_multiple_subpackages(self):
@@ -874,25 +878,27 @@ class TestETMConv(unittest.TestCase):
 
         #two imported subpackages share same parent package
         self.assertEqual(edges[0], [0, 1], 'error with edge parent package to first subpackage')
-        self.assertEqual(edges[1], [0, 2], 'error with edge parent package to second subpackage')
+        self.assertEqual(edges[1], [1, 0], 'error with edge first subpackage to parent package')
+        self.assertEqual(edges[2], [0, 2], 'error with edge parent package to second subpackage')
+        self.assertEqual(edges[3], [2, 0], 'error with edge second subpackage to parent package')
 
         #modules have different subpackages as namespace
-        self.assertEqual(edges[11], [1, 7], 'error with edge subpackage to first imported module')
-        self.assertEqual(edges[12], [7, 1], 'error with edge first imported module to subpackage')
-        self.assertEqual(edges[14], [2, 9], 'error with edge subpackage to second imported module')
-        self.assertEqual(edges[15], [9, 2], 'error with edge second imported module to subpackage')
+        self.assertEqual(edges[13], [1, 7], 'error with edge subpackage to first imported module')
+        self.assertEqual(edges[14], [7, 1], 'error with edge first imported module to subpackage')
+        self.assertEqual(edges[16], [2, 9], 'error with edge subpackage to second imported module')
+        self.assertEqual(edges[17], [9, 2], 'error with edge second imported module to subpackage')
 
         #edges for call of method in first module
-        self.assertEqual(edges[3], [4, 5], 'method definition should have edge to call, accessing')
-        self.assertEqual(edges[4], [5, 4], 'call should have edge to method definition, source')
-        self.assertEqual(edges[5], [8, 5], 'method definition should have edge to call, accessedBy')
-        self.assertEqual(edges[6], [5, 8], 'call should have edge to method definition, target')
+        self.assertEqual(edges[5], [4, 5], 'method definition should have edge to call, accessing')
+        self.assertEqual(edges[6], [5, 4], 'call should have edge to method definition, source')
+        self.assertEqual(edges[7], [8, 5], 'method definition should have edge to call, accessedBy')
+        self.assertEqual(edges[8], [5, 8], 'call should have edge to method definition, target')
         
         #edges for call of method in second module
-        self.assertEqual(edges[7], [4, 6], 'method definition should have edge to call, accessing')
-        self.assertEqual(edges[8], [6, 4], 'call should have edge to method definition, source')
-        self.assertEqual(edges[9], [10, 6], 'method definition should have edge to call, accessedBy')
-        self.assertEqual(edges[10], [6, 10], 'call should have edge to method definition, target')
+        self.assertEqual(edges[9], [4, 6], 'method definition should have edge to call, accessing')
+        self.assertEqual(edges[10], [6, 4], 'call should have edge to method definition, source')
+        self.assertEqual(edges[11], [10, 6], 'method definition should have edge to call, accessedBy')
+        self.assertEqual(edges[12], [6, 10], 'call should have edge to method definition, target')
 
     #test if hashed node names exist, are the right number, and are zipped with node type into one array
     def test_hashed_names(self):
