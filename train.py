@@ -12,19 +12,18 @@ import numpy as np
 from GraphClasses import defined_labels
 from sklearn.metrics import accuracy_score, multilabel_confusion_matrix, classification_report
 
-#repository_directory = 'D:/dataset_repos'  # input repositories
+#repository_directory = 'D:/dataset_repos'  # github repositories
 #output_directory = 'D:/testing'
-output_directory = 'D:/labeled_repos_less_bias_library'
-#labels = '../random_sample_icse_CO.xls' # labeled repositories for the training dataset
-labels = '../labeled_repos_less_bias_library.xlsx'
 #labels = 'D:/testing.xlsx'
-n_epoch = 100
+output_directory = 'D:/labeled_repos_less_bias_library'
+labels = '../labeled_repos_less_bias_library.xlsx'
+n_epoch = 10
 k_folds = 2 #has to be at least 2
 learning_rate = 0.001
 figure_output = 'C:/Users/const/Documents/Bachelorarbeit/training_testing_plot'
 threshold = 0.5 #value above which label is considered to be predicted by model
-save_classification_reports = 'classification_reports/classification_report.txt'
-experiment_name = 'less_libraries'
+save_classification_reports = 'classification_reports/test_no_tutorial.txt'
+experiment_name = 'test_no_tutorial'
 
 def train():
         model.train()
@@ -149,17 +148,17 @@ results = {}
 #for classification reports
 reports = {}
 
-#initialize overall model performance with negative infinity
-#best_acc = - np.inf
+#initialize overall model performance with infinity
+best_loss = np.inf
 
 #training loop
 for f, fold in enumerate(kfold.split(dataset)):
-    # split into train and testset, this is for training the tool, not using finished tool
+    # split into train and testset, this is only for training the tool
     trainset, testset = random_split(dataset, [0.9, 0.1]) #more training data
     print(f'size of train dataset: {len(trainset)}, test dataset: {len(testset)}')
 
     trainloader = DataLoader(trainset, batch_size=32, shuffle=True)
-    testloader = DataLoader(testset, batch_size=1, shuffle=False)
+    testloader = DataLoader(testset, batch_size=32, shuffle=False)
     print(f'number of batches in train dataset: {len(trainloader)}, test dataset: {len(testloader)}')
 
     #log model parameters
@@ -198,12 +197,11 @@ for f, fold in enumerate(kfold.split(dataset)):
             print('testing report:')
             print(test_report)
             print('==============================================')
-
-            #save trained model with best performance, cannot use this with acc for multilabel, save every model for now
-            #if test_acc > best_acc:
-                #best_acc = test_acc
-                #maybe use test_loss instead? or find a way to somehow compute accuracy? gets ugh
-        torch.save(model, f'graph_classification_model_fold{f}.pt')
+            
+            #save trained model with best performance
+            if test_loss < best_loss:
+                best_loss = test_loss
+                torch.save(model, 'graph_classification_model.pt')
 
         #write classification reports in file
         report_file = open(save_classification_reports, 'a')
