@@ -100,8 +100,9 @@ class EcoreToMatrixConverter:
             combined_list.append(arr)
         return combined_list
 
-    '''this is the main function, that converts the nodes in the ecore graph into a matrix structure
-    it saves the node types in a list, and hashes the nodes names with md5 and saves the hex hash in a list'''
+    '''this is the main function, that converts the nodes in the ecore graph into a matrix structure.
+    it saves the node types in a list, hashes the nodes names with md5 and saves the hex hash in a list,
+    and sets the library flags'''
     def convert_nodes(self, typegraph):
 
         #convert packages and subpackages
