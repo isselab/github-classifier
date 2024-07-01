@@ -15,8 +15,8 @@ from sklearn.metrics import accuracy_score, multilabel_confusion_matrix, classif
 #repository_directory = 'D:/dataset_repos'  # github repositories
 #output_directory = 'D:/testing'
 #labels = 'D:/testing.xlsx'
-output_directory = 'D:/labeled_repos_less_bias_library'
-labels = '../labeled_repos_less_bias_library.xlsx'
+output_directory = 'D:/labeled_repos_first100'
+labels = '../labeled_repos_first100.xlsx'
 n_epoch = 10
 k_folds = 2 #has to be at least 2
 learning_rate = 0.001
