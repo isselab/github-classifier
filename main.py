@@ -10,9 +10,9 @@ import torch
     RepositoryDataset: repository list is needed when using the dataset for training, the labels for
     the graphs are loaded from that file, otherwise the graphs are loaded without labels'''
 
-repository_list = '../dataset_labeled.xlsx'
-repository_directory = '../../convert'
-output_directory = 'D:/convert_output'
+repository_list = '../labeled_repos_first100.xlsx'
+repository_directory = 'D:/data_output'
+output_directory = 'D:/labeled_repos_first100'
 path_to_model = 'graph_classification_model.pt'
 
 if __name__ == '__main__':
@@ -21,8 +21,8 @@ if __name__ == '__main__':
 
     try:
         # create the graph dataset of the repositories
-        nodes, edges = prepare_dataset(repository_directory, output_directory)
-        #if nodes is not None and edges is not None:
+        nodes, edges, edge_attributes = prepare_dataset(repository_directory, output_directory)
+        #if nodes is not None and edges is not None and edge_attributes is not None:
             #load trained graph convolutional network model
             #model = torch.load(path_to_model)
            # model.eval() #in pytorch doc!!

@@ -3,7 +3,7 @@ from pyecore.resources import ResourceSet, URI
 from AstToEcoreConverter import ProjectEcoreGraph
 from EcoreToMatrixConverter import EcoreToMatrixConverter
 import pandas as pd
-from DataformatUtils import convert_edge_dim, convert_list_to_floattensor, convert_list_to_longtensor
+from DataformatUtils import convert_edge_dim, convert_list_to_floattensor, convert_list_to_longtensor, convert_hashed_names_to_float
 from multiprocessing import Pool
 
 '''in this file are the pipeline components put into reusable functions'''
@@ -88,13 +88,14 @@ def create_matrix_structure(write_in_file, xmi_file=None, ecore_graph=None, outp
     if write_in_file is False:
         try:
             matrix = EcoreToMatrixConverter(ecore_graph, write_in_file)
-            node_features = matrix.get_encoded_node_matrix() #adjust this get all node features instead!
+            node_features = matrix.get_node_features()
             adj_list = matrix.get_adjacency_list()
+            edge_attr = matrix.get_encoded_edge_attributes()
         except Exception as e:
             print(e)
-        return node_features, adj_list
+        return node_features, adj_list, edge_attr
     else:
-        return None, None
+        return None, None, None
     
 def parallel_processing(func, repository_list):
     pool = Pool() #number of processes: return of os.cpu_count()
@@ -103,6 +104,7 @@ def parallel_processing(func, repository_list):
 def prepare_dataset(repository_directory, output_directory=None, repository_list=None):
     node_features = None
     adj_list = None
+    edge_attr = None
 
     #clone repositories for the dataset
     if repository_list is not None:
@@ -125,11 +127,11 @@ def prepare_dataset(repository_directory, output_directory=None, repository_list
 
     print('--convert repositories into ecore metamodels--')
     #convert repositories into ecore metamodels
-    if write_in_file is True:
-        parallel_processing(create_ecore_graphs, repo_multiprocess)
-    else:
-        single_directory = os.path.join(repository_directory, repositories[0])
-        ecore_graph = create_ecore_graphs(single_directory, write_in_file)
+   # if write_in_file is True:
+        #parallel_processing(create_ecore_graphs, repo_multiprocess)
+   # else:
+       # single_directory = os.path.join(repository_directory, repositories[0])
+       # ecore_graph = create_ecore_graphs(single_directory, write_in_file)
     
     print('---convert ecore graphs to matrix structure---')
     #load xmi instance and convert them to a matrix structure for the gcn
@@ -140,11 +142,12 @@ def prepare_dataset(repository_directory, output_directory=None, repository_list
             xmi_multiprocess.append((write_in_file, xmi_file, None, output_directory))
         parallel_processing(create_matrix_structure, xmi_multiprocess)
     else:
-        node_features, adj_list = create_matrix_structure(write_in_file, None, ecore_graph)
+        node_features, adj_list, edge_attr = create_matrix_structure(write_in_file, None, ecore_graph)
 
-    if node_features is not None and adj_list is not None:
-        node_features = convert_list_to_floattensor(node_features)
+    if node_features is not None and adj_list is not None and edge_attr is not None:
+        node_features = convert_hashed_names_to_float(node_features)
         adj_list = convert_list_to_longtensor(adj_list)
         adj_list = convert_edge_dim(adj_list)
+        edge_attr = convert_list_to_floattensor(edge_attr)
 
-    return node_features, adj_list
+    return node_features, adj_list, edge_attr
