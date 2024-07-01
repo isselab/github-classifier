@@ -11,19 +11,19 @@ class EcoreToMatrixConverter:
             self.typegraph_root = resource.contents[0]
         else:
             self.typegraph_root = resource
-        #nxc feature matrix with n nodes and c features for each node: node type and identifier (e.g. name or location)
-        self.node_matrix = []
-        self.adjacency_list = []
+
+        self.node_matrix = [] #contains feature node types
+        self.adjacency_list = [] #sparse edge matrix [node_id, node_id]
         self.node_dict = {}  #internal structure to set edges later, node_id as key, value is list with type, name, object name, that's connected by edge
         self.node_count = 0  #to create id for nodes, keys in node_dict
-        self.hashed_names = [] #contains hashed node names
+        self.hashed_names = [] #contains node names hashed with md5
         self.edge_attributes = [] #contains type of relationship between nodes
-        self.library_flag = [] #True if object is from external library, False when from repository
+        self.library_flag = [] #flags for nodes in graph
 
         self.convert_nodes(self.typegraph_root)
         self.convert_edges()
         
-        library_flags = ['true', 'false']
+        library_flags = ['true', 'false'] #True if object is from external library, False when from repository
 
         node_labels = [NodeTypes.PACKAGE.value, NodeTypes.MODULE.value, NodeTypes.CLASS.value, NodeTypes.METHOD_DEFINITION.value, 
                        NodeTypes.METHOD.value, NodeTypes.METHOD_SIGNATURE.value, NodeTypes.PARAMETER.value, NodeTypes.CALL.value]
@@ -38,7 +38,8 @@ class EcoreToMatrixConverter:
 
         if len(self.edge_attributes)>0:
             self.encoded_edge_attributes = one_hot_encoding(edge_labels, self.edge_attributes)
-
+        
+        #combine node features into single matrix for output
         features = zip(self.encoded_node_matrix, self.hashed_names, self.encoded_lib_flags)
         self.node_features = self.combine_node_features(features)
 
@@ -70,7 +71,7 @@ class EcoreToMatrixConverter:
     def get_encoded_library_flags(self):
         return self.encoded_lib_flags
     
-    '''returns all of the node features: (ohe enc) node types and hashed names'''
+    '''returns all of the node features: (ohe enc) node types, hashed names, and (ohe enc) library flags'''
     def get_node_features(self):
         return self.node_features
 
