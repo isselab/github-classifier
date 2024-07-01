@@ -3,7 +3,6 @@ from Pipeline import prepare_dataset
 from torch.utils.data import random_split
 from torch_geometric.loader import DataLoader
 from GCN import GCN
-#from GCN_ChebConv import GCN
 import torch
 import mlflow
 import matplotlib.pylab as plt
@@ -24,7 +23,7 @@ k_folds = 2 #has to be at least 2
 learning_rate = 0.001
 figure_output = 'C:/Users/const/Documents/Bachelorarbeit/training_testing_plot'
 threshold = 0.5 #value above which label is considered to be predicted by model
-save_classification_reports = 'classification_reports_less_libraries.txt'
+save_classification_reports = 'classification_reports/classification_report.txt'
 experiment_name = 'less_libraries'
 
 def train():
@@ -180,7 +179,7 @@ for f, fold in enumerate(kfold.split(dataset)):
             train()
             train_acc, train_loss, train_conf, train_report = test(trainloader)
             test_acc, test_loss, test_conf, test_report = test(testloader)
-            
+            #currently not using confusion matrix
             metrics = {"training accuracy":train_acc, "training loss":train_loss, "test accuracy":test_acc, "test loss":test_loss}
             results[f'{f}_epoch_{epoch}'] = metrics
             mlflow.log_metrics(metrics, step=epoch) #one folder per fold, because metrics needs to be key value pairs not dicts
@@ -232,16 +231,6 @@ for f, fold in enumerate(kfold.split(dataset)):
         plt.savefig(f'{figure_output}/fig_{f}.pdf', bbox_inches='tight')
 
 mlflow.end_run()
-
-#write classification reports in file
-#report_file = open(save_classification_reports, 'a')
-#for key, value in reports.items():
-    #report_file.write(f'{key}:')
-    #report_file.write('\n')
-    #report_file.write(f'{value}')
-    #report_file.write('\n')
-#report_file.close()
-
 
 #print fold results, does not make sense without usable accuracy
 #print(f'K-FOLD CROSS VALIDATION RESULTS FOR {k_folds} FOLDS')
