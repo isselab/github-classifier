@@ -10,7 +10,7 @@ from sklearn.model_selection import KFold
 import torch.nn.functional as nn
 import numpy as np
 from GraphClasses import defined_labels
-from sklearn.metrics import accuracy_score, multilabel_confusion_matrix, classification_report
+from sklearn.metrics import classification_report
 
 #repository_directory = 'D:/dataset_repos'  # github repositories
 #output_directory = 'D:/testing'
@@ -22,8 +22,8 @@ k_folds = 2 #has to be at least 2
 learning_rate = 0.001
 figure_output = 'C:/Users/const/Documents/Bachelorarbeit/training_testing_plot'
 threshold = 0.5 #value above which label is considered to be predicted by model
-save_classification_reports = 'classification_reports/test_classrepdict7.txt'
-experiment_name = 'test_classrepdict7'
+save_classification_reports = 'classification_reports/test_classrepdict23.txt'
+experiment_name = 'test_classrepdict23'
 
 def train():
         model.train()
@@ -95,17 +95,12 @@ def test(loader):
                 trafo_output.append(new_item)
             trafo_output = np.reshape(trafo_output, (size, num_classes))
 
-            #for multilabel not good/reliable metric
-            #either 1 (all labels correct) or 0 (at least 1 label not correct predicted)
-            acc = accuracy_score(graph.y, trafo_output)
-
             #better metrics for multilabel: precision, recall, f1_score
-            confusion_matrix = multilabel_confusion_matrix(graph.y, trafo_output)
             #report is string, dict to extract results 
             report_dict = classification_report(graph.y, trafo_output, target_names=defined_labels, output_dict=True)
             class_report = classification_report(graph.y, trafo_output, target_names=defined_labels)
 
-        return acc, loss_test/total, confusion_matrix, class_report, report_dict
+        return loss_test/total, class_report, report_dict
 
 # create the graph dataset of the repositories, already done
 #try:
@@ -124,7 +119,7 @@ except Exception as e:
 
 device = 'cuda' if torch.cuda.is_available() else 'cpu'
 
-model = GCN(dataset.num_node_features, dataset.num_classes, hidden_channels=32) #in paper K=10
+model = GCN(dataset.num_node_features, dataset.num_classes, hidden_channels=32)
 
 if device == 'cuda':
     model = model.to(device)
@@ -142,9 +137,6 @@ mlflow.set_experiment(experiment_name)
 #k fold cross validation
 kfold = KFold(n_splits=k_folds, shuffle=True)
 
-#fold results for n epochs
-results = {}
-
 #for classification reports
 reports = {}
 
@@ -154,7 +146,7 @@ best_avg = - np.inf
 #training loop
 for f, fold in enumerate(kfold.split(dataset)):
     # split into train and testset, this is only for training the tool
-    trainset, testset = random_split(dataset, [0.9, 0.1]) #more training data
+    trainset, testset = random_split(dataset, [0.9, 0.1])
     print(f'size of train dataset: {len(trainset)}, test dataset: {len(testset)}')
 
     trainloader = DataLoader(trainset, batch_size=32, shuffle=True)
@@ -169,28 +161,42 @@ for f, fold in enumerate(kfold.split(dataset)):
 
     with mlflow.start_run():
         plt_epoch = []
-        plt_test_acc = []
         plt_test_loss = []
+        plt_app = []
+        plt_frame = []
+        plt_lib = []
         mlflow.log_params(params)
 
         for epoch in range(n_epoch):
             print(f'Fold {f}, Epoch {epoch}')
             train()
-            train_acc, train_loss, train_conf, train_report, train_rep_dict = test(trainloader)
-            test_acc, test_loss, test_conf, test_report, test_rep_dict = test(testloader)
-            #currently not using confusion matrix
-            metrics = {"training accuracy":train_acc, "training loss":train_loss, "test accuracy":test_acc, "test loss":test_loss}
-            results[f'{f}_epoch_{epoch}'] = metrics
+            train_loss, train_report, train_rep_dict = test(trainloader)
+            test_loss, test_report, test_rep_dict = test(testloader)
+
+            #log loss
+            metrics = {"training loss":train_loss, "test loss":test_loss}
+            #alternatively extract params from dicts and log those/write in csv
             mlflow.log_metrics(metrics, step=epoch) #one folder per fold, because metrics needs to be key value pairs not dicts
             reports[f'Fold_{f}_Epoch_{epoch}_train'] = train_report
             reports[f'Fold_{f}_Epoch_{epoch}_test'] = test_report
-
+            #log report strings with ml flow? no have to be type float64
+            
+            #for plotting
             plt_epoch.append(epoch)
-            plt_test_acc.append(test_acc)
             plt_test_loss.append(test_loss)
-
-            print(f'training acc: {train_acc}, training loss: {train_loss}')
-            print(f'testing acc: {test_acc}, testing loss: {test_loss}')
+            app = test_rep_dict['Application']
+            app_f1 = app['f1-score']
+            plt_app.append(app_f1)
+            frame = test_rep_dict['Framework']
+            frame_f1 = frame['f1-score']
+            plt_frame.append(frame_f1)
+            lib = test_rep_dict['Library']
+            lib_f1 = lib['f1-score']
+            plt_lib.append(lib_f1)
+            
+            #print results
+            print(f'training loss: {train_loss}')
+            print(f'testing loss: {test_loss}')
             print('==============================================')
             av = test_rep_dict['weighted avg']
             f1 = av['f1-score']
@@ -210,23 +216,18 @@ for f, fold in enumerate(kfold.split(dataset)):
             report_file.write(f'{value}')
             report_file.write('\n')
         report_file.close()
-
-        #visualization of accuracy and loss from testing
+        
+        #plot visualization
         fig = plt.figure(f)
-        plt.title(f"Fold {f}")
-        p1 = plt.subplot(2, 1, 1)
-        plt.plot(plt_epoch, plt_test_acc, 'b')
-        plt.setp(p1.get_xticklabels(), visible=False)
-        plt.ylabel('test accuracy')
-
-        p2 = plt.subplot(2, 1, 2, sharex=p1)
-        plt.plot(plt_epoch, plt_test_loss, 'r')
-        plt.setp(p2.get_xticklabels())
-        plt.xlabel('epoch')
-        plt.ylabel('test loss')
-
+        fig, (ax1,ax2) = plt.subplots(2)
+        fig.suptitle(f'Fold {f}')
+        ax1.plot(plt_epoch, plt_test_loss, 'k', label='test loss')
+        ax1.set(ylabel='test loss')
+        ax2.plot(plt_epoch, plt_app, 'r', label='Application')
+        ax2.plot(plt_epoch, plt_frame, 'g', label='Framework')
+        ax2.plot(plt_epoch, plt_lib, 'b', label='Library')
+        ax2.set(xlabel='epoch', ylabel='f1 score')
+        plt.legend()
         plt.savefig(f'{figure_output}/fig_{f}.pdf', bbox_inches='tight')
-
-        #maybe add vis of f1 scores of labels?
 
 mlflow.end_run()
