@@ -15,15 +15,15 @@ from sklearn.metrics import accuracy_score, multilabel_confusion_matrix, classif
 #repository_directory = 'D:/dataset_repos'  # github repositories
 #output_directory = 'D:/testing'
 #labels = 'D:/testing.xlsx'
-output_directory = 'D:/labeled_repos_first100'
+output_directory = 'D:/labeled_repos_first100_oldsearchmethdefs'
 labels = '../labeled_repos_first100.xlsx'
 n_epoch = 10
 k_folds = 2 #has to be at least 2
 learning_rate = 0.001
 figure_output = 'C:/Users/const/Documents/Bachelorarbeit/training_testing_plot'
 threshold = 0.5 #value above which label is considered to be predicted by model
-save_classification_reports = 'classification_reports/test_no_tutorial.txt'
-experiment_name = 'test_no_tutorial'
+save_classification_reports = 'classification_reports/test_gatconv.txt'
+experiment_name = 'test_gatconv'
 
 def train():
         model.train()
@@ -35,17 +35,17 @@ def train():
             if device == 'cuda':
                 graph.x = graph.x.to(device)
                 graph.edge_index = graph.edge_index.to(device)
-                #graph.edge_attr = graph.edge_attr.to(device)
+                graph.edge_attr = graph.edge_attr.to(device)
                 graph.y = graph.y.to(device)
                 graph.batch = graph.batch.to(device)
             
             #prepare input
             size = int(len(graph.y)/num_classes)
             graph.x = nn.normalize(graph.x, p=0.5)
-            #graph.edge_attr = nn.normalize(graph.edge_attr, p=2.0)
+            graph.edge_attr = nn.normalize(graph.edge_attr, p=2.0)
             graph.y = torch.reshape(graph.y, (size, num_classes))
             
-            output = model(graph.x, graph.edge_index, graph.batch)
+            output = model(graph.x, graph.edge_index, graph.edge_attr, graph.batch)
             loss_train = criterion(output, graph.y) #graph.y is label
 
             #backpropagation
@@ -66,7 +66,7 @@ def test(loader):
             if device == 'cuda':
                 graph.x = graph.x.to(device)
                 graph.edge_index = graph.edge_index.to(device)
-                #graph.edge_attr = graph.edge_attr.to(device)
+                graph.edge_attr = graph.edge_attr.to(device)
                 graph.y = graph.y.to(device)
                 graph.batch = graph.batch.to(device)
             
@@ -75,7 +75,7 @@ def test(loader):
             graph.y = torch.reshape(graph.y, (size, num_classes))
 
             #evaluate model
-            output = model(graph.x, graph.edge_index, graph.batch)
+            output = model(graph.x, graph.edge_index, graph.edge_attr, graph.batch)
             loss = criterion(output, graph.y)
             loss_test += loss.item()
             total += len(loader)
