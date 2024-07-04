@@ -17,13 +17,13 @@ from sklearn.metrics import accuracy_score, multilabel_confusion_matrix, classif
 #labels = 'D:/testing.xlsx'
 output_directory = 'D:/labeled_repos_first100_oldsearchmethdefs'
 labels = '../labeled_repos_first100.xlsx'
-n_epoch = 10
+n_epoch = 4
 k_folds = 2 #has to be at least 2
 learning_rate = 0.001
 figure_output = 'C:/Users/const/Documents/Bachelorarbeit/training_testing_plot'
 threshold = 0.5 #value above which label is considered to be predicted by model
-save_classification_reports = 'classification_reports/test_gatconv.txt'
-experiment_name = 'test_gatconv'
+save_classification_reports = 'classification_reports/test_classrepdict4.txt'
+experiment_name = 'test_classrepdict4'
 
 def train():
         model.train()
@@ -102,7 +102,7 @@ def test(loader):
             #better metrics for multilabel: precision, recall, f1_score
             confusion_matrix = multilabel_confusion_matrix(graph.y, trafo_output)
             #report is string, could be changed to dict
-            class_report = classification_report(graph.y, trafo_output, target_names=defined_labels)
+            class_report = classification_report(graph.y, trafo_output, target_names=defined_labels, output_dict=True)
 
         return acc, loss_test/total, confusion_matrix, class_report
 
@@ -148,8 +148,8 @@ results = {}
 #for classification reports
 reports = {}
 
-#initialize overall model performance with infinity
-best_loss = np.inf
+#initialize overall model performance with negative infinity
+best_avg = - np.inf
 
 #training loop
 for f, fold in enumerate(kfold.split(dataset)):
@@ -192,15 +192,18 @@ for f, fold in enumerate(kfold.split(dataset)):
             print(f'training acc: {train_acc}, training loss: {train_loss}')
             print(f'testing acc: {test_acc}, testing loss: {test_loss}')
             print('==============================================')
-            print('training report:')
-            print(train_report)
-            print('testing report:')
-            print(test_report)
+            av = test_report['weighted avg']
+            f1 = av['f1-score']
+            print(f'weighted average of labels (f1-score): {f1}')
+            #print('training report:')
+            #print(train_report)
+            #print('testing report:')
+           # print(test_report)
             print('==============================================')
             
             #save trained model with best performance
-            if test_loss < best_loss:
-                best_loss = test_loss
+            if best_avg < f1:
+                best_avg = f1
                 torch.save(model, 'graph_classification_model.pt')
 
         #write classification reports in file
