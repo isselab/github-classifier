@@ -195,10 +195,6 @@ for f, fold in enumerate(kfold.split(dataset)):
             av = test_report['weighted avg']
             f1 = av['f1-score']
             print(f'weighted average of labels (f1-score): {f1}')
-            #print('training report:')
-            #print(train_report)
-            #print('testing report:')
-           # print(test_report)
             print('==============================================')
             
             #save trained model with best performance
@@ -232,12 +228,3 @@ for f, fold in enumerate(kfold.split(dataset)):
         plt.savefig(f'{figure_output}/fig_{f}.pdf', bbox_inches='tight')
 
 mlflow.end_run()
-
-#print fold results, does not make sense without usable accuracy
-#print(f'K-FOLD CROSS VALIDATION RESULTS FOR {k_folds} FOLDS')
-#print('--------------------------------')
-#sum = 0.0
-#for key, value in results.items():
-    #print(f'Fold {key}: {value} %')
-    #sum += value
-#print(f'Average: {sum/len(results.items())} %')
