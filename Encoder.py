@@ -11,7 +11,7 @@ def one_hot_encoding(labels, matrix):
     return enc
 
 '''encodes the not mutually exclusive classes of graphs in the dataset,
-   labels ['Application', 'Experiment', 'Framework', 'Library']'''
+   labels ['Application', 'Framework', 'Library']'''
 def multi_hot_encoding(graph_classes, graph_list):
     num_classes = len(graph_classes)
     enc_labels = []
@@ -19,22 +19,18 @@ def multi_hot_encoding(graph_classes, graph_list):
         enc = [0. for i in range(0, num_classes)]
         if label == 'Application':
             enc[0] = 1.0
-        if label == 'Experiment':
-            enc[1] = 1.0
         if label == 'Framework':
-            enc[2] = 1.0
+            enc[1] = 1.0
         if label == 'Library':
-            enc[3] = 1.0
+            enc[2] = 1.0
         if ',' in label:
             multiple_labels = label.split(',')
             for m_label in multiple_labels:
                 if m_label == 'Application' or m_label == ' Application':
                     enc[0] = 1.0
-                if m_label == 'Experiment' or m_label == ' Experiment':
-                    enc[1] = 1.0
                 if m_label == 'Framework' or m_label == ' Framework':
-                    enc[2] = 1.0
+                    enc[1] = 1.0
                 if m_label == 'Library' or m_label == ' Library':
-                    enc[3] = 1.0
+                    enc[2] = 1.0
         enc_labels.append(enc)
     return enc_labels
