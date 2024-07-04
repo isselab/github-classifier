@@ -1,0 +1,144 @@
+Fold_0_Epoch_0_train:
+              precision    recall  f1-score   support
+
+ Application       0.19      1.00      0.32         5
+   Framework       0.15      1.00      0.27         4
+     Library       0.69      1.00      0.82        18
+
+   micro avg       0.35      1.00      0.51        27
+   macro avg       0.35      1.00      0.47        27
+weighted avg       0.52      1.00      0.64        27
+ samples avg       0.35      1.00      0.51        27
+
+Fold_0_Epoch_0_test:
+              precision    recall  f1-score   support
+
+ Application       0.00      0.00      0.00         0
+   Framework       0.10      1.00      0.18         1
+     Library       0.90      1.00      0.95         9
+
+   micro avg       0.33      1.00      0.50        10
+   macro avg       0.33      0.67      0.38        10
+weighted avg       0.82      1.00      0.87        10
+ samples avg       0.33      1.00      0.50        10
+
+Fold_0_Epoch_1_train:
+              precision    recall  f1-score   support
+
+ Application       0.23      1.00      0.38         6
+   Framework       0.12      1.00      0.21         3
+     Library       0.69      1.00      0.82        18
+
+   micro avg       0.35      1.00      0.51        27
+   macro avg       0.35      1.00      0.47        27
+weighted avg       0.53      1.00      0.65        27
+ samples avg       0.35      1.00      0.51        27
+
+Fold_0_Epoch_1_test:
+              precision    recall  f1-score   support
+
+ Application       0.00      0.00      0.00         0
+   Framework       0.10      1.00      0.18         1
+     Library       0.90      1.00      0.95         9
+
+   micro avg       0.33      1.00      0.50        10
+   macro avg       0.33      0.67      0.38        10
+weighted avg       0.82      1.00      0.87        10
+ samples avg       0.33      1.00      0.50        10
+
+Fold_0_Epoch_0_train:
+              precision    recall  f1-score   support
+
+ Application       0.19      1.00      0.32         5
+   Framework       0.15      1.00      0.27         4
+     Library       0.69      1.00      0.82        18
+
+   micro avg       0.35      1.00      0.51        27
+   macro avg       0.35      1.00      0.47        27
+weighted avg       0.52      1.00      0.64        27
+ samples avg       0.35      1.00      0.51        27
+
+Fold_0_Epoch_0_test:
+              precision    recall  f1-score   support
+
+ Application       0.00      0.00      0.00         0
+   Framework       0.10      1.00      0.18         1
+     Library       0.90      1.00      0.95         9
+
+   micro avg       0.33      1.00      0.50        10
+   macro avg       0.33      0.67      0.38        10
+weighted avg       0.82      1.00      0.87        10
+ samples avg       0.33      1.00      0.50        10
+
+Fold_0_Epoch_1_train:
+              precision    recall  f1-score   support
+
+ Application       0.23      1.00      0.38         6
+   Framework       0.12      1.00      0.21         3
+     Library       0.69      1.00      0.82        18
+
+   micro avg       0.35      1.00      0.51        27
+   macro avg       0.35      1.00      0.47        27
+weighted avg       0.53      1.00      0.65        27
+ samples avg       0.35      1.00      0.51        27
+
+Fold_0_Epoch_1_test:
+              precision    recall  f1-score   support
+
+ Application       0.00      0.00      0.00         0
+   Framework       0.10      1.00      0.18         1
+     Library       0.90      1.00      0.95         9
+
+   micro avg       0.33      1.00      0.50        10
+   macro avg       0.33      0.67      0.38        10
+weighted avg       0.82      1.00      0.87        10
+ samples avg       0.33      1.00      0.50        10
+
+Fold_1_Epoch_0_train:
+              precision    recall  f1-score   support
+
+ Application       0.27      1.00      0.42         7
+   Framework       0.15      1.00      0.27         4
+     Library       0.58      1.00      0.73        15
+
+   micro avg       0.33      1.00      0.50        26
+   macro avg       0.33      1.00      0.47        26
+weighted avg       0.43      1.00      0.58        26
+ samples avg       0.33      1.00      0.50        26
+
+Fold_1_Epoch_0_test:
+              precision    recall  f1-score   support
+
+ Application       0.20      1.00      0.33         2
+   Framework       0.00      0.00      0.00         0
+     Library       0.80      1.00      0.89         8
+
+   micro avg       0.33      1.00      0.50        10
+   macro avg       0.33      0.67      0.41        10
+weighted avg       0.68      1.00      0.78        10
+ samples avg       0.33      1.00      0.50        10
+
+Fold_1_Epoch_1_train:
+              precision    recall  f1-score   support
+
+ Application       0.23      1.00      0.38         6
+   Framework       0.27      1.00      0.42         7
+     Library       0.54      1.00      0.70        14
+
+   micro avg       0.35      1.00      0.51        27
+   macro avg       0.35      1.00      0.50        27
+weighted avg       0.40      1.00      0.56        27
+ samples avg       0.35      1.00      0.51        27
+
+Fold_1_Epoch_1_test:
+              precision    recall  f1-score   support
+
+ Application       0.20      1.00      0.33         2
+   Framework       0.00      0.00      0.00         0
+     Library       0.80      1.00      0.89         8
+
+   micro avg       0.33      1.00      0.50        10
+   macro avg       0.33      0.67      0.41        10
+weighted avg       0.68      1.00      0.78        10
+ samples avg       0.33      1.00      0.50        10
+

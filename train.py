@@ -17,13 +17,13 @@ from sklearn.metrics import accuracy_score, multilabel_confusion_matrix, classif
 #labels = 'D:/testing.xlsx'
 output_directory = 'D:/labeled_repos_first100_oldsearchmethdefs'
 labels = '../labeled_repos_first100.xlsx'
-n_epoch = 4
+n_epoch = 2
 k_folds = 2 #has to be at least 2
 learning_rate = 0.001
 figure_output = 'C:/Users/const/Documents/Bachelorarbeit/training_testing_plot'
 threshold = 0.5 #value above which label is considered to be predicted by model
-save_classification_reports = 'classification_reports/test_classrepdict4.txt'
-experiment_name = 'test_classrepdict4'
+save_classification_reports = 'classification_reports/test_classrepdict7.txt'
+experiment_name = 'test_classrepdict7'
 
 def train():
         model.train()
@@ -101,11 +101,11 @@ def test(loader):
 
             #better metrics for multilabel: precision, recall, f1_score
             confusion_matrix = multilabel_confusion_matrix(graph.y, trafo_output)
-            #report is string, could be changed to dict
-            class_report = classification_report(graph.y, trafo_output, target_names=defined_labels, output_dict=True)
+            #report is string, dict to extract results 
+            report_dict = classification_report(graph.y, trafo_output, target_names=defined_labels, output_dict=True)
+            class_report = classification_report(graph.y, trafo_output, target_names=defined_labels)
 
-        return acc, loss_test/total, confusion_matrix, class_report
-
+        return acc, loss_test/total, confusion_matrix, class_report, report_dict
 
 # create the graph dataset of the repositories, already done
 #try:
@@ -176,8 +176,8 @@ for f, fold in enumerate(kfold.split(dataset)):
         for epoch in range(n_epoch):
             print(f'Fold {f}, Epoch {epoch}')
             train()
-            train_acc, train_loss, train_conf, train_report = test(trainloader)
-            test_acc, test_loss, test_conf, test_report = test(testloader)
+            train_acc, train_loss, train_conf, train_report, train_rep_dict = test(trainloader)
+            test_acc, test_loss, test_conf, test_report, test_rep_dict = test(testloader)
             #currently not using confusion matrix
             metrics = {"training accuracy":train_acc, "training loss":train_loss, "test accuracy":test_acc, "test loss":test_loss}
             results[f'{f}_epoch_{epoch}'] = metrics
@@ -192,7 +192,7 @@ for f, fold in enumerate(kfold.split(dataset)):
             print(f'training acc: {train_acc}, training loss: {train_loss}')
             print(f'testing acc: {test_acc}, testing loss: {test_loss}')
             print('==============================================')
-            av = test_report['weighted avg']
+            av = test_rep_dict['weighted avg']
             f1 = av['f1-score']
             print(f'weighted average of labels (f1-score): {f1}')
             print('==============================================')
@@ -226,5 +226,7 @@ for f, fold in enumerate(kfold.split(dataset)):
         plt.ylabel('test loss')
 
         plt.savefig(f'{figure_output}/fig_{f}.pdf', bbox_inches='tight')
+
+        #maybe add vis of f1 scores of labels?
 
 mlflow.end_run()
