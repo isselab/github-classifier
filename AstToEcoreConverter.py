@@ -4,24 +4,8 @@ from pyecore.resources import ResourceSet, URI
 from NodeFeatures import NodeTypes
 import logging
 
-formatter = logging.Formatter('%(asctime)s %(levelname)s %(message)s')
-
-def setup_logger(name, log_file, level=logging.INFO):
-    """To setup as many loggers as you want"""
-
-    handler = logging.FileHandler(log_file)        
-    handler.setFormatter(formatter)
-
-    logger = logging.getLogger(name)
-    logger.setLevel(level)
-    logger.addHandler(handler)
-
-    return logger
-
-#logger = logging.getLogger(__name__)
-#logging.basicConfig(filename='skipped_files.log', level=logging.WARNING, filemode='a')
-import_logger = setup_logger('import_logger', 'import_length1.log', level=logging.WARNING)
-skip_logger = setup_logger('skip_logger', 'skipped_files.log', level=logging.WARNING)
+logger = logging.getLogger(__name__)
+logging.basicConfig(filename='skipped_files.log', level=logging.WARNING, filemode='a')
 
 class ProjectEcoreGraph:
     def __init__(self, resource_set: ResourceSet, repository, write_in_file, output_directory=None):
@@ -73,11 +57,13 @@ class ProjectEcoreGraph:
                         package_node = self.create_ecore_instance(NodeTypes.PACKAGE)
                         package_node.tName = item
                         self.graph.packages.append(package_node)
+                        self.package_list.append([package_node, item, None])
                         parent = package_node
                     else:
                         package_node = self.create_ecore_instance(NodeTypes.PACKAGE)
                         package_node.tName = item
                         package_node.parent = parent
+                        self.package_list.append([package_node, item, parent])
                         parent = package_node
 
         #create and process modules with contained program entities
@@ -86,7 +72,7 @@ class ProjectEcoreGraph:
                self.process_file(file_path)
             except Exception as e:
                 if 'invalid syntax' in str(e):
-                    skip_logger.warning(f'skipped: {file_path}')
+                    logger.warning(f'skipped: {file_path}')
                     skipped_files += 1
                     continue #skip file
 
@@ -171,10 +157,9 @@ class ProjectEcoreGraph:
                         self.create_imported_method_call(module_node, method_name, caller_node)
                     #get package in whose namespace imported module is
                     pack_name = None
-                    if subpackage_names is not None and isinstance(subpackage_names, str):
+                    if isinstance(subpackage_names, str):
                         pack_name = subpackage_names + '_ExternalLibrary'
-                    if subpackage_names is not None and isinstance(subpackage_names, list):
-                        #create package hierarchy?!
+                    if isinstance(subpackage_names, list):
                         pack_name = subpackage_names[-1] + '_ExternalLibrary'
                     if pack_name is not None:
                         current_package_node = self.get_imported_library_package(pack_name)
@@ -189,7 +174,7 @@ class ProjectEcoreGraph:
                             subpackage_node.parent = package_node
                             module_node.namespace = subpackage_node
                             self.imported_libraries.append([module_node, module_name, subpackage_node, pack_name])
-                    if subpackage_names is None: #this was orig module_key, check if change correct
+                    if subpackage_names is None:
                         self.imported_libraries.append([module_node, module_name, None, None])
             if package_node is None:
                 if len(split_import)==2:
@@ -220,6 +205,7 @@ class ProjectEcoreGraph:
                     self.graph.modules.append(module_node)
                     if self.imported_package is not None:
                         module_node.namespace = self.imported_package
+
                         package_key = self.get_imported_library_package_key(self.imported_package.tName)
                         import_entry = self.imported_libraries[package_key]
                         import_entry[0] = module_node
@@ -247,24 +233,41 @@ class ProjectEcoreGraph:
                     self.create_calls(caller_node, method_node)
     
     '''creates the hierarchy of packages and subpackages for imported external libraries'''
-    def create_package_hierarchy(self, parent_package, subpackage_names):
+    def create_package_hierarchy(self, parent_package, subpackage_names, lib_flag=True):
         if isinstance(subpackage_names, str):
             package_node = self.create_ecore_instance(NodeTypes.PACKAGE)
-            name = subpackage_names + '_ExternalLibrary'
+            name = None
+            if lib_flag is True:
+                name = subpackage_names + '_ExternalLibrary'
+            else:
+                name = subpackage_names
             package_node.tName = name
-            self.imported_libraries.append([None, None, package_node, name])
             package_node.parent = parent_package
+            if lib_flag is True:
+                self.imported_libraries.append([None, None, package_node, name])
+            else:
+                self.package_list.append([package_node, name, parent_package])
             self.imported_package = package_node
         if isinstance(subpackage_names, list):
             for e, element in enumerate(subpackage_names):
-                element_lib = element + '_ExternalLibrary'
+                element_lib = None
+                if lib_flag is True:
+                    element_lib = element + '_ExternalLibrary'
+                else:
+                    element_lib = element
                 package_node = self.create_ecore_instance(NodeTypes.PACKAGE)
                 package_node.tName = element_lib
-                self.imported_libraries.append([None, None, package_node, element_lib])
                 if e == 0:
                     package_node.parent = parent_package
                 else:
                     package_node.parent = current_parent
+                if lib_flag is True:
+                    self.imported_libraries.append([None, None, package_node, element_lib])
+                else:
+                    if e == 0:
+                        self.package_list.append([package_node, element_lib, parent_package])
+                    else:
+                        self.package_list.append([package_node, element_lib, current_parent])
                 current_parent = package_node
                 self.imported_package = package_node
 
@@ -326,8 +329,6 @@ class ProjectEcoreGraph:
             if module_node is None:
                 if len(split_import)>1: #extra case in dataset repositories, left out (for now)
                     self.call_imported_library.append([caller_node, imported_instance])
-                if len(split_import)==1: #log extra case
-                    import_logger.warning(f'{self.current_module.location}, import: {split_import}')
 
     def set_import_names(self, split_import):
         package_name = split_import[0]
@@ -457,7 +458,7 @@ class ProjectEcoreGraph:
                         if subpackage_names is not None:
                             #single subpackage
                             if isinstance(subpackage_names, str):
-                                subpackage_node = self.check_package_list(subpackage_names, package_name)
+                                subpackage_node = self.check_package_list(subpackage_names, package_node)
                                 if subpackage_node is not None:
                                     mod_found = False
                                     if hasattr(package_node, 'modules'):
@@ -470,35 +471,35 @@ class ProjectEcoreGraph:
                                     subpackage_node = self.create_ecore_instance(NodeTypes.PACKAGE)
                                     subpackage_node.tName = subpackage_names
                                     subpackage_node.parent = package_node
+                                    self.package_list.append([subpackage_node, subpackage_names, package_node])
                                     self.create_missing_module(module_name, obj, subpackage_node)
                             #multiple subpackages
                             if isinstance(subpackage_names, list):
                                 for i, item in enumerate(subpackage_names):
                                     if i == 0:
-                                        subpackage_node = self.check_package_list(item, package_name)
+                                        subpackage_node = self.check_package_list(item, package_node)
                                         #package hierarchy does not exist
                                         if subpackage_node is None:
-                                            self.create_package_hierarchy(package_node, subpackage_names)
+                                            self.create_package_hierarchy(package_node, subpackage_names, lib_flag=False)
                                             #last subpackage in hierarchy is in self.imported_package
                                             self.create_missing_module(module_name, obj, self.imported_package)
+                                    #subpackages lower in hierarchy, continue searching as long as sub package exists
                                     if i > 0:
-                                        subpackage_node = self.check_package_list(item, subpackage_names[i-1])
+                                        subpackage_node = self.get_package_from_list_by_parent_name(subpackage_names[i-1])
+                                        #found sub package in hierarchy that does not exist yet
                                         if subpackage_node is None:
-                                            #last_subpackage = None
-                                            if i >=2:
-                                                last_subpackage = self.check_package_list(subpackage_names[i-1], subpackage_names[i-2])
-                                            if i == 1:
-                                                last_subpackage = self.check_package_list(subpackage_names[i-1], package_node)
                                             missing_subpackages = subpackage_names[i:]
-                                            self.create_package_hierarchy(last_subpackage, missing_subpackages)
+                                            self.create_package_hierarchy(subpackage_node, missing_subpackages, lib_flag=False)
                                             #last subpackage in hierarchy is in self.imported_package
                                             self.create_missing_module(module_name, obj, self.imported_package)
+                                        
                     #(parent) package does not exist
                     if package_node is None:
                         #create package and module
                         package_node = self.create_ecore_instance(NodeTypes.PACKAGE)
                         package_node.tName = package_name
                         self.graph.packages.append(package_node)
+                        self.package_list.append([package_node, package_name, None])
                         if subpackage_names is None:
                             self.create_missing_module(module_name, obj, package_node)
                         if subpackage_names is not None:
@@ -625,6 +626,13 @@ class ProjectEcoreGraph:
                     if parent.tName == package[2].tName:
                         return package[0]
         return None
+    
+    def get_package_from_list_by_parent_name(self, parent_name):
+        for package in self.package_list:
+            if package[2] is not None:
+                if parent_name == package[2].tName:
+                    return package[0]
+        return None
 
     def get_class_from_internal_structure(self, class_name, module):
         for current_class in self.class_list:
@@ -666,7 +674,7 @@ class ProjectEcoreGraph:
             else:
                 self.classes_without_module.append(class_node)
                 self.class_list.append([class_node, name, None])
-            structure.append(class_node)  # class appended to typegraph
+            structure.append(class_node)  #class appended to typegraph
             return class_node
         return None
 
@@ -676,14 +684,14 @@ class ProjectEcoreGraph:
         first_name = name.split('.')[0]
         for import_reference in self.imports:
             if import_reference[1] == first_name:
-                # return module of the alias/imported object and 0 for type
+                #return module of the alias/imported object and 0 for type
                 return import_reference[0], 0
         for instance in self.instances:
             if instance[0] == name:
                 for import_reference in self.imports:
                     if import_reference[1] == instance[1]:
                         return import_reference[0], 0
-                # return class_name of instance and 1 for type
+                #return class_name of instance and 1 for type
                 return instance[1], 1
         return None, None
 

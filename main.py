@@ -11,12 +11,8 @@ import torch
     the graphs are loaded from that file, otherwise the graphs are loaded without labels'''
 
 repository_list = '../labeled_repos_first100.xlsx'
-#repository_directory = 'D:/data_output'
-#output_directory = 'D:/labeled_repos_first100'
-#repository_directory = 'D:/search'
-#output_directory = 'D:/search_out'
-repository_directory = 'tests/unit_tests'
-output_directory = 'D:/testing'
+repository_directory = 'D:/data_output'
+output_directory = 'D:/labeled_repos_first100'
 path_to_model = 'graph_classification_model.pt'
 
 if __name__ == '__main__':
@@ -26,19 +22,19 @@ if __name__ == '__main__':
     try:
         # create the graph dataset of the repositories
         nodes, edges, edge_attributes = prepare_dataset(repository_directory, output_directory)
-        #if nodes is not None and edges is not None and edge_attributes is not None:
+        if nodes is not None and edges is not None and edge_attributes is not None:
             #load trained graph convolutional network model
-            #model = torch.load(path_to_model)
-           # model.eval() #in pytorch doc!!
-           # print(model)
+            model = torch.load(path_to_model)
+            model.eval() #in pytorch doc!!
+            print(model)
            # print(nodes, nodes.size())
            # print(edges, edges.size())
-           #trafo for dimensions?!
-            #if device == 'cuda':
-               # nodes.to(device)
-                #edges.to(device)
-            #output = model(nodes, edges) #complains about missing batch?
-            #print(output)
+            if device == 'cuda':
+                nodes.to(device)
+                edges.to(device)
+                edge_attributes.to(device)
+            output = model(nodes, edges, edge_attributes) #complains about missing batch?
+            print(output)
     except Exception as e:
         print(e)
 
@@ -55,7 +51,8 @@ if __name__ == '__main__':
             #if device == 'cuda':
                 #graph.x.to(device)
                 #graph.edge_index.to(device)
-            #output = model(graph.x, graph.edge_index) #how to save output? --> necessary to save it?
+                #graph.edge_attributes.to(device)
+            #output = model(graph.x, graph.edge_index, graph.edge_attributes) #how to save output? --> necessary to save it?
             #print(output) #maybe new func to get graph name?
     except Exception as e:
         print(e)
