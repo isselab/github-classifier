@@ -4,8 +4,24 @@ from pyecore.resources import ResourceSet, URI
 from NodeFeatures import NodeTypes
 import logging
 
-logger = logging.getLogger(__name__)
-logging.basicConfig(filename='skipped_files.log', level=logging.WARNING, filemode='a')
+formatter = logging.Formatter('%(asctime)s %(levelname)s %(message)s')
+
+def setup_logger(name, log_file, level=logging.INFO):
+    """To setup as many loggers as you want"""
+
+    handler = logging.FileHandler(log_file)        
+    handler.setFormatter(formatter)
+
+    logger = logging.getLogger(name)
+    logger.setLevel(level)
+    logger.addHandler(handler)
+
+    return logger
+
+#logger = logging.getLogger(__name__)
+#logging.basicConfig(filename='skipped_files.log', level=logging.WARNING, filemode='a')
+import_logger = setup_logger('import_logger', 'import_length1.log', level=logging.WARNING)
+skip_logger = setup_logger('skip_logger', 'skipped_files.log', level=logging.WARNING)
 
 class ProjectEcoreGraph:
     def __init__(self, resource_set: ResourceSet, repository, write_in_file, output_directory=None):
@@ -70,7 +86,7 @@ class ProjectEcoreGraph:
                self.process_file(file_path)
             except Exception as e:
                 if 'invalid syntax' in str(e):
-                    logger.warning(f'skipped: {file_path}')
+                    skip_logger.warning(f'skipped: {file_path}')
                     skipped_files += 1
                     continue #skip file
 
@@ -100,7 +116,7 @@ class ProjectEcoreGraph:
             imported = item[1]
             split_import = imported.split('.')
             
-            package_name, module_name, class_name, method_name = self.set_import_names(split_import)
+            package_name, subpackage_names, module_name, class_name, method_name = self.set_import_names(split_import)
             #flag tLib only works for classes, use name for other types
             package_name += '_ExternalLibrary'
             module_name += '_ExternalLibrary'
@@ -154,17 +170,8 @@ class ProjectEcoreGraph:
                     if class_name is None:
                         self.create_imported_method_call(module_node, method_name, caller_node)
                     #get package in whose namespace imported module is
-                    module_key = None
-                    for e, el in enumerate(split_import):
-                        el_lib = el + '_ExternalLibrary'
-                        if el_lib==module_name:
-                            module_key = e
-                            break
-                    if module_key is not None:
-                        pack_name = ''
-                        if module_key>=1:
-                            pack_name = split_import[module_key-1]
-                            pack_name += '_ExternalLibrary'
+                    if subpackage_names is not None and isinstance(subpackage_names, str): #what about case list?
+                        pack_name = subpackage_names + '_ExternalLibrary'
                         current_package_node = self.get_imported_library_package(pack_name)
                         #subpackage exists
                         if current_package_node is not None:
@@ -177,7 +184,7 @@ class ProjectEcoreGraph:
                             subpackage_node.parent = package_node
                             module_node.namespace = subpackage_node
                             self.imported_libraries.append([module_node, module_name, subpackage_node, pack_name])
-                    if module_key is None:
+                    if subpackage_names is None: #this was orig module_key, check if change correct
                         self.imported_libraries.append([module_node, module_name, None, None])
             if package_node is None:
                 if len(split_import)==2:
@@ -195,21 +202,13 @@ class ProjectEcoreGraph:
                     self.create_calls(caller_node, method_node)
                 if len(split_import)>2:
                     #create package hierarchy
-                    parent = None
-                    for element in split_import:
-                        element_lib = element + '_ExternalLibrary'
-                        if element_lib != module_name:
-                            package_node = self.create_ecore_instance(NodeTypes.PACKAGE)
-                            package_node.tName = element_lib
-                            self.imported_libraries.append([None, None, package_node, element_lib])
-                            if parent is not None:
-                                package_node.parent = parent
-                            else:
-                                self.graph.packages.append(package_node)
-                            parent = package_node
-                            self.imported_package = package_node
-                        if element_lib == module_name:
-                            break
+                    package_node = self.create_ecore_instance(NodeTypes.PACKAGE) #parent package
+                    package_node.tName = package_name
+                    self.graph.packages.append(package_node)
+                    self.imported_libraries.append([None, None, package_node, package_name])
+                    self.imported_package = package_node
+                    if subpackage_names is not None:
+                        self.create_package_hierarchy(package_node, subpackage_names)
                     #create module
                     module_node = self.create_ecore_instance(NodeTypes.MODULE)
                     module_node.location = module_name
@@ -241,6 +240,28 @@ class ProjectEcoreGraph:
                         module_node.contains.append(method_node)
                     #set call
                     self.create_calls(caller_node, method_node)
+    
+    '''creates the hierarchy of packages and subpackages for imported external libraries'''
+    def create_package_hierarchy(self, parent_package, subpackage_names):
+        if isinstance(subpackage_names, str):
+            package_node = self.create_ecore_instance(NodeTypes.PACKAGE)
+            name = subpackage_names + '_ExternalLibrary'
+            package_node.tName = name
+            self.imported_libraries.append([None, None, package_node, name])
+            package_node.parent = parent_package
+            self.imported_package = package_node
+        if isinstance(subpackage_names, list):
+            for e, element in enumerate(subpackage_names):
+                element_lib = element + '_ExternalLibrary'
+                package_node = self.create_ecore_instance(NodeTypes.PACKAGE)
+                package_node.tName = element_lib
+                self.imported_libraries.append([None, None, package_node, element_lib])
+                if e == 0:
+                    package_node.parent = parent_package
+                else:
+                    package_node.parent = current_parent
+                current_parent = package_node
+                self.imported_package = package_node
 
     '''creates method from imported module from external library'''
     def create_imported_method_call(self, module_node, method_name, caller_node):
@@ -286,7 +307,7 @@ class ProjectEcoreGraph:
             imported_instance = item[0]
             caller_node = item[1]
             split_import = imported_instance.split('.')
-            package_name, module_name, class_name, method_name = self.set_import_names(split_import)
+            package_name, subpackage_names, module_name, class_name, method_name = self.set_import_names(split_import)
 
             module_node = self.get_module_by_name(module_name)
             if module_node is not None:
@@ -300,12 +321,15 @@ class ProjectEcoreGraph:
             if module_node is None:
                 if len(split_import)>1: #extra case in dataset repositories, left out (for now)
                     self.call_imported_library.append([caller_node, imported_instance])
+                if len(split_import)==1: #log extra case
+                    import_logger.warning(f'{self.current_module.location}, {split_import}')
 
     def set_import_names(self, split_import):
         package_name = split_import[0]
         method_name = split_import[-1]
         class_name = None
         module_name = None
+        subpackage_names = None
 
         if len(split_import)==2:
                 module_name = split_import[0]
@@ -325,15 +349,18 @@ class ProjectEcoreGraph:
                     module_name = split_import[1]
                 else:
                     module_name = obj_name
+                    subpackage_names = split_import[1]
 
         if len(split_import)>4: #structure: packages, subpackages...,module, (class,) method
                 obj_name = split_import[-2]
                 if obj_name[0].isupper():
                     class_name = obj_name
                     module_name = split_import[-3]
+                    subpackage_names = split_import[1:-3]
                 else:
                     module_name = obj_name
-        return package_name, module_name, class_name, method_name
+                    subpackage_names = split_import[1:-2]
+        return package_name, subpackage_names, module_name, class_name, method_name
     
     '''sets the calls for instances within the same module, no imports'''
     def set_internal_module_calls(self):
