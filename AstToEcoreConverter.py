@@ -170,8 +170,12 @@ class ProjectEcoreGraph:
                     if class_name is None:
                         self.create_imported_method_call(module_node, method_name, caller_node)
                     #get package in whose namespace imported module is
-                    if subpackage_names is not None and isinstance(subpackage_names, str): #what about case list?
+                    pack_name = None
+                    if subpackage_names is not None and isinstance(subpackage_names, str):
                         pack_name = subpackage_names + '_ExternalLibrary'
+                    if subpackage_names is not None and isinstance(subpackage_names, list):
+                        pack_name = subpackage_names[-1] + '_ExternalLibrary'
+                    if pack_name is not None:
                         current_package_node = self.get_imported_library_package(pack_name)
                         #subpackage exists
                         if current_package_node is not None:
