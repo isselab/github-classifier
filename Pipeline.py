@@ -127,11 +127,11 @@ def prepare_dataset(repository_directory, output_directory=None, repository_list
 
     print('--convert repositories into ecore metamodels--')
     #convert repositories into ecore metamodels
-   # if write_in_file is True:
-        #parallel_processing(create_ecore_graphs, repo_multiprocess)
-   # else:
-       # single_directory = os.path.join(repository_directory, repositories[0])
-       # ecore_graph = create_ecore_graphs(single_directory, write_in_file)
+    if write_in_file is True:
+        parallel_processing(create_ecore_graphs, repo_multiprocess)
+    else:
+        single_directory = os.path.join(repository_directory, repositories[0])
+        ecore_graph = create_ecore_graphs(single_directory, write_in_file)
     
     print('---convert ecore graphs to matrix structure---')
     #load xmi instance and convert them to a matrix structure for the gcn
