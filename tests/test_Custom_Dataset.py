@@ -5,7 +5,7 @@ import unittest
 of testing loading the dataset, the output of the converters were saved in files,
 the tests checking the dimension of the graph components also ensure that they can be accessed at all'''
 
-output_directory = 'D:/testing' #path to directory containing xmi and csv files of the unit tests
+output_directory = 'testing' #path to directory containing xmi and csv files of the unit tests
 labels = 'testing.xlsx'
 
 class TestCustomDataset(unittest.TestCase):

@@ -90,9 +90,9 @@ class ProjectEcoreGraph:
                     skipped_files += 1
                     continue #skip file
 
-        #append modules and possibly missing method definitions to type graph to set calls after
+        #append modules and possibly missing nodes to type graph to set calls after
         self.append_modules()
-        self.search_meth_defs()
+        self.check_for_missing_nodes()
         
         #set calls
         if len(self.call_in_module)>0:
@@ -174,6 +174,7 @@ class ProjectEcoreGraph:
                     if subpackage_names is not None and isinstance(subpackage_names, str):
                         pack_name = subpackage_names + '_ExternalLibrary'
                     if subpackage_names is not None and isinstance(subpackage_names, list):
+                        #create package hierarchy?!
                         pack_name = subpackage_names[-1] + '_ExternalLibrary'
                     if pack_name is not None:
                         current_package_node = self.get_imported_library_package(pack_name)
@@ -326,7 +327,7 @@ class ProjectEcoreGraph:
                 if len(split_import)>1: #extra case in dataset repositories, left out (for now)
                     self.call_imported_library.append([caller_node, imported_instance])
                 if len(split_import)==1: #log extra case
-                    import_logger.warning(f'{self.current_module.location}, {split_import}')
+                    import_logger.warning(f'{self.current_module.location}, import: {split_import}')
 
     def set_import_names(self, split_import):
         package_name = split_import[0]
@@ -407,10 +408,13 @@ class ProjectEcoreGraph:
             if call_check is False:
                 self.create_calls(caller_node, method_node)        
 
-    '''check_list at start contains all classes with method defs that are created in type graph,
-    then they are compared to the classes with meth defs found in modules at the end,
-    those not found need to be appended to a module, otherwise the meth defs are missing'''
-    def search_meth_defs(self):
+    '''check_list contains all classes with method defs that are created during conversion.
+    They are compared to the classes with meth defs found in modules in the type graph at the end,
+    those not found need to be appended to a module, otherwise the meth defs are missing.
+    Entire modules are missing! (because only .py files processed!?) They are created and appended to 
+    their packages (also created when missing)'''
+    def check_for_missing_nodes(self):
+        #check if every created TClass node is in type graph
         classes_found = []
         for class_node in self.check_list:
             for mod in self.graph.modules:
@@ -420,28 +424,94 @@ class ProjectEcoreGraph:
                             if obj.tName == class_node.tName:
                                 classes_found.append(class_node)
 
-        # remove already appended classes from check_list
+        #remove already appended classes from check_list
         for cl in classes_found:
             for item in self.check_list:
                 if cl.tName == item.tName:
                     self.check_list.remove(item)
-
+        
+        #create missing modules/packages the TClass nodes belong to (from imports)
         if len(self.check_list) > 0:
-            module_node = self.create_ecore_instance(NodeTypes.MODULE)
-            module_node.location = 'ImportedClasses' #actually base or parent classes of other classes that are inside modules
-            self.graph.modules.append(module_node)
             for obj in self.check_list:
-                module_node.contains.append(obj)
-                ref, ty = self.get_reference_by_name(obj.tName)
+                ref, ty = self.get_reference_by_name(obj.tName) #get names of packages and modules
                 if ref is not None:
                     imported = ref.split('.')
-                    del imported[-1] #delete name of the class
-                    for im in reversed(imported):
-                        for pack in self.package_list:
-                            if pack[1] == im:
-                                for m in self.module_list:
-                                    if m[1]== imported[-1]:
-                                        m[0].contains.append(obj)
+                    package_name, subpackage_names, module_name, class_name, method_name = self.set_import_names(imported)
+                    package_node = self.check_package_list(package_name, None)
+                    #(parent) package exists
+                    if package_node is not None:
+                        #package has no subpackages
+                        if subpackage_names is None:
+                            mod_found = False
+                            if hasattr(package_node, 'modules'):
+                                for mod in package_node.modules:
+                                    if mod.location == module_name:
+                                        mod_found = True
+                                if mod_found is False:
+                                    module_node = self.create_ecore_instance(NodeTypes.MODULE)
+                                    module_node.location = module_name
+                                    module_node.contains.append(obj)
+                                    module_node.namespace = package_node
+                                    self.graph.modules.append(module_node)
+                        #package has subpackages
+                        if subpackage_names is not None:
+                            #single subpackage
+                            if isinstance(subpackage_names, str):
+                                subpackage_node = self.check_package_list(subpackage_names, package_name)
+                                if subpackage_node is not None:
+                                    mod_found = False
+                                    if hasattr(package_node, 'modules'):
+                                        for mod in package_node.modules:
+                                            if mod.location == module_name:
+                                                mod_found = True
+                                        if mod_found is False:
+                                            self.create_missing_module(module_name, obj, subpackage_node)
+                                if subpackage_node is None:
+                                    subpackage_node = self.create_ecore_instance(NodeTypes.PACKAGE)
+                                    subpackage_node.tName = subpackage_names
+                                    subpackage_node.parent = package_node
+                                    self.create_missing_module(module_name, obj, subpackage_node)
+                            #multiple subpackages
+                            if isinstance(subpackage_names, list):
+                                for i, item in enumerate(subpackage_names):
+                                    if i == 0:
+                                        subpackage_node = self.check_package_list(item, package_name)
+                                        #package hierarchy does not exist
+                                        if subpackage_node is None:
+                                            self.create_package_hierarchy(package_node, subpackage_names)
+                                            #last subpackage in hierarchy is in self.imported_package
+                                            self.create_missing_module(module_name, obj, self.imported_package)
+                                    if i > 0:
+                                        subpackage_node = self.check_package_list(item, subpackage_names[i-1])
+                                        if subpackage_node is None:
+                                            #last_subpackage = None
+                                            if i >=2:
+                                                last_subpackage = self.check_package_list(subpackage_names[i-1], subpackage_names[i-2])
+                                            if i == 1:
+                                                last_subpackage = self.check_package_list(subpackage_names[i-1], package_node)
+                                            missing_subpackages = subpackage_names[i:]
+                                            self.create_package_hierarchy(last_subpackage, missing_subpackages)
+                                            #last subpackage in hierarchy is in self.imported_package
+                                            self.create_missing_module(module_name, obj, self.imported_package)
+                    #(parent) package does not exist
+                    if package_node is None:
+                        #create package and module
+                        package_node = self.create_ecore_instance(NodeTypes.PACKAGE)
+                        package_node.tName = package_name
+                        self.graph.packages.append(package_node)
+                        if subpackage_names is None:
+                            self.create_missing_module(module_name, obj, package_node)
+                        if subpackage_names is not None:
+                            self.create_package_hierarchy(package_node, subpackage_names)
+                            #last subpackage in hierarchy is in self.imported_package
+                            self.create_missing_module(module_name, obj, self.imported_package)
+
+    def create_missing_module(self, module_name, class_node, package_node):
+        module_node = self.create_ecore_instance(NodeTypes.MODULE)
+        module_node.location = module_name
+        module_node.contains.append(class_node)
+        module_node.namespace = package_node
+        self.graph.modules.append(module_node)
 
     def get_epackage(self):
         return self.epackage
@@ -468,7 +538,7 @@ class ProjectEcoreGraph:
                 return module
         return None
     
-    '''appends modules at the end of the typegraph/xmi file'''
+    '''appends modules at the end of the type graph/xmi file'''
     def append_modules(self):
         for module in self.module_list:
             self.graph.modules.append(module[0])

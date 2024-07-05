@@ -11,8 +11,12 @@ import torch
     the graphs are loaded from that file, otherwise the graphs are loaded without labels'''
 
 repository_list = '../labeled_repos_first100.xlsx'
-repository_directory = 'D:/data_output'
-output_directory = 'D:/labeled_repos_first100'
+#repository_directory = 'D:/data_output'
+#output_directory = 'D:/labeled_repos_first100'
+#repository_directory = 'D:/search'
+#output_directory = 'D:/search_out'
+repository_directory = 'tests/unit_tests'
+output_directory = 'D:/testing'
 path_to_model = 'graph_classification_model.pt'
 
 if __name__ == '__main__':
