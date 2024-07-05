@@ -95,14 +95,14 @@ def test(loader):
                 trafo_output.append(new_item)
             trafo_output = np.reshape(trafo_output, (size, num_classes))
 
-            #better metrics for multilabel: precision, recall, f1_score
+            #better evaluation metrics for multilabel: precision, recall, f1_score
             #report is string, dict to extract results 
             report_dict = classification_report(graph.y, trafo_output, target_names=defined_labels, output_dict=True)
             class_report = classification_report(graph.y, trafo_output, target_names=defined_labels)
 
         return loss_test/total, class_report, report_dict
 
-# create the graph dataset of the repositories, already done
+#create the graph dataset of the repositories, already done
 #try:
    # prepare_dataset(repository_directory, output_directory)
 #except Exception as e:
