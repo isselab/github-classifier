@@ -2,17 +2,19 @@
 
 **short description**
 
-This repository contains a deep-learning based classification tool for Software Repositories. The tool utilizes ecore metamodels and a graph convolutional network. For use run 'main.py' after adding the directory containing the repositories you want to classify.
+This repository contains a deep-learning based classification tool for Software Repositories. The tool utilizes the ecore metamodel 'type graph' and a graph convolutional network. To use the tool, run 'main.py' after adding the directory containing the repositories you want to classify.
 
-If you want to train the tool with different labels, you can use GraphLabels.py to encode your labeled repositories for your dataset.
+If you want to train the tool with different labels, replace the current labels with your own (or add/append them) in GraphClasses.py and in function 'multi_hot_encoding' in Encoder.py. 
+The labels in the tool are not mutually exclusive and are multi-hot encoded.
 
 **labels**
 
-Framework, Library, Application, Tutorial, Experiment
+Application, Framework, Library
 
 **data**
 
-Contains labeled repositories from 2023-aisystemsmining
+Dataset with python software repositories from GitHub, all with a dependency on at least one ML library.
+The labeled repositories  the tool is trained with are in labeled_dataset_repos.xlsx.
 
 **requirements**
 
