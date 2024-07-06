@@ -93,7 +93,7 @@ class ProjectEcoreGraph:
                 self.write_xmi(resource_set, output_directory, repository)
             else:
                 print('output directory is required!')
-        print(f'{repository}, Number of files skipped: {skipped_files}')
+        print(f'{repository}, Number of files skipped: {skipped_files} \n')
             
     '''creates structure of imported external libraries and sets calls to it'''
     def set_imported_libraries_calls(self):
@@ -327,7 +327,7 @@ class ProjectEcoreGraph:
                     if obj.eClass.name == NodeTypes.METHOD_DEFINITION.value:
                         self.create_method_call(obj, method_name, caller_node)
             if module_node is None:
-                if len(split_import)>1: #extra case in dataset repositories, left out (for now)
+                if len(split_import)>1: #if len==1 simple import .. statement, included only if import is used (in that case len>1)
                     self.call_imported_library.append([caller_node, imported_instance])
 
     def set_import_names(self, split_import):
@@ -366,6 +366,7 @@ class ProjectEcoreGraph:
                 else:
                     module_name = obj_name
                     subpackage_names = split_import[1:-2]
+
         return package_name, subpackage_names, module_name, class_name, method_name
     
     '''sets the calls for instances within the same module, no imports'''
@@ -437,75 +438,75 @@ class ProjectEcoreGraph:
                 ref, ty = self.get_reference_by_name(obj.tName) #get names of packages and modules
                 if ref is not None:
                     imported = ref.split('.')
-                    package_name, subpackage_names, module_name, class_name, method_name = self.set_import_names(imported)
-                    package_node = self.check_package_list(package_name, None)
-                    #(parent) package exists
-                    if package_node is not None:
-                        #package has no subpackages
-                        if subpackage_names is None:
-                            mod_found = False
-                            if hasattr(package_node, 'modules'):
-                                for mod in package_node.modules:
-                                    if mod.location == module_name:
-                                        mod_found = True
-                                if mod_found is False:
-                                    module_node = self.create_ecore_instance(NodeTypes.MODULE)
-                                    module_node.location = module_name
-                                    module_node.contains.append(obj)
-                                    module_node.namespace = package_node
-                                    self.graph.modules.append(module_node)
-                        #package has subpackages
-                        if subpackage_names is not None:
-                            #single subpackage
-                            if isinstance(subpackage_names, str):
-                                subpackage_node = self.check_package_list(subpackage_names, package_node)
-                                if subpackage_node is not None:
-                                    mod_found = False
-                                    if hasattr(package_node, 'modules'):
-                                        for mod in package_node.modules:
-                                            if mod.location == module_name:
-                                                mod_found = True
-                                        if mod_found is False:
-                                            self.create_missing_module(module_name, obj, subpackage_node)
-                                if subpackage_node is None:
-                                    subpackage_node = self.create_ecore_instance(NodeTypes.PACKAGE)
-                                    subpackage_node.tName = subpackage_names
-                                    subpackage_node.parent = package_node
-                                    self.package_list.append([subpackage_node, subpackage_names, package_node])
-                                    self.create_missing_module(module_name, obj, subpackage_node)
-                            #multiple subpackages
-                            if isinstance(subpackage_names, list):
-                                for i, item in enumerate(subpackage_names):
-                                    if i == 0:
-                                        subpackage_node = self.check_package_list(item, package_node)
-                                        #package hierarchy does not exist
-                                        if subpackage_node is None:
-                                            self.create_package_hierarchy(package_node, subpackage_names, lib_flag=False)
-                                            #last subpackage in hierarchy is in self.imported_package
-                                            self.create_missing_module(module_name, obj, self.imported_package)
-                                    #subpackages lower in hierarchy, continue searching as long as sub package exists
-                                    if i > 0:
-                                        subpackage_node = self.get_package_from_list_by_parent_name(subpackage_names[i-1])
-                                        #found sub package in hierarchy that does not exist yet
-                                        if subpackage_node is None:
-                                            missing_subpackages = subpackage_names[i:]
-                                            self.create_package_hierarchy(subpackage_node, missing_subpackages, lib_flag=False)
-                                            #last subpackage in hierarchy is in self.imported_package
-                                            self.create_missing_module(module_name, obj, self.imported_package)
-                                        
-                    #(parent) package does not exist
-                    if package_node is None:
-                        #create package and module
-                        package_node = self.create_ecore_instance(NodeTypes.PACKAGE)
-                        package_node.tName = package_name
-                        self.graph.packages.append(package_node)
-                        self.package_list.append([package_node, package_name, None])
-                        if subpackage_names is None:
-                            self.create_missing_module(module_name, obj, package_node)
-                        if subpackage_names is not None:
-                            self.create_package_hierarchy(package_node, subpackage_names)
-                            #last subpackage in hierarchy is in self.imported_package
-                            self.create_missing_module(module_name, obj, self.imported_package)
+                    if len(imported) > 1: #if len==1 simple import .. statement, included only if import is used (in that case len>1)
+                        package_name, subpackage_names, module_name, class_name, method_name = self.set_import_names(imported)
+                        package_node = self.check_package_list(package_name, None)
+                        #(parent) package exists
+                        if package_node is not None:
+                            #package has no subpackages
+                            if subpackage_names is None:
+                                mod_found = False
+                                if hasattr(package_node, 'modules'):
+                                    for mod in package_node.modules:
+                                        if mod.location == module_name:
+                                            mod_found = True
+                                    if mod_found is False:
+                                        module_node = self.create_ecore_instance(NodeTypes.MODULE)
+                                        module_node.location = module_name
+                                        module_node.contains.append(obj)
+                                        module_node.namespace = package_node
+                                        self.graph.modules.append(module_node)
+                            #package has subpackages
+                            if subpackage_names is not None:
+                                #single subpackage
+                                if isinstance(subpackage_names, str):
+                                    subpackage_node = self.check_package_list(subpackage_names, package_node)
+                                    if subpackage_node is not None:
+                                        mod_found = False
+                                        if hasattr(package_node, 'modules'):
+                                            for mod in package_node.modules:
+                                                if mod.location == module_name:
+                                                    mod_found = True
+                                            if mod_found is False:
+                                                self.create_missing_module(module_name, obj, subpackage_node)
+                                    if subpackage_node is None:
+                                        subpackage_node = self.create_ecore_instance(NodeTypes.PACKAGE)
+                                        subpackage_node.tName = subpackage_names
+                                        subpackage_node.parent = package_node
+                                        self.package_list.append([subpackage_node, subpackage_names, package_node])
+                                        self.create_missing_module(module_name, obj, subpackage_node)
+                                #multiple subpackages
+                                if isinstance(subpackage_names, list):
+                                    for i, item in enumerate(subpackage_names):
+                                        if i == 0:
+                                            subpackage_node = self.check_package_list(item, package_node)
+                                            #package hierarchy does not exist
+                                            if subpackage_node is None:
+                                                self.create_package_hierarchy(package_node, subpackage_names, lib_flag=False)
+                                                #last subpackage in hierarchy is in self.imported_package
+                                                self.create_missing_module(module_name, obj, self.imported_package)
+                                        #subpackages lower in hierarchy, continue searching as long as sub package exists
+                                        if i > 0:
+                                            subpackage_node = self.get_package_from_list_by_parent_name(subpackage_names[i-1])
+                                            #found sub package in hierarchy that does not exist yet
+                                            if subpackage_node is None:
+                                                missing_subpackages = subpackage_names[i:]
+                                                self.create_package_hierarchy(subpackage_node, missing_subpackages, lib_flag=False)
+                                                #last subpackage in hierarchy is in self.imported_package
+                                                self.create_missing_module(module_name, obj, self.imported_package)
+                        #(parent) package does not exist
+                        if package_node is None:
+                            #create package and module
+                            package_node = self.create_ecore_instance(NodeTypes.PACKAGE)
+                            package_node.tName = package_name
+                            self.graph.packages.append(package_node)
+                            self.package_list.append([package_node, package_name, None])
+                            if subpackage_names is None:
+                                self.create_missing_module(module_name, obj, package_node)
+                            if subpackage_names is not None:
+                                self.create_package_hierarchy(package_node, subpackage_names, lib_flag=False)
+                                #last subpackage in hierarchy is in self.imported_package
+                                self.create_missing_module(module_name, obj, self.imported_package)
 
     def create_missing_module(self, module_name, class_node, package_node):
         module_node = self.create_ecore_instance(NodeTypes.MODULE)

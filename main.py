@@ -10,9 +10,9 @@ import torch
     RepositoryDataset: repository list is needed when using the dataset for training, the labels for
     the graphs are loaded from that file, otherwise the graphs are loaded without labels'''
 
-repository_list = '../labeled_repos_first100.xlsx'
-repository_directory = 'D:/data_output'
-output_directory = 'D:/labeled_repos_first100'
+repository_list = '../labeled_dataset_repos.xlsx'
+repository_directory = 'D:/labeled_dataset_repos'
+output_directory = 'D:/labeled_repos_output'
 path_to_model = 'graph_classification_model.pt'
 
 if __name__ == '__main__':

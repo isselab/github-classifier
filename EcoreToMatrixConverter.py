@@ -47,7 +47,7 @@ class EcoreToMatrixConverter:
         if write_in_file is True:
             if output_folder is not None:
                 self.write_csv(output_folder, output_name)
-                print(f'{output_name}')
+                print(f'{output_name} \n')
             else:
                 print('output directory is required!')
  
@@ -107,7 +107,6 @@ class EcoreToMatrixConverter:
 
         #convert packages and subpackages
         for tpackage in typegraph.packages:
-            current_package = None
             current_package = self.get_node(tpackage.tName, NodeTypes.PACKAGE.value)
             #if package exists but has length 4 it was a subpackage --> different package, same name
             if current_package is None or len(current_package) == 4:
@@ -125,12 +124,10 @@ class EcoreToMatrixConverter:
 
         #convert modules and contained objects
         for tmodule in typegraph.modules:
-            current_module = None
             current_module = self.get_node(tmodule.location, NodeTypes.MODULE.value)
-            
             if current_module is None:
                 self.node_matrix.append(NodeTypes.MODULE.value)
-                if '_ExternalLibrary' in tmodule.location:
+                if '_ExternalLibrary' in tmodule.location: #cause of none type error
                     self.library_flag.append('true')
                 else:
                     self.library_flag.append('false')
@@ -143,7 +140,6 @@ class EcoreToMatrixConverter:
                 self.node_count += 1
                 if hasattr(tmodule, 'contains'):
                     #can contain TContainableElements (TAbstractType and TMember)
-                    current_class = None
                     for tobject in tmodule.contains:
                         if tobject.eClass.name == NodeTypes.CLASS.value:
                             current_class = self.get_node(tobject.tName, NodeTypes.CLASS.value)
@@ -228,7 +224,6 @@ class EcoreToMatrixConverter:
 
         #convert classes and contained objects
         for tclass in typegraph.classes:
-            current_class = None
             current_class = self.get_node(tclass.tName, NodeTypes.CLASS.value)
             if current_class is None:
                 self.node_matrix.append(NodeTypes.CLASS.value)
@@ -337,6 +332,7 @@ class EcoreToMatrixConverter:
             if node[0] == type:
                 if node[1] == node_name:
                     return node
+        return None
 
     '''necessary for objects with the same name but different parents/container objects'''
     def get_node_in_container(self, node_name, type, parent_name, parent_type):
@@ -348,6 +344,7 @@ class EcoreToMatrixConverter:
                         if node[2] == parent_type:
                             if node[3] == parent_name:
                                 return node
+        return None
 
     '''this function sets the existing edges, it appends the node_ids of the nodes connected 
     by an edge to the adjacency list, it saves the type of relationship between the nodes, 
@@ -490,7 +487,7 @@ class EcoreToMatrixConverter:
     def write_csv(self, output_folder, output_name):
         new_resource_nodes = open(f"{output_folder}/{output_name}_nodefeatures.csv", "w+")
         new_resource_edges = open(f"{output_folder}/{output_name}_A.csv", "w+")
-
+        
         for node in self.node_features:
             node_counter = 1
             for item in node:
