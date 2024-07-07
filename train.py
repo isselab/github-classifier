@@ -12,18 +12,16 @@ import numpy as np
 from GraphClasses import defined_labels
 from sklearn.metrics import classification_report
 
-#repository_directory = 'D:/dataset_repos'  # github repositories
-#output_directory = 'D:/testing'
-#labels = 'D:/testing.xlsx'
-output_directory = 'D:/labeled_repos_first100_oldsearchmethdefs'
-labels = '../labeled_repos_first100.xlsx'
-n_epoch = 2
-k_folds = 2 #has to be at least 2
+#repository_directory = 'D:/labeled_dataset_repos'  #downloaded github repositories
+output_directory = 'D:/labeled_repos_output'
+labels = 'data/labeled_dataset_repos.xlsx'
+n_epoch = 100
+k_folds = 4 #has to be at least 2
 learning_rate = 0.001
 figure_output = 'C:/Users/const/Documents/Bachelorarbeit/training_testing_plot'
 threshold = 0.5 #value above which label is considered to be predicted by model
-save_classification_reports = 'classification_reports/test_classrepdict23.txt'
-experiment_name = 'test_classrepdict23'
+save_classification_reports = 'classification_reports/train_with_115.txt'
+experiment_name = 'train_with_115'
 
 def train():
         model.train()

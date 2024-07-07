@@ -1,0 +1,15 @@
+artifact_uri: file:///C:/Users/const/Documents/Bachelorarbeit/bachelor_repo/github-classifier/mlruns/545974920781003265/aab27ed5bdd240e8a33471cb503a92cb/artifacts
+end_time: 1720349781259
+entry_point_name: ''
+experiment_id: '545974920781003265'
+lifecycle_stage: active
+run_id: aab27ed5bdd240e8a33471cb503a92cb
+run_name: salty-steed-151
+run_uuid: aab27ed5bdd240e8a33471cb503a92cb
+source_name: ''
+source_type: 4
+source_version: ''
+start_time: 1720345077753
+status: 3
+tags: []
+user_id: const
