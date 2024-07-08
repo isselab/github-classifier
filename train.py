@@ -15,13 +15,13 @@ from sklearn.metrics import classification_report
 #repository_directory = 'D:/labeled_dataset_repos'  #downloaded github repositories
 output_directory = 'D:/labeled_repos_output'
 labels = 'data/labeled_dataset_repos.xlsx'
-n_epoch = 100
-k_folds = 4 #has to be at least 2
+n_epoch = 15
+k_folds = 2 #has to be at least 2
 learning_rate = 0.001
 figure_output = 'C:/Users/const/Documents/Bachelorarbeit/training_testing_plot'
 threshold = 0.5 #value above which label is considered to be predicted by model
-save_classification_reports = 'classification_reports/train_with_115.txt'
-experiment_name = 'train_with_115'
+save_classification_reports = 'classification_reports/plot_train.txt'
+experiment_name = 'plot_train'
 
 def train():
         model.train()
@@ -159,10 +159,14 @@ for f, fold in enumerate(kfold.split(dataset)):
 
     with mlflow.start_run():
         plt_epoch = []
+        plt_train_loss = []
+        plt_app_train = []
+        plt_frame_train  = []
+        plt_lib_train  = []
         plt_test_loss = []
-        plt_app = []
-        plt_frame = []
-        plt_lib = []
+        plt_app_test = []
+        plt_frame_test  = []
+        plt_lib_test  = []
         mlflow.log_params(params)
 
         for epoch in range(n_epoch):
@@ -173,37 +177,50 @@ for f, fold in enumerate(kfold.split(dataset)):
 
             #log loss
             metrics = {"training loss":train_loss, "test loss":test_loss}
-            #alternatively extract params from dicts and log those/write in csv
             mlflow.log_metrics(metrics, step=epoch) #one folder per fold, because metrics needs to be key value pairs not dicts
             reports[f'Fold_{f}_Epoch_{epoch}_train'] = train_report
             reports[f'Fold_{f}_Epoch_{epoch}_test'] = test_report
-            #log report strings with ml flow? no have to be type float64
             
-            #for plotting
+            #for plotting train results
             plt_epoch.append(epoch)
+            plt_train_loss.append(train_loss)
+            app_train = train_rep_dict['Application']
+            app_f1_train = app_train['f1-score']
+            plt_app_train.append(app_f1_train)
+            frame_train = train_rep_dict['Framework']
+            frame_f1_train = frame_train['f1-score']
+            plt_frame_train.append(frame_f1_train)
+            lib_train = train_rep_dict['Library']
+            lib_f1_train = lib_train['f1-score']
+            plt_lib_train.append(lib_f1_train)
+
+            #for plotting test results
             plt_test_loss.append(test_loss)
-            app = test_rep_dict['Application']
-            app_f1 = app['f1-score']
-            plt_app.append(app_f1)
-            frame = test_rep_dict['Framework']
-            frame_f1 = frame['f1-score']
-            plt_frame.append(frame_f1)
-            lib = test_rep_dict['Library']
-            lib_f1 = lib['f1-score']
-            plt_lib.append(lib_f1)
+            app_test = test_rep_dict['Application']
+            app_f1_test = app_test['f1-score']
+            plt_app_test.append(app_f1_test)
+            frame_test = test_rep_dict['Framework']
+            frame_f1_test = frame_test['f1-score']
+            plt_frame_test.append(frame_f1_test)
+            lib_test = test_rep_dict['Library']
+            lib_f1_test = lib_test['f1-score']
+            plt_lib_test.append(lib_f1_test)
             
             #print results
             print(f'training loss: {train_loss}')
             print(f'testing loss: {test_loss}')
             print('==============================================')
-            av = test_rep_dict['weighted avg']
-            f1 = av['f1-score']
-            print(f'weighted average of labels (f1-score): {f1}')
+            print(f'f1-score of application during testing: {app_f1_test}')
+            print(f'f1-score of framework during testing: {frame_f1_test}')
+            print(f'f1-score of library during testing: {lib_f1_test}')
+            av_test = test_rep_dict['weighted avg']
+            f1_test = av_test['f1-score']
+            print(f'weighted average of labels (f1-score) during testing: {f1_test}')
             print('==============================================')
             
             #save trained model with best performance
-            if best_avg < f1:
-                best_avg = f1
+            if best_avg < f1_test:
+                best_avg = f1_test
                 torch.save(model, 'graph_classification_model.pt')
 
         #write classification reports in file
@@ -215,17 +232,31 @@ for f, fold in enumerate(kfold.split(dataset)):
             report_file.write('\n')
         report_file.close()
         
-        #plot visualization
+        #plot visualization for training
+        fig_n = f + k_folds + 1 #so figures are separate for training and testing
+        fig = plt.figure(fig_n)
+        fig, (ax1,ax2) = plt.subplots(2)
+        fig.suptitle(f'Fold {f}')
+        ax1.plot(plt_epoch, plt_train_loss, 'k', label='test loss')
+        ax1.set(ylabel='train loss')
+        ax2.plot(plt_epoch, plt_app_train, 'r', label='Application')
+        ax2.plot(plt_epoch, plt_frame_train, 'g', label='Framework')
+        ax2.plot(plt_epoch, plt_lib_train, 'b', label='Library')
+        ax2.set(xlabel='epoch', ylabel='f1 score')
+        plt.legend()
+        plt.savefig(f'{figure_output}/fig_{f}_train.pdf', bbox_inches='tight')
+
+        #plot visualization for testing
         fig = plt.figure(f)
         fig, (ax1,ax2) = plt.subplots(2)
         fig.suptitle(f'Fold {f}')
         ax1.plot(plt_epoch, plt_test_loss, 'k', label='test loss')
         ax1.set(ylabel='test loss')
-        ax2.plot(plt_epoch, plt_app, 'r', label='Application')
-        ax2.plot(plt_epoch, plt_frame, 'g', label='Framework')
-        ax2.plot(plt_epoch, plt_lib, 'b', label='Library')
+        ax2.plot(plt_epoch, plt_app_test, 'r', label='Application')
+        ax2.plot(plt_epoch, plt_frame_test, 'g', label='Framework')
+        ax2.plot(plt_epoch, plt_lib_test, 'b', label='Library')
         ax2.set(xlabel='epoch', ylabel='f1 score')
         plt.legend()
-        plt.savefig(f'{figure_output}/fig_{f}.pdf', bbox_inches='tight')
+        plt.savefig(f'{figure_output}/fig_{f}_test.pdf', bbox_inches='tight')
 
 mlflow.end_run()
