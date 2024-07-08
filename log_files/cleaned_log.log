@@ -35,3 +35,7 @@ xl-sum\seq2seq\transformers\templates\adding_a_new_model\cookiecutter-template-{
 xl-sum\seq2seq\transformers\templates\adding_a_new_model\cookiecutter-template-{{cookiecutter.modelname}}\tokenization_{{cookiecutter.lowercase_modelname}}.py
 xl-sum\seq2seq\transformers\templates\adding_a_new_model\cookiecutter-template-{{cookiecutter.modelname}}\to_replace_{{cookiecutter.lowercase_modelname}}.py
 xl-sum\seq2seq\transformers\templates\adding_a_new_model\cookiecutter-template-{{cookiecutter.modelname}}\__init__.py
+tyro\examples\04_additional\06_generics_py312.py
+tyro\examples\04_additional\13_type_statement.py
+tyro\tests\test_new_style_annotations_min_py312.py
+tyro\tests\test_py311_generated\test_new_style_annotations_min_py312_generated.py
