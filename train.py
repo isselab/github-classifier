@@ -15,13 +15,13 @@ from sklearn.metrics import classification_report
 #repository_directory = 'D:/labeled_dataset_repos'  #downloaded github repositories
 output_directory = 'D:/labeled_repos_output'
 labels = 'data/labeled_dataset_repos.xlsx'
-n_epoch = 3
-k_folds = 2 #has to be at least 2
-learning_rate = 0.001 #0.001
+n_epoch = 30
+k_folds = 3 #has to be at least 2
+learning_rate = 0.01 #0.001
 figure_output = 'C:/Users/const/Documents/Bachelorarbeit/training_testing_plot'
 threshold = 0.5 #value above which label is considered to be predicted by model
-save_classification_reports = 'classification_reports/plot_plugin.txt'
-experiment_name = 'plot_plugin'
+save_classification_reports = 'classification_reports/train_with_130_50_epochs_4.txt'
+experiment_name = 'train_with_130_50_epochs_4'
 
 def train():
         model.train()
@@ -45,6 +45,14 @@ def train():
             
             output = model(graph.x, graph.edge_index, graph.edge_attr, graph.batch)
             loss_train = criterion(output, graph.y) #graph.y is label
+
+            #to free up memory in gpu
+            #if device == 'cuda':
+                #graph.x = graph.x.to('cpu')
+                #graph.edge_index = graph.edge_index.to('cpu')
+                #graph.edge_attr = graph.edge_attr.to('cpu')
+                #graph.y = graph.y.to('cpu')
+                #graph.batch = graph.batch.to('cpu')
 
             #backpropagation
             optimizer.zero_grad()
@@ -77,6 +85,14 @@ def test(loader):
             loss = criterion(output, graph.y)
             loss_test += loss.item()
             total += len(loader)
+            
+            #to free up memory in gpu, useless :(
+            #if device == 'cuda':
+                #graph.x = graph.x.to('cpu')
+               # graph.edge_index = graph.edge_index.to('cpu')
+                #graph.edge_attr = graph.edge_attr.to('cpu')
+                #graph.y = graph.y.to('cpu')
+                #graph.batch = graph.batch.to('cpu')
 
             output = output.cpu().detach().numpy()
             graph.y = graph.y.cpu().detach().numpy()
@@ -115,7 +131,8 @@ except Exception as e:
     print(e)
     print('Dataset cannot be loaded.')
 
-device = 'cuda' if torch.cuda.is_available() else 'cpu'
+#device = 'cuda' if torch.cuda.is_available() else 'cpu'
+device = 'cpu' #to avoid out of memory error with gpu
 
 model = GCN(dataset.num_node_features, dataset.num_classes, hidden_channels=32)
 
