@@ -15,13 +15,13 @@ from sklearn.metrics import classification_report
 #repository_directory = 'D:/labeled_dataset_repos'  #downloaded github repositories
 output_directory = 'D:/labeled_repos_output'
 labels = 'data/labeled_dataset_repos.xlsx'
-n_epoch = 5
+n_epoch = 3
 k_folds = 2 #has to be at least 2
 learning_rate = 0.001 #0.001
 figure_output = 'C:/Users/const/Documents/Bachelorarbeit/training_testing_plot'
 threshold = 0.5 #value above which label is considered to be predicted by model
-save_classification_reports = 'classification_reports/plot_pipe.txt'
-experiment_name = 'plot_pipe'
+save_classification_reports = 'classification_reports/plot_plugin.txt'
+experiment_name = 'plot_plugin'
 
 def train():
         model.train()
@@ -163,11 +163,12 @@ for f, fold in enumerate(kfold.split(dataset)):
         plt_app_train = []
         plt_frame_train  = []
         plt_lib_train  = []
+        plt_plugin_train = []
         plt_test_loss = []
         plt_app_test = []
         plt_frame_test  = []
         plt_lib_test  = []
-        #add plugin here
+        plt_plugin_test = []
         mlflow.log_params(params)
 
         for epoch in range(n_epoch):
@@ -194,6 +195,9 @@ for f, fold in enumerate(kfold.split(dataset)):
             lib_train = train_rep_dict['Library']
             lib_f1_train = lib_train['f1-score']
             plt_lib_train.append(lib_f1_train)
+            plugin_train = train_rep_dict['Plugin']
+            plugin_f1_train = plugin_train['f1-score']
+            plt_plugin_train.append(plugin_f1_train)
 
             #for plotting test results
             plt_test_loss.append(test_loss)
@@ -206,6 +210,9 @@ for f, fold in enumerate(kfold.split(dataset)):
             lib_test = test_rep_dict['Library']
             lib_f1_test = lib_test['f1-score']
             plt_lib_test.append(lib_f1_test)
+            plugin_test = test_rep_dict['Plugin']
+            plugin_f1_test = plugin_test['f1-score']
+            plt_plugin_test.append(plugin_f1_test)
             
             #print results
             print(f'training loss: {train_loss}')
@@ -214,6 +221,7 @@ for f, fold in enumerate(kfold.split(dataset)):
             print(f'f1-score of application during testing: {app_f1_test}')
             print(f'f1-score of framework during testing: {frame_f1_test}')
             print(f'f1-score of library during testing: {lib_f1_test}')
+            print(f'f1-score of plugin during testing: {plugin_f1_test}')
             av_test = test_rep_dict['weighted avg']
             f1_test = av_test['f1-score']
             print(f'weighted average of labels (f1-score) during testing: {f1_test}')
@@ -243,6 +251,7 @@ for f, fold in enumerate(kfold.split(dataset)):
         ax2.plot(plt_epoch, plt_app_train, 'r', label='Application')
         ax2.plot(plt_epoch, plt_frame_train, 'g', label='Framework')
         ax2.plot(plt_epoch, plt_lib_train, 'b', label='Library')
+        ax2.plot(plt_epoch, plt_plugin_train, 'y', label='Plugin')
         ax2.set(xlabel='epoch', ylabel='f1 score')
         plt.legend()
         plt.savefig(f'{figure_output}/fig_{f}_train.pdf', bbox_inches='tight')
@@ -256,6 +265,7 @@ for f, fold in enumerate(kfold.split(dataset)):
         ax2.plot(plt_epoch, plt_app_test, 'r', label='Application')
         ax2.plot(plt_epoch, plt_frame_test, 'g', label='Framework')
         ax2.plot(plt_epoch, plt_lib_test, 'b', label='Library')
+        ax2.plot(plt_epoch, plt_plugin_test, 'y', label='Plugin')
         ax2.set(xlabel='epoch', ylabel='f1 score')
         plt.legend()
         plt.savefig(f'{figure_output}/fig_{f}_test.pdf', bbox_inches='tight')
