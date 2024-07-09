@@ -9,7 +9,7 @@ The labels in the tool are not mutually exclusive and are multi-hot encoded.
 
 **labels**
 
-Application, Framework, Library
+Application, Framework, Library, Plugin
 
 **data**
 

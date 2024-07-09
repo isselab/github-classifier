@@ -1,4 +1,4 @@
 
 '''in this file are the graph labels defined, they are not mutually exclusive'''
 
-defined_labels = ['Application', 'Framework', 'Library']
+defined_labels = ['Application', 'Framework', 'Library', 'Plugin']

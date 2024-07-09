@@ -23,6 +23,8 @@ def multi_hot_encoding(graph_classes, graph_list):
             enc[1] = 1.0
         if label == 'Library':
             enc[2] = 1.0
+        if label == 'Plugin':
+            enc[3] = 1.0
         if ',' in label:
             multiple_labels = label.split(',')
             for m_label in multiple_labels:
@@ -32,5 +34,7 @@ def multi_hot_encoding(graph_classes, graph_list):
                     enc[1] = 1.0
                 if m_label == 'Library' or m_label == ' Library':
                     enc[2] = 1.0
+                if m_label == 'Plugin' or m_label == ' Plugin':
+                    enc[3] = 1.0
         enc_labels.append(enc)
     return enc_labels
