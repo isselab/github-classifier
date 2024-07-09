@@ -19,45 +19,59 @@ output_directory = 'D:/new_15_output'
 path_to_model = 'graph_classification_model.pt'
 
 if __name__ == '__main__':
-
+    
+    #check if gpu is available
     device = 'cuda' if torch.cuda.is_available() else 'cpu'
-
+    
+    #create the graph dataset of the repositories
     try:
-        # create the graph dataset of the repositories
-        nodes, edges, edge_attributes = prepare_dataset(repository_directory, output_directory, repository_list)
-        if nodes is not None and edges is not None and edge_attributes is not None:
-            #load trained graph convolutional network model
-            model = torch.load(path_to_model)
-            model.eval() #in pytorch doc!!
-            print(model)
-           # print(nodes, nodes.size())
-           # print(edges, edges.size())
+        nodes, edges, edge_attributes = prepare_dataset(repository_directory, output_directory)
+    except Exception as e:
+        print(e)
+    
+    #load trained graph convolutional network model
+    print('---load GCN model---')
+    model = torch.load(path_to_model)
+    model.eval()
+    if device == 'cuda':
+        model = model.to(device)
+    
+    #classify only one repository
+    if nodes is not None and edges is not None and edge_attributes is not None:
+            
             if device == 'cuda':
-                nodes.to(device)
-                edges.to(device)
-                edge_attributes.to(device)
-            output = model(nodes, edges, edge_attributes) #complains about missing batch?
-            print(output)
-    except Exception as e:
-        print(e)
+                nodes = nodes.to(device)
+                edges = edges.to(device)
+                edge_attributes = edge_attributes.to(device)
 
-    print('----------------load dataset------------------')
-    try:
-        dataset = RepositoryDataset(f'{output_directory}/csv_files')
-        print('Dataset size: ')
-        print(dataset.__len__())
-        print('Number of classes: ')
-        print(dataset.num_classes)
-       # model = torch.load(path_to_model)
-        #model.eval()
-        #for graph in dataset:
-            #if device == 'cuda':
-                #graph.x.to(device)
-                #graph.edge_index.to(device)
-                #graph.edge_attributes.to(device)
-            #output = model(graph.x, graph.edge_index, graph.edge_attributes) #how to save output? --> necessary to save it?
-            #print(output) #maybe new func to get graph name?
-    except Exception as e:
-        print(e)
-        print('The dataset cannot be loaded.')
+            output = model(nodes, edges, edge_attributes)
+            output = output.cpu().detach().numpy()
+            output = (output > 0.5) #threshold for when label is considered predicted, model is trained with threshold 0.5!
+            print('Labels [Application, Framework, Library, Plugin]:')
+            print(f'Prediction: {output}')
+    
+    #classify multiple repositories with custom dataset
+    if nodes is None and edges is None and edge_attributes is None:
+        print('----------------load dataset------------------')
+        try:
+            #load dataset
+            dataset = RepositoryDataset(f'{output_directory}/csv_files')
+            print('Dataset size: ')
+            print(dataset.__len__())
+            print('Number of classes: ')
+            print(dataset.num_classes)
+        except Exception as e:
+            print(e)
 
+        for i, item in enumerate(dataset.graph_names):
+            graph = dataset.__getitem__(i)
+            print(dataset.graph_names[i])
+            if device == 'cuda':
+                graph.x = graph.x.to(device)
+                graph.edge_index = graph.edge_index.to(device)
+                graph.edge_attr = graph.edge_attr.to(device)
+            output = model(graph.x, graph.edge_index, graph.edge_attr)
+            output = output.cpu().detach().numpy()
+            output = (output > 0.5) #threshold for when label is considered predicted, model is trained with threshold 0.5!
+            print('Labels [Application, Framework, Library, Plugin]:')
+            print(f'Prediction: {output}')

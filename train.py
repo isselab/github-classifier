@@ -15,13 +15,13 @@ from sklearn.metrics import classification_report
 #repository_directory = 'D:/labeled_dataset_repos'  #downloaded github repositories
 output_directory = 'D:/labeled_repos_output'
 labels = 'data/labeled_dataset_repos.xlsx'
-n_epoch = 15
+n_epoch = 5
 k_folds = 2 #has to be at least 2
-learning_rate = 0.001
+learning_rate = 0.001 #0.001
 figure_output = 'C:/Users/const/Documents/Bachelorarbeit/training_testing_plot'
 threshold = 0.5 #value above which label is considered to be predicted by model
-save_classification_reports = 'classification_reports/plot_train.txt'
-experiment_name = 'plot_train'
+save_classification_reports = 'classification_reports/plot_pipe.txt'
+experiment_name = 'plot_pipe'
 
 def train():
         model.train()
@@ -167,6 +167,7 @@ for f, fold in enumerate(kfold.split(dataset)):
         plt_app_test = []
         plt_frame_test  = []
         plt_lib_test  = []
+        #add plugin here
         mlflow.log_params(params)
 
         for epoch in range(n_epoch):

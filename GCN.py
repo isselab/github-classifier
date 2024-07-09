@@ -13,8 +13,9 @@ class GCN(torch.nn.Module):
         self.conv3 = GATConv(hidden_channels, num_classes)
 
     '''x=[N, 1] N=number of nodes, x is feature vector
-       edge_index=[2, E] E=number of edges, edge_index is adjacency list'''
-    def forward(self, x, edge_index, edge_attr, batch):  # runs single iteration of a forward pass
+       edge_index=[2, E] E=number of edges, edge_index is adjacency list,
+       edge_attr=[E, 17] are edge attributes'''
+    def forward(self, x, edge_index, edge_attr, batch=None):  #runs single iteration of a forward pass
         x = self.conv1(x, edge_index, edge_attr)
         x = x.relu()  #relu for non-linearity
         x = self.conv2(x, edge_index, edge_attr)
@@ -22,10 +23,10 @@ class GCN(torch.nn.Module):
         x = self.conv3(x, edge_index, edge_attr)
         x = x.relu()
 
-        # readout layer
+        #readout layer
         x = global_mean_pool(x, batch)
 
-        # dropout for regularization
+        #dropout for regularization
         x = F.dropout(x, p=0.5, training=self.training)
         #sigmoid activation function for multi-label
         x = F.sigmoid(x)

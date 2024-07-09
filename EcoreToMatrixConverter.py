@@ -47,9 +47,9 @@ class EcoreToMatrixConverter:
         if write_in_file is True:
             if output_folder is not None:
                 self.write_csv(output_folder, output_name)
-                print(f'{output_name} \n')
             else:
                 print('output directory is required!')
+        print(f'{output_name} \n')
  
     '''returns sparse matrix containing the node types'''
     def get_node_matrix(self):

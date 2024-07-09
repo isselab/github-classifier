@@ -118,7 +118,12 @@ def prepare_dataset(repository_directory, output_directory=None, repository_list
 
     #create output directory
     if write_in_file is True:
-        create_output_folders(output_directory)
+        try:
+            create_output_folders(output_directory)
+        except Exception as e:
+            print(e)
+            print('Output directory is required!')
+            exit() #exit program because of missing directory
         #create pool for multiprocessing/parallelisation
         repo_multiprocess = []
         for repository in repositories:
