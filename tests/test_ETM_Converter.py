@@ -1,4 +1,16 @@
 import unittest
+import sys
+import os
+ 
+#getting the name of the directory where this file is
+current = os.path.dirname(os.path.realpath(__file__))
+ 
+#getting the parent directory name where the current directory is
+parent = os.path.dirname(current)
+ 
+#adding the parent directory to the sys.path.
+sys.path.append(parent)
+
 from AstToEcoreConverter import ProjectEcoreGraph
 from pyecore.resources import ResourceSet
 from NodeFeatures import NodeTypes
@@ -11,7 +23,7 @@ the hashed node names have their own test, and edge attributes are added and tes
 class TestETMConv(unittest.TestCase):
 
     def test_package(self):
-        repo = 'tests/unit_tests/test_package'
+        repo = 'unit_tests/test_package'
         resource_set = ResourceSet()
         graph = ProjectEcoreGraph(resource_set, repo, False)
         ecore_graph = graph.get_graph()
@@ -42,7 +54,7 @@ class TestETMConv(unittest.TestCase):
         self.assertEqual(enc_node_features[0][7], 0.0, 'parameter node set in encoding')
 
     def test_subpackage(self):
-        repo = 'tests/unit_tests/test_subpackage'
+        repo = 'unit_tests/test_subpackage'
         resource_set = ResourceSet()
         graph = ProjectEcoreGraph(resource_set, repo, False)
         ecore_graph = graph.get_graph()
@@ -68,7 +80,7 @@ class TestETMConv(unittest.TestCase):
         self.assertEqual(edge_attributes[1], EdgeTypes.PARENT.value, 'parent package attribute is missing/wrong')
 
     def test_module(self):
-        repo = 'tests/unit_tests/test_module'
+        repo = 'unit_tests/test_module'
         resource_set = ResourceSet()
         graph = ProjectEcoreGraph(resource_set, repo, False)
         ecore_graph = graph.get_graph()
@@ -98,7 +110,7 @@ class TestETMConv(unittest.TestCase):
         self.assertEqual(enc_node_features[0][7], 0.0, 'parameter node set in encoding')
 
     def test_multiple_modules(self):
-        repo = 'tests/unit_tests/test_multiple_modules'
+        repo = 'unit_tests/test_multiple_modules'
         resource_set = ResourceSet()
         graph = ProjectEcoreGraph(resource_set, repo, False)
         ecore_graph = graph.get_graph()
@@ -120,7 +132,7 @@ class TestETMConv(unittest.TestCase):
         self.assertEqual(len(enc_node_features), 2, 'wrong number of encoded nodes')
 
     def test_module_in_package(self):
-        repo = 'tests/unit_tests/test_module_in_package'
+        repo = 'unit_tests/test_module_in_package'
         resource_set = ResourceSet()
         graph = ProjectEcoreGraph(resource_set, repo, False)
         ecore_graph = graph.get_graph()
@@ -146,7 +158,7 @@ class TestETMConv(unittest.TestCase):
         self.assertEqual(edge_attributes[1], EdgeTypes.NAMESPACE.value, 'attribute for edge module to package is wrong')
 
     def test_class(self):
-        repo = 'tests/unit_tests/test_class'
+        repo = 'unit_tests/test_class'
         resource_set = ResourceSet()
         graph = ProjectEcoreGraph(resource_set, repo, False)
         ecore_graph = graph.get_graph()
@@ -180,7 +192,7 @@ class TestETMConv(unittest.TestCase):
         self.assertEqual(enc_node_features[1][7], 0.0, 'parameter node set in encoding')
 
     def test_child_class(self):
-        repo = 'tests/unit_tests/test_child_class'
+        repo = 'unit_tests/test_child_class'
         resource_set = ResourceSet()
         graph = ProjectEcoreGraph(resource_set, repo, False)
         ecore_graph = graph.get_graph()
@@ -208,7 +220,7 @@ class TestETMConv(unittest.TestCase):
         self.assertEqual(edge_attributes[2], EdgeTypes.PARENTCLASSES.value, 'attribute for edge child class to parent class is wrong')
 
     def test_method(self):
-        repo = 'tests/unit_tests/test_method'
+        repo = 'unit_tests/test_method'
         resource_set = ResourceSet()
         graph = ProjectEcoreGraph(resource_set, repo, False)
         ecore_graph = graph.get_graph()
@@ -244,7 +256,7 @@ class TestETMConv(unittest.TestCase):
 
     #test defining a method inside a class
     def test_method_in_class(self):
-        repo = 'tests/unit_tests/test_method_in_class'
+        repo = 'unit_tests/test_method_in_class'
         resource_set = ResourceSet()
         graph = ProjectEcoreGraph(resource_set, repo, False)
         ecore_graph = graph.get_graph()
@@ -269,7 +281,7 @@ class TestETMConv(unittest.TestCase):
 
     #test defining multiple methods inside a class
     def test_multiple_methods_in_class(self):
-        repo = 'tests/unit_tests/test_multiple_methods_in_class'
+        repo = 'unit_tests/test_multiple_methods_in_class'
         resource_set = ResourceSet()
         graph = ProjectEcoreGraph(resource_set, repo, False)
         ecore_graph = graph.get_graph()
@@ -295,7 +307,7 @@ class TestETMConv(unittest.TestCase):
         self.assertEqual(edges[2], [1, 3], 'class should have edge to second method definition')
         
     def test_parameter(self):
-        repo = 'tests/unit_tests/test_parameter'
+        repo = 'unit_tests/test_parameter'
         resource_set = ResourceSet()
         graph = ProjectEcoreGraph(resource_set, repo, False)
         ecore_graph = graph.get_graph()
@@ -326,7 +338,7 @@ class TestETMConv(unittest.TestCase):
         self.assertEqual(enc_node_features[4][7], 1.0, 'parameter node not set in encoding')
 
     def test_multiple_parameter(self):
-        repo = 'tests/unit_tests/test_multiple_parameter'
+        repo = 'unit_tests/test_multiple_parameter'
         resource_set = ResourceSet()
         graph = ProjectEcoreGraph(resource_set, repo, False)
         ecore_graph = graph.get_graph()
@@ -353,7 +365,7 @@ class TestETMConv(unittest.TestCase):
 
     #test call of method by another method, both in same module
     def test_module_internal_method_call(self):
-        repo = 'tests/unit_tests/test_module_internal_method_call'
+        repo = 'unit_tests/test_module_internal_method_call'
         resource_set = ResourceSet()
         graph = ProjectEcoreGraph(resource_set, repo, False)
         ecore_graph = graph.get_graph()
@@ -384,7 +396,7 @@ class TestETMConv(unittest.TestCase):
  
     #test importing a method from another module in the repo
     def test_internal_method_imports(self):
-        repo = 'tests/unit_tests/test_internal_method_imports'
+        repo = 'unit_tests/test_internal_method_imports'
         resource_set = ResourceSet()
         graph = ProjectEcoreGraph(resource_set, repo, False)
         ecore_graph = graph.get_graph()
@@ -414,7 +426,7 @@ class TestETMConv(unittest.TestCase):
     
     #test importing a method from a class in another module in the repo
     def test_internal_class_imports(self):
-        repo = 'tests/unit_tests/test_internal_class_imports'
+        repo = 'unit_tests/test_internal_class_imports'
         resource_set = ResourceSet()
         graph = ProjectEcoreGraph(resource_set, repo, False)
         ecore_graph = graph.get_graph()
@@ -446,7 +458,7 @@ class TestETMConv(unittest.TestCase):
     
     #test calling a function from an imported module from another package
     def test_internal_method_imports_package(self):
-        repo = 'tests/unit_tests/test_internal_method_imports_package'
+        repo = 'unit_tests/test_internal_method_imports_package'
         resource_set = ResourceSet()
         graph = ProjectEcoreGraph(resource_set, repo, False)
         ecore_graph = graph.get_graph()
@@ -471,7 +483,7 @@ class TestETMConv(unittest.TestCase):
     
     #test calling a function from an imported class from another package
     def test_internal_method_class_imports_package(self):
-        repo = 'tests/unit_tests/test_internal_method_class_imports_package'
+        repo = 'unit_tests/test_internal_method_class_imports_package'
         resource_set = ResourceSet()
         graph = ProjectEcoreGraph(resource_set, repo, False)
         ecore_graph = graph.get_graph()
@@ -498,7 +510,7 @@ class TestETMConv(unittest.TestCase):
     
     #test call of method in a class by another method not in the class, both in same module
     def test_module_internal_class_call(self):
-        repo = 'tests/unit_tests/test_module_internal_class_call'
+        repo = 'unit_tests/test_module_internal_class_call'
         resource_set = ResourceSet()
         graph = ProjectEcoreGraph(resource_set, repo, False)
         ecore_graph = graph.get_graph()
@@ -525,7 +537,7 @@ class TestETMConv(unittest.TestCase):
     
     #test call of method in a class by another method, both in same class
     def test_class_internal_method_call(self):
-        repo = 'tests/unit_tests/test_class_internal_method_call'
+        repo = 'unit_tests/test_class_internal_method_call'
         resource_set = ResourceSet()
         graph = ProjectEcoreGraph(resource_set, repo, False)
         ecore_graph = graph.get_graph()
@@ -552,7 +564,7 @@ class TestETMConv(unittest.TestCase):
 
     #test call for method in multiple packages(subpackage)
     def test_internal_method_imports_multiple_packages(self):
-        repo = 'tests/unit_tests/test_internal_method_imports_multiple_packages'
+        repo = 'unit_tests/test_internal_method_imports_multiple_packages'
         resource_set = ResourceSet()
         graph = ProjectEcoreGraph(resource_set, repo, False)
         ecore_graph = graph.get_graph()
@@ -583,7 +595,7 @@ class TestETMConv(unittest.TestCase):
 
     #test call for method in class in multiple packages(subpackage)
     def test_internal_method_class_imports_multiple_packages(self):
-        repo = 'tests/unit_tests/test_internal_method_class_imports_multiple_packages'
+        repo = 'unit_tests/test_internal_method_class_imports_multiple_packages'
         resource_set = ResourceSet()
         graph = ProjectEcoreGraph(resource_set, repo, False)
         ecore_graph = graph.get_graph()
@@ -616,7 +628,7 @@ class TestETMConv(unittest.TestCase):
 
     #test importing external library, one module, one method   
     def test_call_external_library(self):
-        repo = 'tests/unit_tests/test_call_external_library'
+        repo = 'unit_tests/test_call_external_library'
         resource_set = ResourceSet()
         graph = ProjectEcoreGraph(resource_set, repo, False)
         ecore_graph = graph.get_graph()
@@ -647,7 +659,7 @@ class TestETMConv(unittest.TestCase):
 
     #test importing multiple packages/subpackages from external library
     def test_call_external_library_submodule(self):
-        repo = 'tests/unit_tests/test_call_external_library_submodule'
+        repo = 'unit_tests/test_call_external_library_submodule'
         resource_set = ResourceSet()
         graph = ProjectEcoreGraph(resource_set, repo, False)
         ecore_graph = graph.get_graph()
@@ -693,7 +705,7 @@ class TestETMConv(unittest.TestCase):
 
     #test importing class with a method (external libraries)
     def test_call_external_library_class(self):
-        repo = 'tests/unit_tests/test_call_external_library_class'
+        repo = 'unit_tests/test_call_external_library_class'
         resource_set = ResourceSet()
         graph = ProjectEcoreGraph(resource_set, repo, False)
         ecore_graph = graph.get_graph()
@@ -726,7 +738,7 @@ class TestETMConv(unittest.TestCase):
 
     #test importing class with multiple methods (external libraries)
     def test_call_external_library_class_multiple_methods(self):
-        repo = 'tests/unit_tests/test_call_external_library_class_multiple_methods'
+        repo = 'unit_tests/test_call_external_library_class_multiple_methods'
         resource_set = ResourceSet()
         graph = ProjectEcoreGraph(resource_set, repo, False)
         ecore_graph = graph.get_graph()
@@ -763,7 +775,7 @@ class TestETMConv(unittest.TestCase):
 
     #test importing multiple methods in one module (external libraries)
     def test_call_external_library_multiple_methods(self):
-        repo = 'tests/unit_tests/test_call_external_library_multiple_methods'
+        repo = 'unit_tests/test_call_external_library_multiple_methods'
         resource_set = ResourceSet()
         graph = ProjectEcoreGraph(resource_set, repo, False)
         ecore_graph = graph.get_graph()
@@ -800,7 +812,7 @@ class TestETMConv(unittest.TestCase):
 
     #test imported packages (and subpackages) with multiple modules (external libraries)
     def test_call_external_library_multiple_modules_same_package(self):
-        repo = 'tests/unit_tests/test_call_external_library_multiple_modules_same_package'
+        repo = 'unit_tests/test_call_external_library_multiple_modules_same_package'
         resource_set = ResourceSet()
         graph = ProjectEcoreGraph(resource_set, repo, False)
         ecore_graph = graph.get_graph()
@@ -846,7 +858,7 @@ class TestETMConv(unittest.TestCase):
 
     #test imported packages with multiple subpackages (external libraries)
     def test_call_external_library_multiple_subpackages(self):
-        repo = 'tests/unit_tests/test_call_external_library_multiple_subpackages'
+        repo = 'unit_tests/test_call_external_library_multiple_subpackages'
         resource_set = ResourceSet()
         graph = ProjectEcoreGraph(resource_set, repo, False)
         ecore_graph = graph.get_graph()
@@ -902,7 +914,7 @@ class TestETMConv(unittest.TestCase):
 
     #test if hashed node names exist, are the right number, and are zipped with node type into one array
     def test_hashed_names(self):
-        repo = 'tests/unit_tests/test_hashed_names'
+        repo = 'unit_tests/test_hashed_names'
         resource_set = ResourceSet()
         graph = ProjectEcoreGraph(resource_set, repo, False)
         ecore_graph = graph.get_graph()

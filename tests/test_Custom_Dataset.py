@@ -1,12 +1,24 @@
+import sys
+import os
+ 
+#getting the name of the directory where this file is
+current = os.path.dirname(os.path.realpath(__file__))
+ 
+#getting the parent directory name where the current directory is
+parent = os.path.dirname(current)
+ 
+#adding the parent directory to the sys.path.
+sys.path.append(parent)
+
 from CustomDataset import RepositoryDataset
 import unittest
 
 '''the dataset loaded here consists of the same unit tests as the other tests, but for the purpose 
-of testing loading the dataset, the output of the converters were saved in files,
+of testing to load the dataset, the output of the converters were saved in files,
 the tests checking the dimension of the graph components also ensure that they can be accessed at all'''
 
 output_directory = 'testing' #path to directory containing xmi and csv files of the unit tests
-labels = 'testing.xlsx'
+labels = 'testing.xlsx' #exemplary labels to test loading
 
 class TestCustomDataset(unittest.TestCase):
 

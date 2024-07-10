@@ -2,9 +2,10 @@
 
 **short description**
 
-The unit tests test_ATE_Converter.py, test_ETM_Converter.py, and test_Custom_Dataset.py in this folder have to be moved to the same directory as the Pipeline and its components for execution.
-It is assumed that the unit_tests remain in this folder, otherwise the paths in the different testing functions will have to be manually adjusted.
-
+The unit tests test_ATE_Converter.py, test_ETM_Converter.py, and test_Custom_Dataset.py are for testing the basic functionality of the two converters and loading the dataset.
+Due to the arbitrariness of real-world software repositories, the unit tests do not cover every case encountered there.
+It is assumed that the unit_tests remain in this folder, otherwise the paths in the different testing functions will have to be manually adjusted, or some tests will fail.
+Since Basic.ecore is not a python module, and the ATE-Converter expects the file to be in the same directory as the current file calling the converter, the Basic.ecore file is in this test folder as well.
 
 **requirements**
 
