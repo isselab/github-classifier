@@ -46,14 +46,6 @@ def train():
             output = model(graph.x, graph.edge_index, graph.edge_attr, graph.batch)
             loss_train = criterion(output, graph.y) #graph.y is label
 
-            #to free up memory in gpu
-            #if device == 'cuda':
-                #graph.x = graph.x.to('cpu')
-                #graph.edge_index = graph.edge_index.to('cpu')
-                #graph.edge_attr = graph.edge_attr.to('cpu')
-                #graph.y = graph.y.to('cpu')
-                #graph.batch = graph.batch.to('cpu')
-
             #backpropagation
             optimizer.zero_grad()
             loss_train.backward()
@@ -85,14 +77,6 @@ def test(loader):
             loss = criterion(output, graph.y)
             loss_test += loss.item()
             total += len(loader)
-            
-            #to free up memory in gpu, useless :(
-            #if device == 'cuda':
-                #graph.x = graph.x.to('cpu')
-               # graph.edge_index = graph.edge_index.to('cpu')
-                #graph.edge_attr = graph.edge_attr.to('cpu')
-                #graph.y = graph.y.to('cpu')
-                #graph.batch = graph.batch.to('cpu')
 
             output = output.cpu().detach().numpy()
             graph.y = graph.y.cpu().detach().numpy()
