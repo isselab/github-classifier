@@ -115,7 +115,7 @@ except Exception as e:
     print(e)
     print('Dataset cannot be loaded.')
 
-#device = 'cuda' if torch.cuda.is_available() else 'cpu'
+device = 'cuda' if torch.cuda.is_available() else 'cpu'
 device = 'cpu' #to avoid out of memory error with gpu
 
 model = GCN(dataset.num_node_features, dataset.num_classes, hidden_channels=32)
