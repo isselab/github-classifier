@@ -413,8 +413,8 @@ class ProjectEcoreGraph:
     '''check_list contains all classes with method defs that are created during conversion.
     They are compared to the classes with meth defs found in modules in the type graph at the end,
     those not found need to be appended to a module, otherwise the meth defs are missing.
-    Entire modules are missing! (because only .py files processed!?) They are created and appended to 
-    their packages (also created when missing)'''
+    Entire modules are missing! Perhaps because only .py files are processed. They are created and appended to 
+    their packages, which are also created when they are ot in the type graph.'''
     def check_for_missing_nodes(self):
         #check if every created TClass node is in type graph
         classes_found = []
