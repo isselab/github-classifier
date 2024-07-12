@@ -2,7 +2,9 @@ from CustomDataset import RepositoryDataset
 from Pipeline import prepare_dataset
 import torch
 
-'''prepare_dataset: repository list is optional parameter, if you want to download the repositories automatically;
+'''this is for repositories from the dataset classifyhub
+
+    prepare_dataset: repository list is optional parameter, if you want to download the repositories automatically;
     output_directory is required when more than one repository is going to be converted,
     if there is only one repository the output of the converter is saved in return variables and can be
     piped into the gcn as input without needing to load the data from files
@@ -12,12 +14,9 @@ import torch
     
     if you want to train the gcn, please use train.py, this file is for using the trained tool'''
 
-#repository_list = '../labeled_dataset_repos.xlsx'
-#repository_directory = 'D:/labeled_dataset_repos'
-#output_directory = 'D:/labeled_repos_output'
-repository_list = 'data/new_15.xlsx'
-repository_directory = 'D:/new_15' #path to directory containing the repositories you want to classify
-output_directory = 'D:/new_15_output'
+repository_directory = 'D:/classifyhub_dataset_repos'  #downloaded github repositories
+output_directory = 'D:/classifyhub_converted_output'
+labels = 'data/classifyhub-dataset.xlsx'
 path_to_model = 'graph_classification_model.pt' #trained classification model
 
 if __name__ == '__main__':

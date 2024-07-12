@@ -101,10 +101,10 @@ def test(loader):
         return loss_test/total, class_report, report_dict
 
 #create the graph dataset of the repositories
-try:
-    prepare_dataset(repository_directory, output_directory, labels)
-except Exception as e:
-    print(e)
+#try:
+   # nodes, edges, edge_attributes = prepare_dataset(repository_directory, output_directory)
+#except Exception as e:
+    #print(e)
 
 print('--------------load dataset---------------')
 

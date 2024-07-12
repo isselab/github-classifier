@@ -7,14 +7,21 @@ This repository contains a deep-learning based classification tool for Software 
 If you want to train the tool with different labels, replace the current labels with your own (or add them to the labels) in GraphClasses.py and in function 'multi_hot_encoding' in Encoder.py. 
 The labels in the tool are not mutually exclusive and are multi-hot encoded.
 
+Currently, the tool only processes python files.
+
+This feature branch is for testing the tool with the dataset from classifyhub.
+
 **labels**
 
-Application, Framework, Library, Plugin
+Dev, Edu, Hw, Other
+
+The labels Data, Docs, and Web are excluded because we do not expect the repositories belonging to these
+classes to contain any python files.
 
 **data**
 
-Dataset with python software repositories from GitHub, all with a dependency on at least one ML library.
-The labeled repositories the tool is trained with are in data/labeled_dataset_repos.xlsx.
+Dataset with software repositories from GitHub. The dataset is from classyhub.
+The labeled repositories the tool is trained with are in data/classifyhub-dataset.xlsx.
 
 **requirements**
 
