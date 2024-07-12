@@ -7,6 +7,8 @@ This repository contains a deep-learning based classification tool for Software 
 If you want to train the tool with different labels, replace the current labels with your own (or add them to the labels) in GraphClasses.py and in function 'multi_hot_encoding' in Encoder.py. 
 The labels in the tool are not mutually exclusive and are multi-hot encoded.
 
+Currently, the tool only processes python files.
+
 **labels**
 
 Application, Framework, Library, Plugin

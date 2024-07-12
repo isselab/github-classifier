@@ -12,8 +12,10 @@ import numpy as np
 from GraphClasses import defined_labels
 from sklearn.metrics import classification_report
 
+'''please prepare the dataset you want to train the tool with by using prepareDataset.py'''
+
 #repository_directory = 'D:/labeled_dataset_repos'  #downloaded github repositories
-output_directory = 'D:/labeled_repos_output'
+output_directory = 'D:/labeled_repos_output' #path to the folder containing the converted repositories
 labels = 'data/labeled_dataset_repos.xlsx'
 n_epoch = 30
 k_folds = 3 #has to be at least 2
@@ -102,7 +104,7 @@ def test(loader):
 
 #create the graph dataset of the repositories
 #try:
-   # prepare_dataset(repository_directory, output_directory)
+   # nodes, edges, edge_attributes = prepare_dataset(repository_directory, output_directory)
 #except Exception as e:
    # print(e)
 
