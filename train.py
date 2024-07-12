@@ -17,7 +17,7 @@ output_directory = 'D:/labeled_repos_output'
 labels = 'data/labeled_dataset_repos.xlsx'
 n_epoch = 30
 k_folds = 3 #has to be at least 2
-learning_rate = 0.01 #0.001
+learning_rate = 0.001
 figure_output = 'C:/Users/const/Documents/Bachelorarbeit/training_testing_plot'
 threshold = 0.5 #value above which label is considered to be predicted by model
 save_classification_reports = 'classification_reports/train_with_130_50_epochs_4.txt'
@@ -100,7 +100,7 @@ def test(loader):
 
         return loss_test/total, class_report, report_dict
 
-#create the graph dataset of the repositories, already done
+#create the graph dataset of the repositories
 #try:
    # prepare_dataset(repository_directory, output_directory)
 #except Exception as e:
@@ -133,7 +133,7 @@ criterion = torch.nn.MultiLabelSoftMarginLoss()
 mlflow.create_experiment(experiment_name)
 mlflow.set_experiment(experiment_name)
 
-#k fold cross validation
+#k-fold cross validation
 kfold = KFold(n_splits=k_folds, shuffle=True)
 
 #for classification reports
@@ -144,7 +144,7 @@ best_avg = - np.inf
 
 #training loop
 for f, fold in enumerate(kfold.split(dataset)):
-    # split into train and testset, this is only for training the tool
+    #split into train and testset
     trainset, testset = random_split(dataset, [0.9, 0.1])
     print(f'size of train dataset: {len(trainset)}, test dataset: {len(testset)}')
 

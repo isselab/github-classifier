@@ -35,9 +35,10 @@ def download_repositories(repository_directory, repository_list):
         url = object.get('html_url')
         os.system(f'git clone {url}')
 
-    #change working directory back to github-classifier, otherwise cannot load resources from there
+    #change working directory back to github-classifier, otherwise cannot load resources from there and run tool
     os.chdir(working_directory)
     
+'''convert repository into type graph'''    
 def create_ecore_graphs(repository, write_in_file, output_directory=None):
     skip_counter = 0
     resource_set = ResourceSet()
@@ -69,6 +70,7 @@ def create_ecore_graphs(repository, write_in_file, output_directory=None):
     else:
         return None
 
+'''convert type graph into three matrices'''
 def create_matrix_structure(write_in_file, xmi_file=None, ecore_graph=None, output_directory=None):
     skip_xmi = 0
     
@@ -98,7 +100,7 @@ def create_matrix_structure(write_in_file, xmi_file=None, ecore_graph=None, outp
         return None, None, None
     
 def parallel_processing(func, repository_list):
-    pool = Pool() #number of processes: return of os.cpu_count()
+    pool = Pool() #number of processes is return value of os.cpu_count()
     pool.starmap(func, repository_list)
     
 def prepare_dataset(repository_directory, output_directory=None, repository_list=None):
@@ -123,22 +125,22 @@ def prepare_dataset(repository_directory, output_directory=None, repository_list
         except Exception as e:
             print(e)
             print('Output directory is required!')
-            exit() #exit program because of missing directory
+            exit() #exit program because of missing output directory
         #create pool for multiprocessing/parallelisation
         repo_multiprocess = []
         for repository in repositories:
             current_directory = os.path.join(repository_directory, repository)
             repo_multiprocess.append((current_directory, write_in_file, output_directory))
 
-    print('--convert repositories into ecore metamodels--')
-    #convert repositories into ecore metamodels
+    print('---convert repositories into type graphs---')
+    #convert repositories into type graphs
     if write_in_file is True:
         parallel_processing(create_ecore_graphs, repo_multiprocess)
     else:
         single_directory = os.path.join(repository_directory, repositories[0])
         ecore_graph = create_ecore_graphs(single_directory, write_in_file)
     
-    print('---convert ecore graphs to matrix structure---')
+    print('---convert type graphs into three matrices---')
     #load xmi instance and convert them to a matrix structure for the gcn
     if write_in_file is True:
         list_xmi_files = os.listdir(f'{output_directory}/xmi_files')
@@ -148,7 +150,8 @@ def prepare_dataset(repository_directory, output_directory=None, repository_list
         parallel_processing(create_matrix_structure, xmi_multiprocess)
     else:
         node_features, adj_list, edge_attr = create_matrix_structure(write_in_file, None, ecore_graph)
-
+    
+    #if only one repository is converted for classification, adjust data format needed by the gcn
     if node_features is not None and adj_list is not None and edge_attr is not None:
         node_features = convert_hashed_names_to_float(node_features)
         adj_list = convert_list_to_longtensor(adj_list)

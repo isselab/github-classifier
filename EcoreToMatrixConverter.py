@@ -12,10 +12,10 @@ class EcoreToMatrixConverter:
         else:
             self.typegraph_root = resource
 
-        self.node_matrix = [] #contains feature node types
-        self.adjacency_list = [] #sparse edge matrix [node_id, node_id]
-        self.node_dict = {}  #internal structure to set edges later, node_id as key, value is list with type, name, object name, that's connected by edge
-        self.node_count = 0  #to create id for nodes, keys in node_dict
+        self.node_matrix = [] #contains the feature node types
+        self.adjacency_list = [] #sparse edge matrix, entries: [node_id1, node_id2]
+        self.node_dict = {}  #internal structure to set edges later, node_id is key, value is list with type, name, and object name, that it is connected to with an edge
+        self.node_count = 0  #to create id for nodes
         self.hashed_names = [] #contains node names hashed with md5
         self.edge_attributes = [] #contains type of relationship between nodes
         self.library_flag = [] #flags for nodes in graph
@@ -33,6 +33,7 @@ class EcoreToMatrixConverter:
                        EdgeTypes.PARAMETERS.value, EdgeTypes.PREVIOUS.value, EdgeTypes.SIGNATURES.value, EdgeTypes.SOURCE.value, EdgeTypes.SUBPACKAGE.value, 
                        EdgeTypes.TARGET.value, EdgeTypes.PARENT.value, EdgeTypes.PARENTCLASSES.value]
         
+        #encode features to numerical values
         self.encoded_node_matrix = one_hot_encoding(node_labels, self.node_matrix)
         self.encoded_lib_flags = one_hot_encoding(library_flags, self.library_flag)
 
@@ -51,7 +52,7 @@ class EcoreToMatrixConverter:
                 print('output directory is required!')
         print(f'{output_name} \n')
  
-    '''returns sparse matrix containing the node types'''
+    '''returns sparse matrix containing the node types as strings'''
     def get_node_matrix(self):
         return self.node_matrix
     
@@ -59,11 +60,11 @@ class EcoreToMatrixConverter:
     def get_encoded_node_matrix(self):
         return self.encoded_node_matrix
     
-    '''returns node names hashed with sha 256, utf-8 encoded'''
+    '''returns node names hashed with md5, hexadecimal encoded'''
     def get_hashed_names(self):
         return self.hashed_names
     
-    '''returns flags for external libraries'''
+    '''returns flags for external libraries as strings'''
     def get_external_library_flags(self):
         return self.library_flag
     
@@ -75,11 +76,11 @@ class EcoreToMatrixConverter:
     def get_node_features(self):
         return self.node_features
 
-    '''returns sparse adjacency matrix, [node_id, node_id]'''
+    '''returns sparse edge matrix, E=[number of edges, 2]'''
     def get_adjacency_list(self):
         return self.adjacency_list
     
-    '''returns list of edge attributes'''
+    '''returns list of edge attributes as strings'''
     def get_edge_attributes(self):
         return self.edge_attributes
     
@@ -101,7 +102,7 @@ class EcoreToMatrixConverter:
         return combined_list
 
     '''this is the main function, that converts the nodes in the ecore graph into a matrix structure.
-    it saves the node types in a list, hashes the nodes names with md5 and saves the hex hash in a list,
+    It saves the node types in a list, hashes the node names with md5 and saves the hex hash in a list,
     and sets the library flags'''
     def convert_nodes(self, typegraph):
 
@@ -127,14 +128,14 @@ class EcoreToMatrixConverter:
             current_module = self.get_node(tmodule.location, NodeTypes.MODULE.value)
             if current_module is None:
                 self.node_matrix.append(NodeTypes.MODULE.value)
-                if '_ExternalLibrary' in tmodule.location: #cause of none type error
+                if '_ExternalLibrary' in tmodule.location:
                     self.library_flag.append('true')
                 else:
                     self.library_flag.append('false')
                 hashed_name = hashlib.md5(tmodule.location.encode('utf-8'))
                 self.hashed_names.append(hashed_name.hexdigest())
                 if tmodule.namespace is not None:
-                    self.node_dict[self.node_count] = [NodeTypes.MODULE.value, tmodule.location, NodeTypes.PACKAGE.value, tmodule.namespace.tName]  # name of TPackage object
+                    self.node_dict[self.node_count] = [NodeTypes.MODULE.value, tmodule.location, NodeTypes.PACKAGE.value, tmodule.namespace.tName]  #name of TPackage object
                 else:
                     self.node_dict[self.node_count] = [NodeTypes.MODULE.value, tmodule.location]
                 self.node_count += 1
@@ -249,7 +250,7 @@ class EcoreToMatrixConverter:
             current_subpackage = self.get_node_in_container(tsubpackage.tName, NodeTypes.PACKAGE.value, tpackage.tName, NodeTypes.PACKAGE.value)
             if current_subpackage is None:
                 self.node_matrix.append(NodeTypes.PACKAGE.value)
-                self.node_dict[self.node_count] = [NodeTypes.PACKAGE.value, tsubpackage.tName, NodeTypes.PACKAGE.value, tpackage.tName]  # save type and name for edge info
+                self.node_dict[self.node_count] = [NodeTypes.PACKAGE.value, tsubpackage.tName, NodeTypes.PACKAGE.value, tpackage.tName]  #save type and name for edge info
                 if '_ExternalLibrary' in tsubpackage.tName:
                     self.library_flag.append('true')
                 else:
@@ -260,8 +261,8 @@ class EcoreToMatrixConverter:
                 if hasattr(tsubpackage, 'subpackages'):
                     self.convert_subpackages_recursive(tsubpackage)
 
-    '''has only one attribute childclasses checking recursively will result 
-        in potential endless loop, without these child classes existing in the xmi file'''
+    #classes have only one attribute childClasses
+    #checking recursively will result in potential endless loop, without these child classes existing in the xmi file
     def convert_childClasses(self, tclass):
         for child in tclass.childClasses:
             self.node_matrix.append(NodeTypes.CLASS.value)
@@ -346,9 +347,9 @@ class EcoreToMatrixConverter:
                                 return node
         return None
 
-    '''this function sets the existing edges, it appends the node_ids of the nodes connected 
-    by an edge to the adjacency list, it saves the type of relationship between the nodes, 
-    e.g. "contains", in an extra list'''
+    '''sets the existing edges, it appends the node_ids of the nodes connected 
+    by an edge to the sparse edge matrix, it saves the type of relationship between the nodes, 
+    e.g. "contains", in an extra list "edge attributes"'''
     def convert_edges(self):
         for keys in self.node_dict:
             current_node = self.node_dict[keys]
@@ -465,7 +466,7 @@ class EcoreToMatrixConverter:
                         self.edge_attributes.append(EdgeTypes.TARGET.value)
                         self.adjacency_list.append([keys, find_key])
 
-    '''find number of node (key), name explicitly saved in current_node'''
+    '''find key of node, name explicitly saved in current_node'''
     def find_key_of_connected_node(self, type_string, current_node):
         for find_key in self.node_dict:
             find_node = self.node_dict[find_key]
@@ -474,7 +475,7 @@ class EcoreToMatrixConverter:
                     return find_key
         return None
 
-    '''find number of node (key), name not explicitly saved'''
+    '''find key of node, name not explicitly saved'''
     def find_connected_node(self, type_string, node_name):
         for find_key in self.node_dict:
             find_node = self.node_dict[find_key]
@@ -483,7 +484,7 @@ class EcoreToMatrixConverter:
                     return find_key
         return None
 
-    '''write graph in two csv files'''
+    '''write graph in three csv files'''
     def write_csv(self, output_folder, output_name):
         new_resource_nodes = open(f"{output_folder}/{output_name}_nodefeatures.csv", "w+")
         new_resource_edges = open(f"{output_folder}/{output_name}_A.csv", "w+")
@@ -498,7 +499,7 @@ class EcoreToMatrixConverter:
                     new_resource_nodes.write("%s" % item)
             new_resource_nodes.write("\n")
 
-        #edge is array with two entries [node_id, node_id]
+        #edge is array with two entries: [node_id1, node_id2]
         for edge in self.adjacency_list:
             edge_counter = 1
             for item in edge:

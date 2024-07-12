@@ -28,7 +28,7 @@ class RepositoryDataset(Dataset):
         
         self.check_dataset() #check if every graph can be loaded
 
-        # load labels for graphs in correct order and return them in tensor
+        #load labels for graphs in correct order and return them in tensor
         if hasattr(self, 'encoded_labels'):
             self.y = self.sort_labels()
             print(f'Number of Applications: {self.class_elements[0]}, Frameworks: {self.class_elements[1]}, Libraries: {self.class_elements[2]}, Plugins: {self.class_elements[3]}')
@@ -38,8 +38,8 @@ class RepositoryDataset(Dataset):
         size = len(self.graph_names)
         return size
 
-    '''fetches pair (sample, label) from the dataset at index position, indexing starts at 0
-    returns only graph in the dataset at index position, when dataset is not used for training and has no labels'''
+    '''fetches pair (sample, label) from the dataset at index position, indexing starts at 0,
+    when dataset is not used for training and has no labels only graph in the dataset at index position is returned'''
     def __getitem__(self, index):
         graph_name = self.graph_names[index]
         for g,graph in enumerate(self.graph_dir):
@@ -64,7 +64,9 @@ class RepositoryDataset(Dataset):
         if hasattr(self, 'edge_attr'):
             graph.edge_attr = self.edge_attr
         return graph
-
+    
+    '''sorts labels according to order of graphs, so the labels belonging to a graph share the same index position 
+    as the graph'''
     def sort_labels(self):
         label_list = list(self.encoded_labels)
         sorted = None
@@ -81,8 +83,8 @@ class RepositoryDataset(Dataset):
     
     '''takes directory path of excel file with labeled repositories as input and converts the 
         labeled dataset into a one hot encoded torch tensor/python list,
-        requirements for format: no empty rows in between and header names 'html_url'
-        and 'final type' for columns'''
+        requirements for format: no empty rows in between and header names 'html_url' for repo column
+        and 'final type' for label column'''
     def convert_labeled_graphs(self, labels):
         resource = pd.read_excel(labels)
         graph_labels = []
@@ -94,7 +96,7 @@ class RepositoryDataset(Dataset):
             url = object.get('html_url') #column header containing repository url
             repo_name = url.split('/')[-1]  #last element is repository name
             graph_names.append(repo_name)
-            type_label = object.get('final type') #column header wontaining label
+            type_label = object.get('final type') #column header containing label
             graph_labels.append(type_label)
         
         self.class_elements = self.count_class_elements(graph_labels) #count how many repos are in each class
@@ -125,8 +127,8 @@ class RepositoryDataset(Dataset):
         counted_elements = [app, frame, lib, plugin]
         return counted_elements
     
-    '''check if the graphs in the dataset can be loaded, if not, for example because a file is empty, 
-    the graph cannot be loaded and is removed from the dataset'''
+    '''checks if the graphs in the dataset can be loaded, if not, for example because a file is empty, 
+    the graph is removed from the dataset'''
     def check_dataset(self):
         for i, item in enumerate(self.graph_names):
             graph_name = self.graph_names[i]

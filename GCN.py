@@ -3,7 +3,7 @@ from torch_geometric.nn import GATConv
 from torch_geometric.nn import global_mean_pool
 import torch
 
-'''class GCN defines the architecture of the graph convolutional network'''
+'''defines the architecture of the graph convolutional network'''
 class GCN(torch.nn.Module):
     def __init__(self, num_node_features, num_classes, hidden_channels):
         super(GCN, self).__init__()
@@ -12,9 +12,9 @@ class GCN(torch.nn.Module):
         self.conv2 = GATConv(hidden_channels, hidden_channels)
         self.conv3 = GATConv(hidden_channels, num_classes)
 
-    '''x=[N, 1] N=number of nodes, x is feature vector
-       edge_index=[2, E] E=number of edges, edge_index is adjacency list,
-       edge_attr=[E, 17] are edge attributes'''
+    '''x is node feature matrix with shape x=[N, 11], N=number of nodes
+       edge_index is sparse edge matrix with shape edge_index=[2, E], E=number of edges
+       edge_attr is edge attribute matrix with shape edge_attr=[E, 17], E=number of edges'''
     def forward(self, x, edge_index, edge_attr, batch=None):  #runs single iteration of a forward pass
         x = self.conv1(x, edge_index, edge_attr)
         x = x.relu()  #relu for non-linearity

@@ -1,6 +1,6 @@
 from enum import Enum
 
-#programm entities in metamodel
+#node types in the type graph
 class NodeTypes(Enum):
     CALL = "TCall"
     CLASS = "TClass"

@@ -20,15 +20,15 @@ class ProjectEcoreGraph:
         self.graph = self.epackage.getEClassifier('TypeGraph')(tName=self.root_directory.split('/')[-1])
 
         #initialize internal structures
-        self.package_list = [] # entries [package_node, name, parent]
-        self.module_list = [] # entries [module_node, module_name]
+        self.package_list = [] #entries: [package_node, name, parent]
+        self.module_list = [] #entries: [module_node, module_name]
         self.current_module = None
-        self.instances = []  # entries [instance_name, class_name]
-        self.imports = []  # entries [module, alias]
-        self.class_list = []  # entries [class_node, name, module/None]
+        self.instances = []  #entries: [instance_name, class_name]
+        self.imports = []  #entries: [module, alias]
+        self.class_list = []  #entries: [class_node, name, module/None]
         self.classes_without_module = []
-        self.method_list = []  # entries [method_node, name, module_node]
-        self.check_list = [] # entries: class_node
+        self.method_list = []  #entries: [method_node, name, module_node]
+        self.check_list = [] #entries: class_node
         self.call_in_module = [] #entries: [caller_node_module, caller_node, called_function_name] both methods in the same module
         self.call_external_module = [] #entries: [imported instance, caller node]
         self.call_imported_library = [] #entries: [caller_node, imported_instance]
@@ -308,8 +308,8 @@ class ProjectEcoreGraph:
                 return lib[0]
         return None
     
-    '''sets calls for inside the repo imported objects, objects already exist 
-    because they are defined in the repo, but in different modules/packages'''
+    '''sets calls for within the repo imported objects, these objects already exist 
+    because they are defined in the repo, but are in different modules/packages'''
     def set_external_module_calls(self):
         for item in self.call_external_module:
             imported_instance = item[0]
@@ -414,7 +414,7 @@ class ProjectEcoreGraph:
     They are compared to the classes with meth defs found in modules in the type graph at the end,
     those not found need to be appended to a module, otherwise the meth defs are missing.
     Entire modules are missing! Perhaps because only .py files are processed. They are created and appended to 
-    their packages, which are also created when they are ot in the type graph.'''
+    their packages, which are also created when they are not in the type graph.'''
     def check_for_missing_nodes(self):
         #check if every created TClass node is in type graph
         classes_found = []
@@ -540,12 +540,12 @@ class ProjectEcoreGraph:
                 return module
         return None
     
-    '''appends modules at the end of the type graph/xmi file'''
+    '''appends modules to the type graph/xmi file after every python file has been processed'''
     def append_modules(self):
         for module in self.module_list:
             self.graph.modules.append(module[0])
 
-    '''this function parses the code of one source file into an ast and traverses it for conversion into a metamodel, 
+    '''parses the code of one source file into an AST and traverses it for conversion into a type graph, 
     the modules are created here and connected to a package, one module per file'''
     def process_file(self, path):
         path = path.replace('\\', '/')
@@ -559,7 +559,7 @@ class ProjectEcoreGraph:
         self.current_module_name = path_split[-1]
         self.module_list.append([self.current_module, self.current_module_name])
 
-        # necessary to create inheritance structure for classes
+        #necessary to create inheritance structure for classes
         for class_object in self.classes_without_module:
             for index, path_part in enumerate(path_split):
                 if class_object.tName == path_part:
@@ -567,15 +567,15 @@ class ProjectEcoreGraph:
                     if index == len(path_split) - 1:
                         for child in class_object.childClasses: 
                             self.current_module.contains.append(child)
-                    # check necessary! otherwise x not in list error for some repos
+                    #check necessary! otherwise x not in list error for some repos
                     if class_object in self.classes_without_module:
                         self.classes_without_module.remove(class_object)
                         class_object.delete()
 
-        # added errors='ignore' to fix encoding issues in some repositories ('charmap cannot decode byte..')
+        #added errors='ignore' to fix encoding issues in some repositories ('charmap cannot decode byte..')
         with open(path, 'r', errors='ignore') as file:
             code = file.read()
-        # added following to fix some invalid character and syntax errors
+        #added following to fix some invalid character and syntax errors
         code = code.replace('“', '"').replace('”', '"').replace("‘", "'").replace("’", "'").replace("»", ">>").replace("—", "-")
         tree = ast.parse(code)
         visitor = ASTVisitor(self)
@@ -585,20 +585,20 @@ class ProjectEcoreGraph:
         package_hierarchy = path.replace(f"{self.root_directory}/", '').split('/')[:-1]
         parent_package = None
         package_node = None
-        # first element is highest in package hierarchy
+        #first element is highest in package hierarchy
         for package_name in package_hierarchy:
             package_node = self.get_package_by_name_and_parent(package_name, parent_package)
             parent_package = package_node
         return package_node
     
-    '''this function creates TPackage objects, one package per folder in the repository,
-    and appends the package that is highest in hierarchy to the typegraph, the rest are subpackages'''
+    '''creates TPackage objects, one package per folder in the repository, and appends 
+    the package that is highest in hierarchy to the type graph, the rest are subpackages'''
     def get_package_by_name_and_parent(self, name, parent):
         for package_node in self.graph.packages:
             return_package = self.get_package_recursive(package_node, name, parent)
             if return_package is not None:
                 return return_package
-        my_package = self.check_package_list(name, parent)  # checks if subpackage already exists
+        my_package = self.check_package_list(name, parent)  #checks if subpackage already exists
         if my_package is not None:
             return my_package
         package_node = self.create_ecore_instance(NodeTypes.PACKAGE)
@@ -617,7 +617,7 @@ class ProjectEcoreGraph:
             return self.get_package_recursive(subpackage, name, package_node)
         return None
     
-    # this fixed the multiple subpackages
+    #this fixed the same subpackages being defined multiple times
     def check_package_list(self, package_name, parent):
         for package in self.package_list:
             if package_name == package[1]:
@@ -653,7 +653,8 @@ class ProjectEcoreGraph:
                         if child.tName == child_name:
                             return current_class[2] #return module of parent class
         return None
-
+    
+    '''creates classes and their inheritance structure'''
     def get_class_by_name(self, name, structure=None, create_if_not_found=True, module=None, move_to_module=True):
         if structure is None:
             structure = self.graph.classes
@@ -675,11 +676,11 @@ class ProjectEcoreGraph:
             else:
                 self.classes_without_module.append(class_node)
                 self.class_list.append([class_node, name, None])
-            structure.append(class_node)  #class appended to typegraph
+            structure.append(class_node)  #class appended to type graph
             return class_node
         return None
 
-    '''this function checks imported modules and classes (type = 0) 
+    '''checks imported modules and classes (type = 0) 
     and assigned instances (type = 1)'''
     def get_reference_by_name(self, name):
         first_name = name.split('.')[0]
@@ -719,6 +720,7 @@ class ProjectEcoreGraph:
                 return method_def
         return None
     
+    '''checks if TMethodDefinition object in module already exists'''
     def get_method_def_in_module(self, method_name, module):
         for object in module.contains:
             if object.eClass.name == NodeTypes.METHOD_DEFINITION.value:
@@ -740,6 +742,8 @@ class ProjectEcoreGraph:
                         return current_method[0]
         return None
     
+    '''for every TMethodDefinition object, TMethod and TMethodSignature objects are created,
+    the parameters in a function are converted here'''
     def create_method_signature(self, method_node, name, arguments):
         method_signature = self.create_ecore_instance(NodeTypes.METHOD_SIGNATURE)
         method = self.create_ecore_instance(NodeTypes.METHOD)
@@ -757,7 +761,7 @@ class ProjectEcoreGraph:
 
         method_node.signature = method_signature 
 
-        # for interal structure
+        #for interal structure
         module_node = self.get_current_module()
         self.method_list.append([method_node, name, module_node])
 
@@ -779,14 +783,12 @@ class ProjectEcoreGraph:
         resource.append(self.graph)
         resource.save()
 
-
-'''class ASTVisitor defines the visits of the different node types of the ast
+'''defines the visits of the different node types of the AST,
 ASTVisitor calls the functions of ProjectEcoreGraph to create ecore instances'''
-
 class ASTVisitor(ast.NodeVisitor):
     def __init__(self, graph_class):
         self.graph = graph_class.get_graph()
-        self.graph_class = graph_class  # ecore graph instance
+        self.graph_class = graph_class  #ProjectEcoreGraph instance
         self.current_method = None
         self.current_class = None
         self.current_indentation = 0
@@ -805,7 +807,8 @@ class ASTVisitor(ast.NodeVisitor):
                 self.graph_class.add_import(f"{node.module}.{name.name}", name.name)
             else:
                 self.graph_class.add_import(f"{node.module}.{name.name}", name.asname)
-
+    
+    '''creates inheritance structure for classes'''
     def create_inheritance_structure(self, node, child):
         base_node = None
         if isinstance(node, ast.Name):
@@ -924,7 +927,7 @@ class ASTVisitor(ast.NodeVisitor):
         #for calls within one module
         self.graph_class.call_in_module.append([self.current_module, caller_node, instance])
 
-        #for calls of imported instances, both custom def in repo and external libraries
+        #for calls of imported instances, both within repo and external libraries
         instance_from_graph, type = self.graph_class.get_reference_by_name(instance.replace(f".{instance.split('.')[-1]}", ''))
 
         #this is necessary to get all the called methods' names correctly

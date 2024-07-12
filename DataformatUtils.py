@@ -1,7 +1,7 @@
 import torch
 import numpy as np
 
-'''change the shape of the edge tensor to E=[2, number of edges]'''
+'''changes the shape of the edge tensor to E=[2, number of edges]'''
 def convert_edge_dim(edge_tensor):
     edge_tensor = edge_tensor.permute(1,0)
     return edge_tensor
@@ -14,6 +14,7 @@ def convert_list_to_longtensor(list):
     tensor = torch.LongTensor(np.array(list, dtype=int))
     return tensor
 
+'''converts the hex hashes to completely numerical values'''
 def convert_hashed_names_to_float(features):
     features = np.array(features)
     for h, hash in enumerate(features):

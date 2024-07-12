@@ -8,15 +8,17 @@ import torch
     piped into the gcn as input without needing to load the data from files
 
     RepositoryDataset: repository list is needed when using the dataset for training, the labels for
-    the graphs are loaded from that file, otherwise the graphs are loaded without labels'''
+    the graphs are loaded from that file, otherwise the graphs are loaded without labels
+    
+    if you want to train the gcn, please use train.py, this file is for using the trained tool'''
 
 #repository_list = '../labeled_dataset_repos.xlsx'
 #repository_directory = 'D:/labeled_dataset_repos'
 #output_directory = 'D:/labeled_repos_output'
 repository_list = 'data/new_15.xlsx'
-repository_directory = 'D:/new_15'
+repository_directory = 'D:/new_15' #path to directory containing the repositories you want to classify
 output_directory = 'D:/new_15_output'
-path_to_model = 'graph_classification_model.pt'
+path_to_model = 'graph_classification_model.pt' #trained classification model
 
 if __name__ == '__main__':
     
