@@ -12,16 +12,16 @@ import numpy as np
 from GraphClasses import defined_labels
 from sklearn.metrics import classification_report
 
-#repository_directory = 'D:/labeled_dataset_repos'  #downloaded github repositories
-output_directory = 'D:/labeled_repos_output'
-labels = 'data/labeled_dataset_repos.xlsx'
-n_epoch = 30
+repository_directory = 'D:/classifyhub_dataset_repos'  #downloaded github repositories
+output_directory = 'D:/classifyhub_converted_output'
+labels = 'data/classifyhub-dataset.xlsx'
+n_epoch = 100
 k_folds = 3 #has to be at least 2
 learning_rate = 0.001
-figure_output = 'C:/Users/const/Documents/Bachelorarbeit/training_testing_plot'
+figure_output = 'C:/Users/const/Documents/Bachelorarbeit/training_testing_plot_alt_data'
 threshold = 0.5 #value above which label is considered to be predicted by model
-save_classification_reports = 'classification_reports/train_with_130_50_epochs_4.txt'
-experiment_name = 'train_with_130_50_epochs_4'
+save_classification_reports = 'classification_reports/train_with_classifyhub.txt'
+experiment_name = 'train_with_classifyhub'
 
 def train():
         model.train()
@@ -101,10 +101,10 @@ def test(loader):
         return loss_test/total, class_report, report_dict
 
 #create the graph dataset of the repositories
-#try:
-   # prepare_dataset(repository_directory, output_directory)
-#except Exception as e:
-   # print(e)
+try:
+    prepare_dataset(repository_directory, output_directory, labels)
+except Exception as e:
+    print(e)
 
 print('--------------load dataset---------------')
 
@@ -116,7 +116,7 @@ except Exception as e:
     print('Dataset cannot be loaded.')
 
 device = 'cuda' if torch.cuda.is_available() else 'cpu'
-device = 'cpu' #to avoid out of memory error with gpu
+#device = 'cpu' #to avoid out of memory error with gpu
 
 model = GCN(dataset.num_node_features, dataset.num_classes, hidden_channels=32)
 
@@ -145,7 +145,7 @@ best_avg = - np.inf
 #training loop
 for f, fold in enumerate(kfold.split(dataset)):
     #split into train and testset
-    trainset, testset = random_split(dataset, [0.9, 0.1])
+    trainset, testset = random_split(dataset, [0.8, 0.2])
     print(f'size of train dataset: {len(trainset)}, test dataset: {len(testset)}')
 
     trainloader = DataLoader(trainset, batch_size=32, shuffle=True)
@@ -161,15 +161,15 @@ for f, fold in enumerate(kfold.split(dataset)):
     with mlflow.start_run():
         plt_epoch = []
         plt_train_loss = []
-        plt_app_train = []
-        plt_frame_train  = []
-        plt_lib_train  = []
-        plt_plugin_train = []
+        plt_dev_train = []
+        plt_edu_train  = []
+        plt_hw_train  = []
+        plt_other_train = []
         plt_test_loss = []
-        plt_app_test = []
-        plt_frame_test  = []
-        plt_lib_test  = []
-        plt_plugin_test = []
+        plt_dev_test = []
+        plt_edu_test  = []
+        plt_hw_test  = []
+        plt_other_test = []
         mlflow.log_params(params)
 
         for epoch in range(n_epoch):
@@ -187,42 +187,42 @@ for f, fold in enumerate(kfold.split(dataset)):
             #for plotting train results
             plt_epoch.append(epoch)
             plt_train_loss.append(train_loss)
-            app_train = train_rep_dict['Application']
-            app_f1_train = app_train['f1-score']
-            plt_app_train.append(app_f1_train)
-            frame_train = train_rep_dict['Framework']
-            frame_f1_train = frame_train['f1-score']
-            plt_frame_train.append(frame_f1_train)
-            lib_train = train_rep_dict['Library']
-            lib_f1_train = lib_train['f1-score']
-            plt_lib_train.append(lib_f1_train)
-            plugin_train = train_rep_dict['Plugin']
-            plugin_f1_train = plugin_train['f1-score']
-            plt_plugin_train.append(plugin_f1_train)
+            dev_train = train_rep_dict['Dev']
+            dev_f1_train = dev_train['f1-score']
+            plt_dev_train.append(dev_f1_train)
+            edu_train = train_rep_dict['Edu']
+            edu_f1_train = edu_train['f1-score']
+            plt_edu_train.append(edu_f1_train)
+            hw_train = train_rep_dict['Hw']
+            hw_f1_train = hw_train['f1-score']
+            plt_hw_train.append(hw_f1_train)
+            other_train = train_rep_dict['Other']
+            other_f1_train = other_train['f1-score']
+            plt_other_train.append(other_f1_train)
 
             #for plotting test results
             plt_test_loss.append(test_loss)
-            app_test = test_rep_dict['Application']
-            app_f1_test = app_test['f1-score']
-            plt_app_test.append(app_f1_test)
-            frame_test = test_rep_dict['Framework']
-            frame_f1_test = frame_test['f1-score']
-            plt_frame_test.append(frame_f1_test)
-            lib_test = test_rep_dict['Library']
-            lib_f1_test = lib_test['f1-score']
-            plt_lib_test.append(lib_f1_test)
-            plugin_test = test_rep_dict['Plugin']
-            plugin_f1_test = plugin_test['f1-score']
-            plt_plugin_test.append(plugin_f1_test)
+            dev_test = test_rep_dict['Dev']
+            dev_f1_test = dev_test['f1-score']
+            plt_dev_test.append(dev_f1_test)
+            edu_test = test_rep_dict['Edu']
+            edu_f1_test = edu_test['f1-score']
+            plt_edu_test.append(edu_f1_test)
+            hw_test = test_rep_dict['Hw']
+            hw_f1_test = hw_test['f1-score']
+            plt_hw_test.append(hw_f1_test)
+            other_test = test_rep_dict['Other']
+            other_f1_test = other_test['f1-score']
+            plt_other_test.append(other_f1_test)
             
             #print results
             print(f'training loss: {train_loss}')
             print(f'testing loss: {test_loss}')
             print('==============================================')
-            print(f'f1-score of application during testing: {app_f1_test}')
-            print(f'f1-score of framework during testing: {frame_f1_test}')
-            print(f'f1-score of library during testing: {lib_f1_test}')
-            print(f'f1-score of plugin during testing: {plugin_f1_test}')
+            print(f'f1-score of Dev during testing: {dev_f1_test}')
+            print(f'f1-score of Edu during testing: {edu_f1_test}')
+            print(f'f1-score of Hw during testing: {hw_f1_test}')
+            print(f'f1-score of Other during testing: {other_f1_test}')
             av_test = test_rep_dict['weighted avg']
             f1_test = av_test['f1-score']
             print(f'weighted average of labels (f1-score) during testing: {f1_test}')
@@ -249,10 +249,10 @@ for f, fold in enumerate(kfold.split(dataset)):
         fig.suptitle(f'Fold {f}')
         ax1.plot(plt_epoch, plt_train_loss, 'k', label='test loss')
         ax1.set(ylabel='train loss')
-        ax2.plot(plt_epoch, plt_app_train, 'r', label='Application')
-        ax2.plot(plt_epoch, plt_frame_train, 'g', label='Framework')
-        ax2.plot(plt_epoch, plt_lib_train, 'b', label='Library')
-        ax2.plot(plt_epoch, plt_plugin_train, 'y', label='Plugin')
+        ax2.plot(plt_epoch, plt_dev_train, 'r', label='Dev')
+        ax2.plot(plt_epoch, plt_edu_train, 'g', label='Edu')
+        ax2.plot(plt_epoch, plt_hw_train, 'b', label='Hw')
+        ax2.plot(plt_epoch, plt_other_train, 'y', label='Other')
         ax2.set(xlabel='epoch', ylabel='f1 score')
         plt.legend()
         plt.savefig(f'{figure_output}/fig_{f}_train.pdf', bbox_inches='tight')
@@ -263,10 +263,10 @@ for f, fold in enumerate(kfold.split(dataset)):
         fig.suptitle(f'Fold {f}')
         ax1.plot(plt_epoch, plt_test_loss, 'k', label='test loss')
         ax1.set(ylabel='test loss')
-        ax2.plot(plt_epoch, plt_app_test, 'r', label='Application')
-        ax2.plot(plt_epoch, plt_frame_test, 'g', label='Framework')
-        ax2.plot(plt_epoch, plt_lib_test, 'b', label='Library')
-        ax2.plot(plt_epoch, plt_plugin_test, 'y', label='Plugin')
+        ax2.plot(plt_epoch, plt_dev_test, 'r', label='Dev')
+        ax2.plot(plt_epoch, plt_edu_test, 'g', label='Edu')
+        ax2.plot(plt_epoch, plt_hw_test, 'b', label='Hw')
+        ax2.plot(plt_epoch, plt_other_test, 'y', label='Other')
         ax2.set(xlabel='epoch', ylabel='f1 score')
         plt.legend()
         plt.savefig(f'{figure_output}/fig_{f}_test.pdf', bbox_inches='tight')
