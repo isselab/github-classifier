@@ -20,8 +20,8 @@ k_folds = 3 #has to be at least 2
 learning_rate = 0.001
 figure_output = 'C:/Users/const/Documents/Bachelorarbeit/training_testing_plot_alt_data'
 threshold = 0.5 #value above which label is considered to be predicted by model
-save_classification_reports = 'classification_reports/train_with_classifyhub.txt'
-experiment_name = 'train_with_classifyhub'
+save_classification_reports = 'classification_reports/train_with_classifyhub_100epochs.txt'
+experiment_name = 'train_with_classifyhub_100epochs'
 
 def train():
         model.train()

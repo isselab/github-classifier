@@ -31,7 +31,7 @@ class RepositoryDataset(Dataset):
         #load labels for graphs in correct order and return them in tensor
         if hasattr(self, 'encoded_labels'):
             self.y = self.sort_labels()
-            print(f'Number of Applications: {self.class_elements[0]}, Frameworks: {self.class_elements[1]}, Libraries: {self.class_elements[2]}, Plugins: {self.class_elements[3]}')
+            print(f'Number of Dev: {self.class_elements[0]}, Edu: {self.class_elements[1]}, Hw: {self.class_elements[2]}, Other: {self.class_elements[3]}')
 
     #returns number of samples (graphs) in the dataset
     def __len__(self):
@@ -107,24 +107,24 @@ class RepositoryDataset(Dataset):
         return file
     
     def count_class_elements(self, labels):
-        app = 0
-        frame = 0
-        lib = 0
-        plugin = 0
+        dev = 0
+        edu = 0
+        hw = 0
+        other = 0
         try:
             for element in labels:
-                if 'Application' in element:
-                    app += 1
-                if 'Framework' in element:
-                    frame += 1
-                if 'Library' in element:
-                    lib += 1
-                if 'Plugin' in element:
-                    plugin += 1
+                if 'Dev' in element:
+                    dev += 1
+                if 'Edu' in element:
+                    edu += 1
+                if 'Hw' in element:
+                    hw += 1
+                if 'Other' in element:
+                    other += 1
         except Exception as e:
             print(e)
             print('Problem with the Labels')
-        counted_elements = [app, frame, lib, plugin]
+        counted_elements = [dev, edu, hw, other]
         return counted_elements
     
     '''checks if the graphs in the dataset can be loaded, if not, for example because a file is empty, 
