@@ -9,7 +9,7 @@ The labels in the tool are not mutually exclusive and are multi-hot encoded.
 
 Currently, the tool only processes python files.
 
-This feature branch is for testing the tool with the dataset from classifyhub.
+This feature branch is for testing the tool with the dataset from classifyhub. Please do not merge this branch into the branches dev or main.
 
 **labels**
 
