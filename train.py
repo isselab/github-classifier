@@ -1,5 +1,4 @@
 from CustomDataset import RepositoryDataset
-from Pipeline import prepare_dataset
 from torch.utils.data import random_split
 from torch_geometric.loader import DataLoader
 from GCN import GCN
@@ -12,18 +11,18 @@ import numpy as np
 from GraphClasses import defined_labels
 from sklearn.metrics import classification_report
 
-'''please prepare the dataset you want to train the tool with by using prepareDataset.py'''
+'''please prepare the dataset you want to train the tool with by using prepareDataset.py,
+this file is for training the tool'''
 
-#repository_directory = 'D:/labeled_dataset_repos'  #downloaded github repositories
 output_directory = 'D:/labeled_repos_output' #path to the folder containing the converted repositories
 labels = 'data/labeled_dataset_repos.xlsx'
-n_epoch = 30
-k_folds = 3 #has to be at least 2
+n_epoch = 100
+k_folds = 4 #has to be at least 2
 learning_rate = 0.001
 figure_output = 'C:/Users/const/Documents/Bachelorarbeit/training_testing_plot'
 threshold = 0.5 #value above which label is considered to be predicted by model
-save_classification_reports = 'classification_reports/train_with_130_50_epochs_4.txt'
-experiment_name = 'train_with_130_50_epochs_4'
+save_classification_reports = 'classification_reports/train.txt'
+experiment_name = 'train'
 
 def train():
         model.train()
@@ -102,12 +101,6 @@ def test(loader):
 
         return loss_test/total, class_report, report_dict
 
-#create the graph dataset of the repositories
-#try:
-   # nodes, edges, edge_attributes = prepare_dataset(repository_directory, output_directory)
-#except Exception as e:
-   # print(e)
-
 print('--------------load dataset---------------')
 
 try:
@@ -118,7 +111,6 @@ except Exception as e:
     print('Dataset cannot be loaded.')
 
 device = 'cuda' if torch.cuda.is_available() else 'cpu'
-device = 'cpu' #to avoid out of memory error with gpu
 
 model = GCN(dataset.num_node_features, dataset.num_classes, hidden_channels=32)
 
@@ -127,9 +119,6 @@ if device == 'cuda':
 
 optimizer = torch.optim.Adam(model.parameters(), learning_rate)
 criterion = torch.nn.MultiLabelSoftMarginLoss()
-
-#set our tracking server uri for logging
-#mlflow.set_tracking_uri(uri="https://community.cloud.databricks.com/ml/experiments?o=286453794264191")
 
 #create a new MLflow Experiment
 mlflow.create_experiment(experiment_name)

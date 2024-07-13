@@ -12,12 +12,9 @@ import torch
     
     if you want to train the gcn, please use train.py, this file is for using the trained tool'''
 
-#repository_list = '../labeled_dataset_repos.xlsx'
-#repository_directory = 'D:/labeled_dataset_repos'
-#output_directory = 'D:/labeled_repos_output'
-repository_list = 'data/new_15.xlsx'
-repository_directory = 'D:/new_15' #path to directory containing the repositories you want to classify
-output_directory = 'D:/new_15_output'
+repository_list = 'data/labeled_dataset_repos.xlsx'
+repository_directory = 'D:/labeled_dataset_repos' #path to directory containing the repositories you want to classify
+output_directory = 'D:/labeled_repos_output'
 path_to_model = 'graph_classification_model.pt' #trained classification model
 
 if __name__ == '__main__':
