@@ -20,8 +20,8 @@ k_folds = 3 #has to be at least 2
 learning_rate = 0.001
 figure_output = 'C:/Users/const/Documents/Bachelorarbeit/training_testing_plot_alt_data'
 threshold = 0.5 #value above which label is considered to be predicted by model
-save_classification_reports = 'classification_reports/train_with_classifyhub_100epochs.txt'
-experiment_name = 'train_with_classifyhub_100epochs'
+save_classification_reports = 'classification_reports/train_with_classifyhub_100epochs1.txt'
+experiment_name = 'train_with_classifyhub_100epochs1'
 
 def train():
         model.train()
@@ -100,12 +100,6 @@ def test(loader):
 
         return loss_test/total, class_report, report_dict
 
-#create the graph dataset of the repositories
-#try:
-   # nodes, edges, edge_attributes = prepare_dataset(repository_directory, output_directory)
-#except Exception as e:
-    #print(e)
-
 print('--------------load dataset---------------')
 
 try:
@@ -116,7 +110,6 @@ except Exception as e:
     print('Dataset cannot be loaded.')
 
 device = 'cuda' if torch.cuda.is_available() else 'cpu'
-#device = 'cpu' #to avoid out of memory error with gpu
 
 model = GCN(dataset.num_node_features, dataset.num_classes, hidden_channels=32)
 
@@ -125,9 +118,6 @@ if device == 'cuda':
 
 optimizer = torch.optim.Adam(model.parameters(), learning_rate)
 criterion = torch.nn.MultiLabelSoftMarginLoss()
-
-#set our tracking server uri for logging
-#mlflow.set_tracking_uri(uri="https://community.cloud.databricks.com/ml/experiments?o=286453794264191")
 
 #create a new MLflow Experiment
 mlflow.create_experiment(experiment_name)
@@ -157,6 +147,9 @@ for f, fold in enumerate(kfold.split(dataset)):
     for name, param in model.named_parameters():
         if param.requires_grad:
             params[f"{name}"] = param.data
+
+    latex_table_train = open(f'latex_results_train_{f}.txt', 'a')
+    latex_table_test = open(f'latex_results_test_{f}.txt', 'a')
 
     with mlflow.start_run():
         plt_epoch = []
@@ -200,6 +193,21 @@ for f, fold in enumerate(kfold.split(dataset)):
             other_f1_train = other_train['f1-score']
             plt_other_train.append(other_f1_train)
 
+            #for writing training results in a latex table
+            latex_table_train.write('\hline')
+            latex_table_train.write('\n')
+            dev_prec_train = dev_train['precision']
+            dev_recall_train = dev_train['recall']
+            edu_prec_train = edu_train['precision']
+            edu_recall_train = edu_train['recall']
+            hw_prec_train = hw_train['precision']
+            hw_recall_train = hw_train['recall']
+            other_prec_train = other_train['precision']
+            other_recall_train = other_train['recall']
+            latex_table_train.write(f'  {epoch} & ')
+            latex_table_train.write('%4.3f %4.3f %4.3f & %4.3f %4.3f %4.3f & %4.3f %4.3f %4.3f & %4.3f %4.3f %4.3f \\' % (dev_prec_train, dev_recall_train, dev_f1_train, edu_prec_train, edu_recall_train, edu_f1_train, hw_prec_train, hw_recall_train, hw_f1_train, other_prec_train, other_recall_train, other_f1_train))
+            latex_table_train.write('\n')
+
             #for plotting test results
             plt_test_loss.append(test_loss)
             dev_test = test_rep_dict['Dev']
@@ -214,6 +222,21 @@ for f, fold in enumerate(kfold.split(dataset)):
             other_test = test_rep_dict['Other']
             other_f1_test = other_test['f1-score']
             plt_other_test.append(other_f1_test)
+
+            #for writing test results in a latex table
+            latex_table_test.write('\hline')
+            latex_table_test.write('\n')
+            dev_prec_test = dev_test['precision']
+            dev_recall_test = dev_test['recall']
+            edu_prec_test = edu_test['precision']
+            edu_recall_test = edu_test['recall']
+            hw_prec_test = hw_test['precision']
+            hw_recall_test = hw_test['recall']
+            other_prec_test = other_test['precision']
+            other_recall_test = other_test['recall']
+            latex_table_test.write(f'  {epoch} & ')
+            latex_table_test.write('%4.3f %4.3f %4.3f & %4.3f %4.3f %4.3f & %4.3f %4.3f %4.3f & %4.3f %4.3f %4.3f \\' % (dev_prec_test, dev_recall_test, dev_f1_test, edu_prec_test, edu_recall_test, edu_f1_test, hw_prec_test, hw_recall_test, hw_f1_test, other_prec_test, other_recall_test, other_f1_test))
+            latex_table_test.write('\n')
             
             #print results
             print(f'training loss: {train_loss}')
