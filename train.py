@@ -194,7 +194,7 @@ for f, fold in enumerate(kfold.split(dataset)):
             plt_other_train.append(other_f1_train)
 
             #for writing training results in a latex table
-            latex_table_train.write('\hline')
+            latex_table_train.write('  \hline')
             latex_table_train.write('\n')
             dev_prec_train = dev_train['precision']
             dev_recall_train = dev_train['recall']
@@ -224,7 +224,7 @@ for f, fold in enumerate(kfold.split(dataset)):
             plt_other_test.append(other_f1_test)
 
             #for writing test results in a latex table
-            latex_table_test.write('\hline')
+            latex_table_test.write('  \hline')
             latex_table_test.write('\n')
             dev_prec_test = dev_test['precision']
             dev_recall_test = dev_test['recall']
