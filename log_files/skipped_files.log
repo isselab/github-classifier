@@ -39,3 +39,13 @@ WARNING:AstToEcoreConverter:skipped: D:/new_15/tyro\examples\04_additional\06_ge
 WARNING:AstToEcoreConverter:skipped: D:/new_15/tyro\examples\04_additional\13_type_statement.py
 WARNING:AstToEcoreConverter:skipped: D:/new_15/tyro\tests\test_new_style_annotations_min_py312.py
 WARNING:AstToEcoreConverter:skipped: D:/new_15/tyro\tests\test_py311_generated\test_new_style_annotations_min_py312_generated.py
+WARNING:AstToEcoreConverter:skipped: D:/new_15/DeepDPM\scripts\DeepDPM_load_from_checkpoint.py
+WARNING:AstToEcoreConverter:skipped: D:/new_15/nematus\nematus\shuffle.py
+WARNING:AstToEcoreConverter:skipped: D:/new_15/nematus\utils\plot_heatmap.py
+WARNING:AstToEcoreConverter:skipped: D:/new_15/OpenKS\openks\models\pytorch\kg_modules\tasks.py
+WARNING:AstToEcoreConverter:skipped: D:/new_15/OpenKS\openks\models\pytorch\mmd_modules\HOI\datasets\hico_eval_new.py
+WARNING:AstToEcoreConverter:skipped: D:/new_15/OpenKS\openks\models\pytorch\mmd_modules\HOI\datasets\panoptic_eval.py
+WARNING:AstToEcoreConverter:skipped: D:/new_15/OpenKS\openks\models\pytorch\mmd_modules\spcan\train_office31.py
+WARNING:AstToEcoreConverter:skipped: D:/new_15/VoxelNeXt\pcdet\datasets\kitti\kitti_object_eval_python\evaluate.py
+WARNING:AstToEcoreConverter:skipped: D:/new_15/qiskit-ibmq-provider\qiskit\providers\ibmq\jupyter\live_data_widget.py
+WARNING:AstToEcoreConverter:skipped: D:/new_15/openmixup\tests\test_models\test_backbones\test_efficientformer.py
