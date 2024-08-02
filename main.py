@@ -2,7 +2,7 @@ from CustomDataset import RepositoryDataset
 from Pipeline import prepare_dataset
 import torch
 
-'''this is for repositories from the dataset classifyhub
+'''this is for repositories from the dataset ClassifyHub
 
     prepare_dataset: repository list is optional parameter, if you want to download the repositories automatically;
     output_directory is required when more than one repository is going to be converted,
@@ -48,7 +48,7 @@ if __name__ == '__main__':
             output = model(nodes, edges, edge_attributes)
             output = output.cpu().detach().numpy()
             output = (output > 0.5) #threshold for when label is considered predicted, model is trained with threshold 0.5!
-            print('Labels [Application, Framework, Library, Plugin]:')
+            print('Labels [Dev, Edu, Hw, Other]:')
             print(f'Prediction: {output}')
     
     #classify multiple repositories with custom dataset
@@ -74,5 +74,5 @@ if __name__ == '__main__':
             output = model(graph.x, graph.edge_index, graph.edge_attr)
             output = output.cpu().detach().numpy()
             output = (output > 0.5) #threshold for when label is considered predicted, model is trained with threshold 0.5!
-            print('Labels [Application, Framework, Library, Plugin]:')
+            print('Labels [Dev, Edu, Hw, Other]:')
             print(f'Prediction: {output}')

@@ -2,25 +2,28 @@
 
 **short description**
 
-This repository contains a deep-learning based classification tool for Software Repositories. The tool utilizes the ecore metamodel 'type graph' and a graph convolutional network. To use the tool, run 'main.py' after adding the directory containing the repositories you want to classify.
+This repository contains a deep-learning based classification tool for software repositories. The tool utilizes the ecore metamodel 'type graph' and a graph convolutional network. To use the tool, run 'main.py' after adding the directory containing the repositories you want to classify.
 
 If you want to train the tool with different labels, replace the current labels with your own (or add them to the labels) in GraphClasses.py and in function 'multi_hot_encoding' in Encoder.py. 
 The labels in the tool are not mutually exclusive and are multi-hot encoded.
 
-Currently, the tool only processes python files.
+Currently, the tool only processes Python files.
 
-This feature branch is for testing the tool with the dataset from classifyhub. Please do not merge this branch into the branches dev or main.
+This feature branch is for testing the tool with the dataset from ClassifyHub. 
+
+PLEASE DO NOT MERGE THIS BRANCH INTO THE BRANCHES DEV OR MAIN!
 
 **labels**
 
 Dev, Edu, Hw, Other
 
 The labels Data, Docs, and Web are excluded because we do not expect the repositories belonging to these
-classes to contain any python files.
+classes to contain any Python files.
 
 **data**
 
-Dataset with software repositories from GitHub. The dataset is from classyhub.
+Dataset with software repositories from GitHub. 
+The dataset is from ClassifyHub: https://github.com/Top-Ranger/ClassifyHub-data
 The labeled repositories the tool is trained with are in data/classifyhub-dataset.xlsx.
 
 **requirements**
@@ -29,4 +32,4 @@ pyecore~=0.14.0 or higher versions
 
 autopep8
 
-GRaViTY tool for visualizing the metamodels, see https://github.com/GRaViTY-Tool/gravity-tool?tab=readme-ov-file for instructions on how to install the tool
+GRaViTY tool for visualizing the ecore metamodels, see https://github.com/GRaViTY-Tool/gravity-tool?tab=readme-ov-file for instructions on how to install the tool
