@@ -7,9 +7,9 @@ from Pipeline import prepare_dataset
     if there is only one repository the output of the converter is saved in return variables and can be
     piped into the gcn as input without needing to load the data from files'''
 
-repository_directory = 'D:/new_15' #GitHub repositories
+repository_directory = 'D:/new_15' # GitHub repositories
 output_directory = 'D:/new_15_output'
-repository_list = 'data/new_15.xlsx'
+repository_list = 'data/new_15.xlsx' # Missing?
 
 if __name__ == '__main__':
     
