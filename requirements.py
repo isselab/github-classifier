@@ -3,7 +3,6 @@ import subprocess
 import sys
 from types import ModuleType
 
-
 def check_and_install(package) -> ModuleType:
     """
     Check if a Python package is installed. If not, install it using pip.
