@@ -1,6 +1,7 @@
 from enum import Enum
 
-#types of relations between nodes in the type graph
+
+# types of relations between nodes in the type graph
 class EdgeTypes(Enum):
     PARENT = "parent"
     SUBPACKAGE = "subpackage"

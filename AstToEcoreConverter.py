@@ -94,16 +94,17 @@ class ProjectEcoreGraph:
             else:
                 print('output directory is required!')
         print(f'{repository}, Number of files skipped: {skipped_files} \n')
-            
+
     '''creates structure of imported external libraries and sets calls to it'''
+
     def set_imported_libraries_calls(self):
         for item in self.call_imported_library:
             caller_node = item[0]
             imported = item[1]
             split_import = imported.split('.')
-            
+
             package_name, subpackage_names, module_name, class_name, method_name = self.set_import_names(split_import)
-            #flag tLib only works for classes, use name for other types
+            # flag tLib only works for classes, use name for other types
             package_name += '_ExternalLibrary'
             module_name += '_ExternalLibrary'
             method_name += '_ExternalLibrary'
@@ -155,7 +156,7 @@ class ProjectEcoreGraph:
                         self.create_imported_class_call(module_node, class_name, method_name, caller_node)
                     if class_name is None:
                         self.create_imported_method_call(module_node, method_name, caller_node)
-                    #get package in whose namespace imported module is
+                    # get package in whose namespace imported module is
                     pack_name = None
                     if isinstance(subpackage_names, str):
                         pack_name = subpackage_names + '_ExternalLibrary'
@@ -163,11 +164,11 @@ class ProjectEcoreGraph:
                         pack_name = subpackage_names[-1] + '_ExternalLibrary'
                     if pack_name is not None:
                         current_package_node = self.get_imported_library_package(pack_name)
-                        #subpackage exists
+                        # subpackage exists
                         if current_package_node is not None:
                             module_node.namespace = current_package_node
                             self.imported_libraries.append([module_node, module_name, current_package_node, pack_name])
-                        #subpackage does not exist
+                        # subpackage does not exist
                         if current_package_node is None:
                             subpackage_node = self.create_ecore_instance(NodeTypes.PACKAGE)
                             subpackage_node.tName = pack_name
@@ -177,7 +178,7 @@ class ProjectEcoreGraph:
                     if subpackage_names is None:
                         self.imported_libraries.append([module_node, module_name, None, None])
             if package_node is None:
-                if len(split_import)==2:
+                if len(split_import) == 2:
                     package_node = self.create_ecore_instance(NodeTypes.PACKAGE)
                     package_node.tName = package_name
                     module_node = self.create_ecore_instance(NodeTypes.MODULE)
@@ -190,16 +191,16 @@ class ProjectEcoreGraph:
                     self.graph.modules.append(module_node)
                     self.graph.packages.append(package_node)
                     self.create_calls(caller_node, method_node)
-                if len(split_import)>2:
-                    #create package hierarchy
-                    package_node = self.create_ecore_instance(NodeTypes.PACKAGE) #parent package
+                if len(split_import) > 2:
+                    # create package hierarchy
+                    package_node = self.create_ecore_instance(NodeTypes.PACKAGE)  # parent package
                     package_node.tName = package_name
                     self.graph.packages.append(package_node)
                     self.imported_libraries.append([None, None, package_node, package_name])
                     self.imported_package = package_node
                     if subpackage_names is not None:
                         self.create_package_hierarchy(package_node, subpackage_names)
-                    #create module
+                    # create module
                     module_node = self.create_ecore_instance(NodeTypes.MODULE)
                     module_node.location = module_name
                     self.graph.modules.append(module_node)
@@ -211,13 +212,13 @@ class ProjectEcoreGraph:
                         import_entry[0] = module_node
                         import_entry[1] = module_name
                     else:
-                        #self.imported_package can be None (very rarely) due to complex import possibilities
+                        # self.imported_package can be None (very rarely) due to complex import possibilities
                         package_node = self.create_ecore_instance(NodeTypes.PACKAGE)
                         package_node.tName = module_name
                         module_node.namespace = package_node
                         self.graph.packages.append(package_node)
                         self.imported_libraries.append([module_node, module_name, package_node, module_name])
-                    #create called method
+                    # create called method
                     method_node = self.create_ecore_instance(NodeTypes.METHOD_DEFINITION)
                     self.create_method_signature(method_node, method_name, [])
                     if class_name is not None:
@@ -229,7 +230,7 @@ class ProjectEcoreGraph:
                         module_node.contains.append(class_node)
                     if class_name is None:
                         module_node.contains.append(method_node)
-                    #set call
+                    # set call
                     self.create_calls(caller_node, method_node)
     
     '''creates the hierarchy of packages and subpackages for imported external libraries'''

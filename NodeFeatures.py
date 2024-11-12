@@ -1,6 +1,7 @@
 from enum import Enum
 
-#node types in the type graph
+
+# node types in the type graph
 class NodeTypes(Enum):
     CALL = "TCall"
     CLASS = "TClass"

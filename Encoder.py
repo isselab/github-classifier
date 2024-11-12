@@ -1,7 +1,9 @@
-from sklearn.preprocessing import OneHotEncoder
 import pandas as pd
+from sklearn.preprocessing import OneHotEncoder
 
 '''one hot encoding for node features'''
+
+
 def one_hot_encoding(labels, matrix):
     one_hot_encoder = OneHotEncoder(handle_unknown='ignore', sparse_output=False)
     labels = pd.DataFrame(labels)
@@ -10,8 +12,11 @@ def one_hot_encoding(labels, matrix):
     enc = one_hot_encoder.transform(matrix)
     return enc
 
+
 '''encodes the not mutually exclusive labels in the dataset,
    labels: ['Application', 'Framework', 'Library', 'Plugin']'''
+
+
 def multi_hot_encoding(graph_classes, graph_list):
     num_classes = len(graph_classes)
     enc_labels = []
@@ -25,7 +30,7 @@ def multi_hot_encoding(graph_classes, graph_list):
             enc[2] = 1.0
         if label == 'Plugin':
             enc[3] = 1.0
-        #if multiple labels are assigned to one repo
+        # if multiple labels are assigned to one repo
         if ',' in label:
             multiple_labels = label.split(',')
             for m_label in multiple_labels:

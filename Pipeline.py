@@ -1,44 +1,52 @@
 import os
-from pyecore.resources import ResourceSet, URI
-from AstToEcoreConverter import ProjectEcoreGraph
-from EcoreToMatrixConverter import EcoreToMatrixConverter
-import pandas as pd
-from DataformatUtils import convert_edge_dim, convert_list_to_floattensor, convert_list_to_longtensor, convert_hashed_names_to_float
 from multiprocessing import Pool
 
+import pandas as pd
+from pyecore.resources import ResourceSet, URI
+
+from AstToEcoreConverter import ProjectEcoreGraph
+from DataformatUtils import convert_edge_dim, convert_list_to_floattensor, convert_list_to_longtensor, \
+    convert_hashed_names_to_float
+from EcoreToMatrixConverter import EcoreToMatrixConverter
+
 '''in this file are the pipeline components put into reusable functions'''
+
 
 def create_output_folders(directory):
     if not os.path.exists(directory):
         os.makedirs(directory)
-    #create sub folders for converter output and dataset
+    # create sub folders for converter output and dataset
     if not os.path.exists(f'{directory}/xmi_files'):
         os.makedirs(f'{directory}/xmi_files')
     if not os.path.exists(f'{directory}/csv_files'):
         os.makedirs(f'{directory}/csv_files')
 
+
 def download_repositories(repository_directory, repository_list):
     working_directory = os.getcwd()
 
-    #load labeled repository from excel/ods file
-    #requirements for format: no empty rows in between and header name html_url
+    # load labeled repository from excel/ods file
+    # requirements for format: no empty rows in between and header name html_url
     resource = pd.read_excel(repository_list)
 
-    #create directory for cloning if it does not exist and set it as current working directory
+    # create directory for cloning if it does not exist and set it as current working directory
     if not os.path.exists(repository_directory):
         os.makedirs(repository_directory)
     os.chdir(repository_directory)
 
-    #retrieve urls and clone repositories
+    # retrieve urls and clone repositories
     for row in resource.iterrows():
         object = row[1]
         url = object.get('html_url')
         os.system(f'git clone {url}')
 
-    #change working directory back to github-classifier, otherwise cannot load resources from there and run tool
+    # change working directory back to github-classifier, otherwise cannot load resources from there and run tool
     os.chdir(working_directory)
-    
-'''convert repository into type graph'''    
+
+
+'''convert repository into type graph'''
+
+
 def create_ecore_graphs(repository, write_in_file, output_directory=None):
     skip_counter = 0
     resource_set = ResourceSet()
@@ -48,11 +56,11 @@ def create_ecore_graphs(repository, write_in_file, output_directory=None):
         except Exception as e:
             print(e)
             if 'inconsistent use of tabs and spaces in indentation' in str(e):
-                #format repository files using autopep8
+                # format repository files using autopep8
                 python_files = [os.path.join(root, file) for root, _, files in os.walk(
-                                    repository) for file in files if file.endswith('.py')]
+                    repository) for file in files if file.endswith('.py')]
                 for file_path in python_files:
-                        os.system(f'autopep8 --in-place {file_path}')
+                    os.system(f'autopep8 --in-place {file_path}')
                 try:
                     ecore_graph = ProjectEcoreGraph(resource_set, repository, write_in_file, output_directory)
                 except Exception as e:
@@ -70,10 +78,13 @@ def create_ecore_graphs(repository, write_in_file, output_directory=None):
     else:
         return None
 
+
 '''convert type graph into three matrices'''
+
+
 def create_matrix_structure(write_in_file, xmi_file=None, ecore_graph=None, output_directory=None):
     skip_xmi = 0
-    
+
     if write_in_file is True:
         rset = ResourceSet()
         resource = rset.get_resource(URI('Basic.ecore'))
@@ -98,20 +109,22 @@ def create_matrix_structure(write_in_file, xmi_file=None, ecore_graph=None, outp
         return node_features, adj_list, edge_attr
     else:
         return None, None, None
-    
+
+
 def parallel_processing(func, repository_list):
-    pool = Pool() #number of processes is return value of os.cpu_count()
+    pool = Pool()  # number of processes is return value of os.cpu_count()
     pool.starmap(func, repository_list)
-    
+
+
 def prepare_dataset(repository_directory, output_directory=None, repository_list=None):
     node_features = None
     adj_list = None
     edge_attr = None
 
-    #clone repositories for the dataset
+    # clone repositories for the dataset
     if repository_list is not None:
         download_repositories(repository_directory, repository_list)
-    
+
     repositories = os.listdir(repository_directory)
     if len(repositories) == 1:
         write_in_file = False
@@ -120,30 +133,30 @@ def prepare_dataset(repository_directory, output_directory=None, repository_list
     else:
         raise Exception("No repositories found")
 
-    #create output directory
+    # create output directory
     if write_in_file is True:
         try:
             create_output_folders(output_directory)
         except Exception as e:
             print(e)
             print('output directory is required!')
-            exit() #exit program because of missing output directory
-        #create pool for multiprocessing/parallelisation
+            exit()  # exit program because of missing output directory
+        # create pool for multiprocessing/parallelisation
         repo_multiprocess = []
         for repository in repositories:
             current_directory = os.path.join(repository_directory, repository)
             repo_multiprocess.append((current_directory, write_in_file, output_directory))
 
     print('---convert repositories into type graphs---')
-    #convert repositories into type graphs
+    # convert repositories into type graphs
     if write_in_file is True:
         parallel_processing(create_ecore_graphs, repo_multiprocess)
     else:
         single_directory = os.path.join(repository_directory, repositories[0])
         ecore_graph = create_ecore_graphs(single_directory, write_in_file)
-    
+
     print('---convert type graphs into three matrices---')
-    #load xmi instance and convert them to a matrix structure for the gcn
+    # load xmi instance and convert them to a matrix structure for the gcn
     if write_in_file is True:
         list_xmi_files = os.listdir(f'{output_directory}/xmi_files')
         xmi_multiprocess = []
@@ -152,8 +165,8 @@ def prepare_dataset(repository_directory, output_directory=None, repository_list
         parallel_processing(create_matrix_structure, xmi_multiprocess)
     else:
         node_features, adj_list, edge_attr = create_matrix_structure(write_in_file, None, ecore_graph)
-    
-    #if only one repository is converted for classification, adjust data format needed by the gcn
+
+    # if only one repository is converted for classification, adjust data format needed by the gcn
     if node_features is not None and adj_list is not None and edge_attr is not None:
         node_features = convert_hashed_names_to_float(node_features)
         adj_list = convert_list_to_longtensor(adj_list)
