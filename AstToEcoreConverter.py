@@ -237,7 +237,6 @@ class ProjectEcoreGraph:
     def create_package_hierarchy(self, parent_package, subpackage_names, lib_flag=True):
         if isinstance(subpackage_names, str):
             package_node = self.create_ecore_instance(NodeTypes.PACKAGE)
-            name = None
             if lib_flag is True:
                 name = subpackage_names + '_ExternalLibrary'
             else:
@@ -251,7 +250,6 @@ class ProjectEcoreGraph:
             self.imported_package = package_node
         if isinstance(subpackage_names, list):
             for e, element in enumerate(subpackage_names):
-                element_lib = None
                 if lib_flag is True:
                     element_lib = element + '_ExternalLibrary'
                 else:
@@ -374,7 +372,6 @@ class ProjectEcoreGraph:
     def set_internal_module_calls(self):
         class_name = ''
         method_name = ''
-        found_class = None
         for item in self.call_in_module:
             module = item[0]
             caller_node = item[1]
@@ -753,7 +750,7 @@ class ProjectEcoreGraph:
         method_signature.method = method
 
         previous = None
-        for arg in arguments:
+        for _ in arguments:
             parameter = self.create_ecore_instance(NodeTypes.PARAMETER)
             if previous is not None:
                 parameter.previous = previous
@@ -940,7 +937,6 @@ class ASTVisitor(ast.NodeVisitor):
         #add method name to instance from graph
         instances[0] = instance_from_graph
         instance_name = ".".join(instances)
-        method_name = instance_name.split('.')[-1]
 
         self.graph_class.call_external_module.append([instance_name, caller_node])
 
