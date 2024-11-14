@@ -41,7 +41,7 @@ def multi_hot_encoding(graph_classes, graph_list):
     num_classes = len(graph_classes)
     enc_labels = []
     for label in graph_list:
-        enc = [0. for i in range(0, num_classes)]
+        enc = [0. for _ in range(0, num_classes)]
         if label == 'Application':
             enc[0] = 1.0
         if label == 'Framework':
