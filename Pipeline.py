@@ -13,6 +13,18 @@ from EcoreToMatrixConverter import EcoreToMatrixConverter
 
 
 def create_output_folders(directory):
+    """
+       Create a directory structure for output files.
+
+       Ensures the main directory exists and creates subdirectories `xmi_files`
+       and `csv_files` for organizing output files.
+
+       Args:
+           directory (str): Path to the main output directory.
+
+       Raises:
+           OSError: If the directory cannot be created.
+       """
     if not os.path.exists(directory):
         os.makedirs(directory)
     # create sub folders for converter output and dataset
@@ -23,6 +35,18 @@ def create_output_folders(directory):
 
 
 def download_repositories(repository_directory, repository_list):
+    """
+    Clone Git repositories listed in an Excel/ODS file into a specified directory.
+
+    Args:
+        repository_directory: Directory where repositories will be cloned.
+        repository_list: Path to the Excel/ODS file containing repository URLs
+                         with a header named 'html_url'.
+
+    Raises:
+        ValueError: If the 'html_url' header is missing in the input file.
+        OSError: If the directory cannot be created or if cloning fails.
+    """
     working_directory = os.getcwd()
 
     # load labeled repository from excel/ods file
@@ -43,11 +67,26 @@ def download_repositories(repository_directory, repository_list):
     # change working directory back to github-classifier, otherwise cannot load resources from there and run tool
     os.chdir(working_directory)
 
-
-'''convert repository into type graph'''
-
-
 def create_ecore_graphs(repository, write_in_file, output_directory=None):
+    """
+      Convert a repository into an Ecore graph.
+
+      This function attempts to create an Ecore graph from the specified repository.
+      If the repository contains inconsistent indentation (mixing tabs and spaces),
+      it will automatically format the Python files using `autopep8` and retry the graph creation.
+
+      Args:
+          repository: The path to the repository to be converted into an Ecore graph.
+          write_in_file: A boolean indicating whether to write the graph to a file.
+          output_directory: Optional; the directory where the output file will be written.
+
+      Returns:
+          The generated Ecore graph if `write_in_file` is False; otherwise, returns None.
+
+      Raises:
+          Exception: Any exceptions raised during the graph creation process will be printed,
+                      and the function will skip the problematic repository.
+      """
     skip_counter = 0
     resource_set = ResourceSet()
     if os.path.isdir(repository):
@@ -78,11 +117,32 @@ def create_ecore_graphs(repository, write_in_file, output_directory=None):
     else:
         return None
 
-
-'''convert type graph into three matrices'''
-
-
 def create_matrix_structure(write_in_file, xmi_file=None, ecore_graph=None, output_directory=None):
+    """
+    Convert an Ecore graph or XMI file into three matrices: node features, adjacency list,
+    and edge attributes.
+
+    This function can either write the matrices to files or return them as output.
+    If writing to files, it expects an XMI file to be provided; otherwise, it will
+    use the provided Ecore graph.
+
+    Args:
+        write_in_file: A boolean indicating whether to write the matrices to files.
+        xmi_file: Optional; the name of the XMI file to be processed.
+        ecore_graph: Optional; the Ecore graph to be converted into matrices.
+        output_directory: The directory where output files will be written.
+
+    Returns:
+        A tuple containing:
+            - node features (if `write_in_file` is False)
+            - adjacency list (if `write_in_file` is False)
+            - edge attributes (if `write_in_file` is False)
+        If `write_in_file` is True, returns (None, None, None).
+
+    Raises:
+        Exception: Any exceptions raised during the conversion process will be printed,
+                    and the function will skip the problematic XMI file if applicable.
+    """
     skip_xmi = 0
 
     if write_in_file is True:
@@ -112,11 +172,52 @@ def create_matrix_structure(write_in_file, xmi_file=None, ecore_graph=None, outp
 
 
 def parallel_processing(func, repository_list):
+    """
+    Execute a function in parallel across a list of repositories.
+
+    This function utilizes multiprocessing to apply the given function to each
+    repository in the repository list concurrently.
+
+    Args:
+        func: The function to be executed in parallel. It should accept a
+              variable number of arguments.
+        repository_list: A list of tuples, where each tuple contains the arguments
+                         to be passed to the function.
+
+    Raises:
+        Exception: Any exceptions raised during the execution of the function
+                    will be propagated.
+    """
     pool = Pool()  # number of processes is return value of os.cpu_count()
     pool.starmap(func, repository_list)
 
 
 def prepare_dataset(repository_directory, output_directory=None, repository_list=None):
+    """
+        Prepare a dataset by processing repositories into type graphs and converting
+        those graphs into matrices suitable for a Graph Convolutional Network (GCN).
+
+        This function clones repositories, creates necessary output directories,
+        and handles parallel processing to convert repositories and their
+        corresponding type graphs into matrices.
+
+        Args:
+            repository_directory: The path to the directory containing the repositories.
+            output_directory: The path where output files will be saved.
+            Required if multiple repositories are processed.
+            repository_list: A list of repositories to clone. If provided,
+            these repositories will be downloaded.
+
+        Returns:
+            tuple: A tuple containing:
+                - node_features: Features of the nodes in the graph.
+                - adj_list: Adjacency list representation of the graph.
+                - edge_attr: Attributes of the edges in the graph.
+
+        Raises:
+            Exception: If no repositories are found or if the output directory is missing
+                        when processing multiple repositories.
+        """
     node_features = None
     adj_list = None
     edge_attr = None
