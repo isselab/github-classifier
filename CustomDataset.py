@@ -71,10 +71,9 @@ class RepositoryDataset(Dataset):
             graph.edge_attr = self.edge_attr
         return graph
 
-    '''sorts labels according to order of graphs, so the labels belonging to a graph share the same index position 
-    as the graph'''
-
     def sort_labels(self):
+        """sorts labels according to order of graphs, so the labels belonging to a graph share the same index position
+        as the graph"""
         label_list = list(self.encoded_labels)
         sorted = None
         for n, item in enumerate(self.graph_names):
@@ -135,10 +134,11 @@ class RepositoryDataset(Dataset):
         counted_elements = [app, frame, lib, plugin]
         return counted_elements
 
-    '''checks if the graphs in the dataset can be loaded, if not, for example because a file is empty, 
-    the graph is removed from the dataset'''
+
 
     def check_dataset(self):
+        """checks if the graphs in the dataset can be loaded, if not, for example because a file is empty,
+        the graph is removed from the dataset"""
         for i, item in enumerate(self.graph_names):
             graph_name = self.graph_names[i]
             for g, graph in enumerate(self.graph_dir):
