@@ -11,7 +11,22 @@ logging.basicConfig(filename='skipped_files.log', level=logging.WARNING, filemod
 
 
 class ProjectEcoreGraph:
+    """
+    Class to represent a project Ecore graph, processing Python files to create a type graph.
+    """
     def __init__(self, resource_set: ResourceSet, repository, write_in_file, output_directory=None):
+        """
+        Initializes the ProjectEcoreGraph.
+
+        Args:
+            resource_set (ResourceSet?): The resource set for Ecore.
+            repository (str?): The root directory of the project.
+            write_in_file (bool?): Flag indicating whether to write output to a file.
+            output_directory (str?, optional?): Directory for output files.
+
+        Raises:
+            ValueError: If the repository is None or empty.
+        """
         if repository is None or repository == '':
             raise ValueError('Directory is required')
 
@@ -99,7 +114,7 @@ class ProjectEcoreGraph:
         print(f'{repository}, Number of files skipped: {skipped_files} \n')
 
     def set_imported_libraries_calls(self):
-        """creates structure of imported external libraries and sets calls to it"""
+        """Creates structure of imported external libraries and sets calls to it"""
         for item in self.call_imported_library:
             caller_node = item[0]
             imported = item[1]
@@ -236,7 +251,14 @@ class ProjectEcoreGraph:
                     self.create_calls(caller_node, method_node)
 
     def create_package_hierarchy(self, parent_package, subpackage_names, lib_flag=True):
-        """creates the hierarchy of packages and subpackages for imported external libraries"""
+        """
+        Creates the hierarchy of packages and subpackages for imported external libraries.
+
+        Args:
+            parent_package: The parent package node.
+            subpackage_names: The names of the subpackages to create.
+            lib_flag (bool): Flag indicating if the packages are for libraries.
+        """
         if isinstance(subpackage_names, str):
             package_node = self.create_ecore_instance(NodeTypes.PACKAGE)
             if lib_flag is True:
@@ -273,14 +295,29 @@ class ProjectEcoreGraph:
                 self.imported_package = package_node
 
     def create_imported_method_call(self, module_node, method_name, caller_node):
-        """creates method from imported module from external library"""
+        """
+        Creates a method from an imported module from an external library.
+
+        Args:
+            module_node: The module node where the method will be created.
+            method_name: The name of the method.
+            caller_node: The node that is calling the method.
+        """
         method_node = self.create_ecore_instance(NodeTypes.METHOD_DEFINITION)
         self.create_method_signature(method_node, method_name, [])
         module_node.contains.append(method_node)
         self.create_calls(caller_node, method_node)
 
     def create_imported_class_call(self, module_node, class_name, method_name, caller_node):
-        """creates class and method from imported module from external library"""
+        """
+        Creates a class and method from an imported module from an external library.
+
+        Args:
+            module_node: The module node where the class will be created.
+            class_name: The name of the class.
+            method_name: The name of the method.
+            caller_node: The node that is calling the method.
+        """
         class_node = self.create_ecore_instance(NodeTypes.CLASS)
         class_node.tName = class_name
         class_node.tLib = True  # flag for external libraries, only works for classes
@@ -292,18 +329,45 @@ class ProjectEcoreGraph:
         self.create_calls(caller_node, method_node)
 
     def get_imported_library_package(self, package_name):
+        """
+        Retrieves the imported library package by name.
+
+            Args:
+                package_name (str?): The name of the package.
+
+            Returns:
+                Package node or None if not found.
+            """
         for lib in self.imported_libraries:
             if lib[3] == package_name:
                 return lib[2]
         return None
 
     def get_imported_library_package_key(self, package_name):
+        """
+        Gets the key of the imported library package by name.
+
+        Args:
+            package_name (str): The name of the package.
+
+        Returns:
+            int or None if not found.
+        """
         for key, lib in enumerate(self.imported_libraries):
             if lib[3] == package_name:
                 return key
         return None
 
     def get_imported_library(self, module_name):
+        """
+        Retrieves the imported library by module name.
+
+        Args:
+            module_name (str?): The name of the module.
+
+        Returns:
+            Module node or None if not found.
+        """
         for lib in self.imported_libraries:
             if lib[1] == module_name:
                 return lib[0]
@@ -332,6 +396,15 @@ class ProjectEcoreGraph:
                     self.call_imported_library.append([caller_node, imported_instance])
 
     def set_import_names(self, split_import):
+        """
+        Sets the names for imported modules, classes, and methods.
+
+         Args:
+            split_import (list): The split import path.
+
+        Returns:
+            tuple: Package name, subpackage names, module name, class name, method name.
+        """
         package_name = split_import[0]
         method_name = split_import[-1]
         class_name = None
@@ -398,13 +471,26 @@ class ProjectEcoreGraph:
                         self.create_method_in_class_call(method_name, found_class, caller_node)
 
     def create_method_in_class_call(self, method_name, class_node, caller_node):
-        """creates calls only for in the structure already existing entities"""
+        """
+        Creates calls for methods defined in a class.
+
+         Args:
+             method_name (str?): The name of the method.
+             class_node: The class node containing the method.
+             caller_node: The node that is calling the method.
+         """
         for method in class_node.defines:
             if method.eClass.name == NodeTypes.METHOD_DEFINITION.value:
                 self.create_method_call(method, method_name, caller_node)
 
     def create_method_call(self, method_node, method_name, caller_node):
-        """creates calls only for in the structure already existing entities"""
+        """Creates calls to a method.
+
+         Args:
+             method_node: The method node being called.
+             method_name (str): The name of the method.
+             caller_node: The node that is calling the method.
+         """
         if method_node.signature.method.tName == method_name:
             call_check = self.get_calls(caller_node, method_node)
             if call_check is False:
@@ -513,6 +599,14 @@ class ProjectEcoreGraph:
                                 self.create_missing_module(module_name, obj, self.imported_package)
 
     def create_missing_module(self, module_name, class_node, package_node):
+        """
+        Creates a missing module and associates it with a class and package.
+
+        Args:
+            module_name (str?): The name of the module.
+            class_node: The class node to be included in the module.
+            package_node: The package node to which the module belongs.
+        """
         module_node = self.create_ecore_instance(NodeTypes.MODULE)
         module_node.location = module_name
         module_node.contains.append(class_node)
@@ -520,24 +614,69 @@ class ProjectEcoreGraph:
         self.graph.modules.append(module_node)
 
     def get_epackage(self):
+        """
+        Retrieves the EPackage associated with the graph.
+
+        Returns:
+            The EPackage instance.
+        """
         return self.epackage
 
     def get_graph(self):
+        """
+        Retrieves the graph representing the project.
+
+        Returns:
+            The graph instance.
+        """
         return self.graph
 
     def create_ecore_instance(self, type):
+        """
+        Creates an Ecore instance of the specified type.
+
+        Args:
+            type: The type of the Ecore instance to create.
+
+        Returns:
+            The created Ecore instance.
+        """
         return self.epackage.getEClassifier(type.value)()
 
     def get_current_module(self):
+        """
+        Retrieves the current module being processed.
+
+        Returns:
+            The current module instance.
+        """
         return self.current_module
 
     def get_module_by_name(self, name):
+        """
+        Retrieves a module by its name.
+
+        Args:
+           name (str): The name of the module.
+
+        Returns:
+           The module node or None if not found.
+       """
         for module in self.module_list:
             if name == module[1]:
                 return module[0]
         return None
 
     def get_module_by_location(self, location):
+        """
+        Retrieves a module by its location.
+
+        Args:
+            location (str): The location of the module.
+
+        Returns:
+            The module node or None if not found.
+        """
         for list_object in self.module_list:
             module = list_object[0]
             if module.location == location:
@@ -550,8 +689,12 @@ class ProjectEcoreGraph:
             self.graph.modules.append(module[0])
 
     def process_file(self, path):
-        """parses the code of one source file into an AST and traverses it for conversion into a type graph,
-        the modules are created here and connected to a package, one module per file"""
+        """
+        Processes a single Python file, parsing its AST and converting it into a type graph.
+
+        Args:
+            path (str): The path to the Python file to process.
+        """
         path = path.replace('\\', '/')
         current_package = self.get_package_by_path(path)
 
@@ -587,6 +730,15 @@ class ProjectEcoreGraph:
         visitor.visit(tree)
 
     def get_package_by_path(self, path):
+        """
+        Retrieves the package node corresponding to a given file path.
+
+        Args:
+            path (str): The file path.
+
+        Returns:
+            The package node or None if not found.
+        """
         package_hierarchy = path.replace(f"{self.root_directory}/", '').split('/')[:-1]
         parent_package = None
         package_node = None
@@ -597,8 +749,16 @@ class ProjectEcoreGraph:
         return package_node
 
     def get_package_by_name_and_parent(self, name, parent):
-        """creates TPackage objects, one package per folder in the repository, and appends
-        the package that is highest in hierarchy to the type graph, the rest are subpackages"""
+        """
+        Retrieves or creates a package node by name and parent.
+
+        Args:
+            name (str): The name of the package.
+            parent: The parent package node.
+
+        Returns:
+            The package node.
+        """
         for package_node in self.graph.packages:
             return_package = self.get_package_recursive(package_node, name, parent)
             if return_package is not None:
@@ -616,6 +776,17 @@ class ProjectEcoreGraph:
         return package_node
 
     def get_package_recursive(self, package_node, name, parent):
+        """
+        Recursively searches for a package node by name and parent.
+
+        Args:
+            package_node: The starting package node for the search.
+            name (str): The name of the package.
+            parent: The parent package node.
+
+        Returns:
+            The found package node or None if not found.
+        """
         if package_node.tName == name and package_node.parent == parent:
             return package_node
         for subpackage in package_node.subpackages:
@@ -624,6 +795,16 @@ class ProjectEcoreGraph:
 
     # this fixed the same subpackages being defined multiple times
     def check_package_list(self, package_name, parent):
+        """
+        Checks if a package already exists in the package list.
+
+       Args:
+           package_name (str): The name of the package.
+           parent: The parent package node.
+
+       Returns:
+           The package node if found, otherwise None.
+       """
         for package in self.package_list:
             if package_name == package[1]:
                 if parent is None and package[2] is None:
@@ -634,6 +815,15 @@ class ProjectEcoreGraph:
         return None
 
     def get_package_from_list_by_parent_name(self, parent_name):
+        """
+        Retrieves a package from the list by its parent's name.
+
+        Args:
+            parent_name (str): The name of the parent package.
+
+        Returns:
+            The package node or None if not found.
+        """
         for package in self.package_list:
             if package[2] is not None:
                 if parent_name == package[2].tName:
@@ -641,6 +831,16 @@ class ProjectEcoreGraph:
         return None
 
     def get_class_from_internal_structure(self, class_name, module):
+        """
+        Retrieves a class from the internal structure by name and module.
+
+        Args:
+            class_name (str): The name of the class.
+            module: The module to which the class belongs.
+
+        Returns:
+            The class node or None if not found.
+        """
         for current_class in self.class_list:
             if class_name == current_class[1]:
                 if module is None and current_class[2] is None:
@@ -651,6 +851,16 @@ class ProjectEcoreGraph:
         return None
 
     def get_module_of_class(self, class_name, child_name):
+        """
+        Retrieves the module of a class by its name and the name of its child.
+
+       Args:
+           class_name (str): The name of the class.
+           child_name (str): The name of the child class.
+
+       Returns:
+           The module node or None if not found.
+       """
         for current_class in self.class_list:
             if class_name == current_class[1]:
                 if hasattr(current_class[0], 'childClasses'):
@@ -660,7 +870,19 @@ class ProjectEcoreGraph:
         return None
 
     def get_class_by_name(self, name, structure=None, create_if_not_found=True, module=None, move_to_module=True):
-        """creates classes and their inheritance structure"""
+        """
+        Retrieves or creates a class by its name.
+
+        Args:
+            name (str): The name of the class.
+            structure: The structure to search in (default is the graph's classes).
+            create_if_not_found (bool): Flag indicating whether to create the class if not found.
+            module: The module to which the class may belong.
+            move_to_module (bool): Flag indicating whether to move the class to the module if found.
+
+        Returns:
+            The class node.
+        """
         if structure is None:
             structure = self.graph.classes
         for class_object in structure:
@@ -686,8 +908,15 @@ class ProjectEcoreGraph:
         return None
 
     def get_reference_by_name(self, name):
-        """checks imported modules and classes (type = 0)
-        and assigned instances (type = 1)"""
+        """
+        Retrieves a reference by name, checking imported modules and classes (type = 0) and assigned instances (type = 1).
+
+        Args:
+            name (str): The name to look up.
+
+        Returns:
+            A tuple containing the reference and its type (0 for module, 1 for instance).
+        """
         first_name = name.split('.')[0]
         for import_reference in self.imports:
             if import_reference[1] == first_name:
@@ -703,9 +932,23 @@ class ProjectEcoreGraph:
         return None, None
 
     def add_import(self, module, alias):
+        """
+        Adds an import to the list of imports.
+
+        Args:
+            module: The module being imported.
+            alias (str?): The alias for the import.
+        """
         self.imports.append([module, alias])
 
     def add_instance(self, instance_name, class_name):
+        """
+        Adds an instance to the list of instances.
+
+       Args:
+           instance_name (str?): The name of the instance.
+           class_name (str?): The name of the class to which the instance belongs.
+       """
         reference, type = self.get_reference_by_name(class_name)
         if reference is not None and type == 0:
             classes = class_name.split('.')[1:]
@@ -714,19 +957,43 @@ class ProjectEcoreGraph:
         self.instances.append([instance_name, class_name])
 
     def remove_instance(self, class_name):
+        """
+        Removes an instance from the list of instances by class name.
+
+       Args:
+           class_name (str): The name of the class whose instance should be removed.
+       """
         for instance in self.instances:
             if instance[1] == class_name:
                 self.instances.remove(instance)
 
     def get_method_def_in_class(self, name, class_node):
-        """checks if TMethodDefinition object in class already exists"""
+        """
+        Checks if a method definition exists in a class.
+
+        Args:
+            name (str): The name of the method.
+            class_node: The class node to check.
+
+        Returns:
+            The method definition node or None if not found.
+        """
         for method_def in class_node.defines:
             if method_def.signature.method.tName == name:
                 return method_def
         return None
 
     def get_method_def_in_module(self, method_name, module):
-        """checks if TMethodDefinition object in module already exists"""
+        """
+        Checks if a method definition exists in a module.
+
+        Args:
+            method_name (str): The name of the method.
+            module: The module to check.
+
+        Returns:
+            The method definition node or None if not found.
+        """
         for object in module.contains:
             if object.eClass.name == NodeTypes.METHOD_DEFINITION.value:
                 if object.signature.method.tName == method_name:
@@ -738,6 +1005,16 @@ class ProjectEcoreGraph:
         return None
 
     def get_method_def_from_internal_structure(self, method_name, module):
+        """
+        Retrieves a method definition from the internal structure.
+
+       Args:
+           method_name (str): The name of the method.
+           module: The module to check.
+
+       Returns:
+           The method definition node or None if not found.
+       """
         for current_method in self.method_list:
             if method_name == current_method[1]:
                 if module is None and current_method[2] is None:
@@ -748,8 +1025,14 @@ class ProjectEcoreGraph:
         return None
 
     def create_method_signature(self, method_node, name, arguments):
-        """for every TMethodDefinition object, TMethod and TMethodSignature objects are created,
-         the parameters in a function are converted here"""
+        """
+        Creates a method signature for a method definition.
+
+        Args:
+            method_node: The method definition node.
+            name (str?): The name of the method.
+            arguments (list?): The list of arguments for the method.
+        """
         method_signature = self.create_ecore_instance(NodeTypes.METHOD_SIGNATURE)
         method = self.create_ecore_instance(NodeTypes.METHOD)
         method.tName = name
@@ -771,18 +1054,42 @@ class ProjectEcoreGraph:
         self.method_list.append([method_node, name, module_node])
 
     def get_calls(self, caller_node, called_node):
-        """checks if call already exists"""
+        """
+        Checks if a call already exists between two nodes.
+
+        Args:
+            caller_node: The node making the call.
+            called_node: The node being called.
+
+        Returns:
+            True if the call exists, otherwise False.
+        """
         for call_object in caller_node.accessing:
             if call_object.target == called_node:
                 return True
         return False
 
     def create_calls(self, caller_node, called_node):
+        """
+        Creates a call between two nodes.
+
+       Args:
+           caller_node: The node making the call.
+           called_node: The node being called.
+       """
         call = self.create_ecore_instance(NodeTypes.CALL)
         call.source = caller_node
         call.target = called_node
 
     def write_xmi(self, resource_set, output_directory, repository):
+        """
+        Writes the graph to an XMI file.
+
+        Args:
+            resource_set (ResourceSet?): The resource set for Ecore.
+            output_directory (str?): The directory for output files.
+            repository (str?): The repository name for the output file.
+        """
         repository_name = repository.split('\\')[-1]
         resource = resource_set.create_resource(URI(f'{output_directory}/xmi_files/{repository_name}.xmi'),
                                                 use_uuid=True)
@@ -791,10 +1098,16 @@ class ProjectEcoreGraph:
 
 
 class ASTVisitor(ast.NodeVisitor):
-    """defines the visits of the different node types of the AST,
-    ASTVisitor calls the functions of ProjectEcoreGraph to create ecore instances"""
+    """Defines the visits of the different node types of the AST,
+       ASTVisitor calls the functions of ProjectEcoreGraph to create Ecore instances."""
 
     def __init__(self, graph_class):
+        """
+        Initializes the ASTVisitor.
+
+        Args:
+            graph_class (ProjectEcoreGraph): The instance of ProjectEcoreGraph to interact with.
+        """
         self.graph = graph_class.get_graph()
         self.graph_class = graph_class  # ProjectEcoreGraph instance
         self.current_method = None
@@ -803,6 +1116,12 @@ class ASTVisitor(ast.NodeVisitor):
         self.current_module = None
 
     def visit_Import(self, node):
+        """
+        Visits an import statement in the AST.
+
+        Args:
+            node: The AST node representing the import statement.
+        """
         for name in node.names:
             if name.asname is None:
                 self.graph_class.add_import(name.name, name.name)
@@ -810,6 +1129,12 @@ class ASTVisitor(ast.NodeVisitor):
                 self.graph_class.add_import(name.name, name.asname)
 
     def visit_ImportFrom(self, node):
+        """
+        Visits an import from statement in the AST.
+
+        Args:
+            node: The AST node representing the import from statement.
+        """
         for name in node.names:
             if name.asname is None:
                 self.graph_class.add_import(f"{node.module}.{name.name}", name.name)
@@ -817,7 +1142,15 @@ class ASTVisitor(ast.NodeVisitor):
                 self.graph_class.add_import(f"{node.module}.{name.name}", name.asname)
 
     def create_inheritance_structure(self, node, child):
-        """creates inheritance structure for classes"""
+        """Creates the inheritance structure for classes.
+
+           Args:
+               node: The AST node representing the base class.
+               child: The child class node being defined.
+
+           Returns:
+               The base class node or None if not found.
+           """
         base_node = None
         if isinstance(node, ast.Name):
             base_node, type = self.graph_class.get_reference_by_name(node.id)
@@ -840,6 +1173,12 @@ class ASTVisitor(ast.NodeVisitor):
         return base_node
 
     def visit_ClassDef(self, node):
+        """
+        Visits a class definition in the AST.
+
+        Args:
+            node: The AST node representing the class definition.
+        """
         class_name = node.name
         self.current_module = self.graph_class.get_current_module()
         class_node = self.graph_class.get_class_by_name(class_name, module=self.graph_class.get_current_module())
@@ -862,6 +1201,12 @@ class ASTVisitor(ast.NodeVisitor):
         self.generic_visit(node)
 
     def visit_FunctionDef(self, node):
+        """
+        Visits a function definition in the AST.
+
+        Args:
+            node: The AST node representing the function definition.
+        """
         self.current_method = None
         if self.current_class is not None:
             self.current_method = self.graph_class.get_method_def_in_class(node.name, self.current_class)
@@ -876,6 +1221,12 @@ class ASTVisitor(ast.NodeVisitor):
         self.generic_visit(node)
 
     def visit_Assign(self, node):
+        """
+        Visits an assignment statement in the AST.
+
+       Args:
+           node: The AST node representing the assignment statement.
+       """
         if node.col_offset <= self.current_indentation:
             self.current_method = None
             self.current_indentation = node.col_offset
@@ -899,6 +1250,12 @@ class ASTVisitor(ast.NodeVisitor):
         self.generic_visit(node)
 
     def visit_Call(self, node):
+        """
+        Visits a function call in the AST.
+
+        Args:
+            node: The AST node representing the function call.
+        """
         if node.col_offset <= self.current_indentation:
             self.current_method = None
             self.current_indentation = node.col_offset
