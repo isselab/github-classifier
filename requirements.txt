@@ -1,5 +1,5 @@
-#Version numbers needs to be checked, current one are only guessed.
-torch==2.5.1         # Ensure compatibility with torch-geometric
+# Version numbers needs to be checked, current one are only guessed.
+torch==2.5.1               # Ensure compatibility with torch-geometric
 torch-geometric==2.6.1     # Verify compatibility with the torch version
 pandas==2.2.3              # Check for compatibility with your code
 scikit-learn==1.5.2        # Ensure this version works with your code
