@@ -11,19 +11,20 @@ from torch_geometric.loader import DataLoader
 from CustomDataset import RepositoryDataset
 from GCN import GCN
 from GraphClasses import defined_labels
+from settings import CONFIG
 
 '''please prepare the dataset you want to train the tool with by using prepareDataset.py,
 this file is for training the tool'''
 
-output_directory = 'D:/labeled_repos_output'  # path to the folder containing the converted repositories
-labels = 'data/labeled_dataset_repos.xlsx'
-n_epoch = 100
-k_folds = 4  # has to be at least 2
-learning_rate = 0.001
-figure_output = 'C:/Users/const/Documents/Bachelorarbeit/training_testing_plot'
-threshold = 0.5  # value above which label is considered to be predicted by model
-save_classification_reports = 'classification_reports/train.txt'
-experiment_name = 'train'
+output_directory = CONFIG['training']['output_directory']  # path to the folder containing the converted repositories
+labels = CONFIG['main']['repository_list_file']
+n_epoch = CONFIG['training']['n_epoch']
+k_folds = CONFIG['training']['k_folds']  # has to be at least 2
+learning_rate = CONFIG['training']['learning_rate']
+figure_output = CONFIG['training']['figure_output']
+threshold = CONFIG['training']['threshold']  # value above which label is considered to be predicted by model
+save_classification_reports = CONFIG['training']['save_classification_reports']
+experiment_name = CONFIG['training']['experiment_name']
 
 
 def train():

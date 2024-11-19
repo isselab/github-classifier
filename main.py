@@ -2,6 +2,7 @@ import torch
 
 from CustomDataset import RepositoryDataset
 from Pipeline import prepare_dataset
+from settings import CONFIG
 
 '''prepare_dataset: repository list is optional parameter, if you want to download the repositories automatically;
     output_directory is required when more than one repository is going to be converted,
@@ -13,10 +14,11 @@ from Pipeline import prepare_dataset
     
     if you want to train the gcn, please use train.py, this file is for using the trained tool'''
 
-repository_list = 'data/labeled_dataset_repos.xlsx'
-repository_directory = 'data/input'  # path to directory containing the repositories you want to classify
-output_directory = 'data/output'  # path for the output directory
-path_to_model = 'graph_classification_model.pt'  # trained classification model
+# Access the relevant settings from the CONFIG dictionary
+repository_list = CONFIG['dataset_preparation']['repository_list_file']  # Path to the labeled dataset repository file
+repository_directory = CONFIG['dataset_preparation']['repository_directory']  # Path to directory containing the repositories you want to classify
+output_directory = CONFIG['dataset_preparation']['output_directory']  # Path for the output directory
+path_to_model = CONFIG['graph']['model_path']  # Path to the trained classification model
 
 if __name__ == '__main__':
 
