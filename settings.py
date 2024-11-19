@@ -36,7 +36,7 @@ MAIN_SETTINGS = {
     'repository_list_file': os.path.join(BASE_DIR, 'data/labeled_dataset_repos.xlsx'),
     'repository_directory': os.path.join(BASE_DIR, 'data/input'),  # Path to directory containing repositories to classify
     'output_directory': os.path.join(BASE_DIR, 'data/output'),  # Path for the output directory
-    'path_to_model': os.path.join(BASE_DIR, 'graph_classification_model.pt'),  # Trained classification model
+    'model_path': os.path.join(BASE_DIR, 'graph_classification_model.pt'),  # Trained classification model
 }
 
 # Graph Class Configuration

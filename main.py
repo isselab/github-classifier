@@ -15,10 +15,10 @@ from settings import CONFIG
     if you want to train the gcn, please use train.py, this file is for using the trained tool'''
 
 # Access the relevant settings from the CONFIG dictionary
-repository_list = CONFIG['dataset_preparation']['repository_list_file']  # Path to the labeled dataset repository file
-repository_directory = CONFIG['dataset_preparation']['repository_directory']  # Path to directory containing the repositories you want to classify
-output_directory = CONFIG['dataset_preparation']['output_directory']  # Path for the output directory
-path_to_model = CONFIG['graph']['model_path']  # Path to the trained classification model
+repository_list = CONFIG['main']['repository_list_file']  # Path to the labeled dataset repository file
+repository_directory = CONFIG['main']['repository_directory']  # Path to directory containing the repositories you want to classify
+output_directory = CONFIG['main']['output_directory']  # Path for the output directory
+path_to_model = CONFIG['main']['model_path']  # Path to the trained classification model
 
 if __name__ == '__main__':
 
