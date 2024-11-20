@@ -26,9 +26,10 @@ TRAINING_SETTINGS = {
 
 # Dataset Preparation Configuration
 DATASET_PREPARATION_SETTINGS = {
-    'repository_directory': os.path.join('D:/new_15'),  # Path to GitHub repositories , Local Path used here!!!
-    'output_directory': os.path.join('D:/new_15_output'), # Local Path used here!!!
-    'repository_list_file': os.path.join(BASE_DIR, 'data/new_15.xlsx'),  # Missing?
+    'repository_directory': os.path.join('data/input'),  # Path to GitHub repositories , Local Path used here!!!
+    'output_directory': os.path.join('data/output'), # Local Path used here!!!
+    'repository_list_file': os.path.join(BASE_DIR, 'data/labeled_dataset_repos.xlsx'),
+    'download_from_repository_list' : False
 }
 
 # Main Configuration

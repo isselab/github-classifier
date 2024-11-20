@@ -10,12 +10,16 @@ from settings import CONFIG
 
 repository_directory = CONFIG['dataset_preparation']['repository_directory']  # GitHub repositories
 output_directory = CONFIG['dataset_preparation']['output_directory']
-repository_list = CONFIG['dataset_preparation']['repository_list_file']  # Missing?
+repository_list = CONFIG['dataset_preparation']['repository_list_file']
+download_from_repository_list = CONFIG['dataset_preparation']['download_from_repository_list']
 
 if __name__ == '__main__':
 
     # create the graph dataset of the repositories
     try:
-        nodes, edges, edge_attributes = prepare_dataset(repository_directory, output_directory)
+        if download_from_repository_list:
+            nodes, edges, edge_attributes = prepare_dataset(repository_directory, output_directory,repository_list)
+        else:
+            nodes, edges, edge_attributes = prepare_dataset(repository_directory, output_directory)
     except Exception as e:
         print(e)
