@@ -113,7 +113,7 @@ try:
     print(f'Dataset size: {dataset.__len__()}')
 except Exception as e:
     print(e)
-    exit('Datasetcannot be loaded.')
+    exit('Dataset can not be loaded.')
 
 device = 'cuda' if torch.cuda.is_available() else 'cpu'
 
