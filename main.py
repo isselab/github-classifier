@@ -30,6 +30,7 @@ if __name__ == '__main__':
         nodes, edges, edge_attributes = prepare_dataset(repository_directory, output_directory)
     except Exception as e:
         print(e)
+        exit('can not create graph dataset of the repositories')
 
     # load trained graph convolutional network model
     print('---load GCN model---')
