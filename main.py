@@ -48,8 +48,7 @@ if __name__ == '__main__':
 
         output = model(nodes, edges, edge_attributes)
         output = output.cpu().detach().numpy()
-        output = (
-                    output > 0.5)  # threshold for when label is considered predicted, model is trained with threshold 0.5!
+        output = (output > 0.5)  # threshold for when label is considered predicted, model is trained with threshold 0.5!
         print('Labels [Application, Framework, Library, Plugin]:')
         print(f'Prediction: {output}')
 
@@ -75,7 +74,6 @@ if __name__ == '__main__':
                 graph.edge_attr = graph.edge_attr.to(device)
             output = model(graph.x, graph.edge_index, graph.edge_attr)
             output = output.cpu().detach().numpy()
-            output = (
-                        output > 0.5)  # threshold for when label is considered predicted, model is trained with threshold 0.5!
+            output = (output > 0.5)  # threshold for when label is considered predicted, model is trained with threshold 0.5!
             print('Labels [Application, Framework, Library, Plugin]:')
             print(f'Prediction: {output}')

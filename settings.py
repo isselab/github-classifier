@@ -13,12 +13,12 @@ BASE_DIR = os.path.dirname(os.path.abspath(__file__))
 
 # Training Configuration
 TRAINING_SETTINGS = {
-    'output_directory': os.path.join('D:/labeled_repos_output'), # Path to the folder containing the converted repositories
+    'output_directory': os.path.join('data/output'), # Path to the folder containing the converted repositories
     'labels_file': os.path.join(BASE_DIR, 'data/labeled_dataset_repos.xlsx'),
     'n_epoch': 100,
     'k_folds': 4,  # 1 to disable / Must be at least 2 to be active
     'learning_rate': 0.001,
-    'figure_output': os.path.join('C:/Users/const/Documents/Bachelorarbeit/training_testing_plot'), # Local Path used here!!!
+    'figure_output': os.path.join('data/output/training_test_plot'), # Local Path used here!!!
     'threshold': 0.5,  # Value above which label is considered predicted by model
     'save_classification_reports': os.path.join(BASE_DIR, 'classification_reports/train.txt'),
     'experiment_name': 'train',
