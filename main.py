@@ -14,11 +14,11 @@ from settings import CONFIG
     
     if you want to train the gcn, please use train.py, this file is for using the trained tool'''
 
-# Access the relevant settings from the CONFIG dictionary
-repository_list = CONFIG['main']['repository_list_file']  # Path to the labeled dataset repository file
-repository_directory = CONFIG['main']['repository_directory']  # Path to directory containing the repositories you want to classify
+# Access the relevant settings from settings.py
+repository_directory = CONFIG['main']['input_directory']  # Path to directory containing the repositories you want to classify
 output_directory = CONFIG['main']['output_directory']  # Path for the output directory
 path_to_model = CONFIG['main']['model_path']  # Path to the trained classification model
+threshold = CONFIG['main']['threshold']
 
 if __name__ == '__main__':
 
@@ -76,6 +76,6 @@ if __name__ == '__main__':
                 graph.edge_attr = graph.edge_attr.to(device)
             output = model(graph.x, graph.edge_index, graph.edge_attr)
             output = output.cpu().detach().numpy()
-            output = (output > 0.5)  # threshold for when label is considered predicted, model is trained with threshold 0.5!
+            output = (output > threshold)  # threshold for when label is considered predicted, model is trained with threshold 0.5!
             print('Labels [Application, Framework, Library, Plugin]:')
             print(f'Prediction: {output}')
