@@ -64,6 +64,7 @@ if __name__ == '__main__':
             print(dataset.num_classes)
         except Exception as e:
             print(e)
+            exit('not able to load dataset')
 
         for i, item in enumerate(dataset.graph_names):
             graph = dataset.__getitem__(i)

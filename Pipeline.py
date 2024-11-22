@@ -240,8 +240,7 @@ def prepare_dataset(repository_directory, output_directory=None, repository_list
             create_output_folders(output_directory)
         except Exception as e:
             print(e)
-            print('output directory is required!')
-            exit()  # exit program because of missing output directory
+            exit('output directory is required!')  # exit program because of missing output directory
         # create pool for multiprocessing/parallelisation
         repo_multiprocess = []
         for repository in repositories:

@@ -113,7 +113,7 @@ try:
     print(f'Dataset size: {dataset.__len__()}')
 except Exception as e:
     print(e)
-    print('Dataset cannot be loaded.')
+    exit('Datasetcannot be loaded.')
 
 device = 'cuda' if torch.cuda.is_available() else 'cpu'
 
@@ -143,7 +143,6 @@ for f, fold in enumerate(kfold.split(dataset)):
     # split into train and testset
     trainset, testset = random_split(dataset, [0.9, 0.1])
     print(f'size of train dataset: {len(trainset)}, test dataset: {len(testset)}')
-
     trainloader = DataLoader(trainset, batch_size=32, shuffle=True)
     testloader = DataLoader(testset, batch_size=32, shuffle=False)
     print(f'number of batches in train dataset: {len(trainloader)}, test dataset: {len(testloader)}')
@@ -176,8 +175,7 @@ for f, fold in enumerate(kfold.split(dataset)):
 
             # log loss
             metrics = {"training loss": train_loss, "test loss": test_loss}
-            mlflow.log_metrics(metrics,
-                               step=epoch)  # one folder per fold, because metrics needs to be key value pairs not dicts
+            mlflow.log_metrics(metrics,step=epoch)  # one folder per fold, because metrics needs to be key value pairs not dicts
             reports[f'Fold_{f}_Epoch_{epoch}_train'] = train_report
             reports[f'Fold_{f}_Epoch_{epoch}_test'] = test_report
 
