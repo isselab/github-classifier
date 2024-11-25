@@ -67,6 +67,7 @@ def download_repositories(repository_directory, repository_list):
     # change working directory back to github-classifier, otherwise cannot load resources from there and run tool
     os.chdir(working_directory)
 
+
 def create_ecore_graphs(repository, write_in_file, output_directory=None):
     """
       Convert a repository into an Ecore graph.
@@ -91,7 +92,8 @@ def create_ecore_graphs(repository, write_in_file, output_directory=None):
     resource_set = ResourceSet()
     if os.path.isdir(repository):
         try:
-            ecore_graph = ProjectEcoreGraph(resource_set, repository, write_in_file, output_directory)
+            ecore_graph = ProjectEcoreGraph(
+                resource_set, repository, write_in_file, output_directory)
         except Exception as e:
             print(e)
             if 'inconsistent use of tabs and spaces in indentation' in str(e):
@@ -101,7 +103,8 @@ def create_ecore_graphs(repository, write_in_file, output_directory=None):
                 for file_path in python_files:
                     os.system(f'autopep8 --in-place {file_path}')
                 try:
-                    ecore_graph = ProjectEcoreGraph(resource_set, repository, write_in_file, output_directory)
+                    ecore_graph = ProjectEcoreGraph(
+                        resource_set, repository, write_in_file, output_directory)
                 except Exception as e:
                     print(e)
                     print(f'Problem with repository {repository}. Skipping.')
@@ -116,6 +119,7 @@ def create_ecore_graphs(repository, write_in_file, output_directory=None):
         return ecore_graph.get_graph()
     else:
         return None
+
 
 def create_matrix_structure(write_in_file, xmi_file=None, ecore_graph=None, output_directory=None):
     """
@@ -151,9 +155,11 @@ def create_matrix_structure(write_in_file, xmi_file=None, ecore_graph=None, outp
         mm_root = resource.contents[0]
         rset.metamodel_registry[mm_root.nsURI] = mm_root
 
-        resource = rset.get_resource(URI(f'{output_directory}/xmi_files/{xmi_file}'))
+        resource = rset.get_resource(
+            URI(f'{output_directory}/xmi_files/{xmi_file}'))
         try:
-            EcoreToMatrixConverter(resource, write_in_file, f'{output_directory}/csv_files')
+            EcoreToMatrixConverter(
+                resource, write_in_file, f'{output_directory}/csv_files')
         except Exception as e:
             print(e)
             print(f'Problem with xmi file {xmi_file}. Skipping')
@@ -240,12 +246,14 @@ def prepare_dataset(repository_directory, output_directory=None, repository_list
             create_output_folders(output_directory)
         except Exception as e:
             print(e)
-            exit('output directory is required!')  # exit program because of missing output directory
+            # exit program because of missing output directory
+            exit('output directory is required!')
         # create pool for multiprocessing/parallelisation
         repo_multiprocess = []
         for repository in repositories:
             current_directory = os.path.join(repository_directory, repository)
-            repo_multiprocess.append((current_directory, write_in_file, output_directory))
+            repo_multiprocess.append(
+                (current_directory, write_in_file, output_directory))
 
     print('---convert repositories into type graphs---')
     # convert repositories into type graphs
@@ -261,10 +269,12 @@ def prepare_dataset(repository_directory, output_directory=None, repository_list
         list_xmi_files = os.listdir(f'{output_directory}/xmi_files')
         xmi_multiprocess = []
         for xmi_file in list_xmi_files:
-            xmi_multiprocess.append((write_in_file, xmi_file, None, output_directory))
+            xmi_multiprocess.append(
+                (write_in_file, xmi_file, None, output_directory))
         parallel_processing(create_matrix_structure, xmi_multiprocess)
     else:
-        node_features, adj_list, edge_attr = create_matrix_structure(write_in_file, None, ecore_graph)
+        node_features, adj_list, edge_attr = create_matrix_structure(
+            write_in_file, None, ecore_graph)
 
     # if only one repository is converted for classification, adjust data format needed by the gcn
     if node_features is not None and adj_list is not None and edge_attr is not None:

@@ -16,13 +16,15 @@ from settings import CONFIG
 '''please prepare the dataset you want to train the tool with by using prepareDataset.py,
 this file is for training the tool'''
 
-output_directory = CONFIG['training']['output_directory']  # path to the folder containing the converted repositories
+# path to the folder containing the converted repositories
+output_directory = CONFIG['training']['output_directory']
 labels = CONFIG['main']['repository_list_file']
 n_epoch = CONFIG['training']['n_epoch']
 k_folds = CONFIG['training']['k_folds']  # has to be at least 2
 learning_rate = CONFIG['training']['learning_rate']
 figure_output = CONFIG['training']['figure_output']
-threshold = CONFIG['training']['threshold']  # value above which label is considered to be predicted by model
+# value above which label is considered to be predicted by model
+threshold = CONFIG['training']['threshold']
 save_classification_reports = CONFIG['training']['save_classification_reports']
 experiment_name = CONFIG['training']['experiment_name']
 
@@ -100,8 +102,10 @@ def test(loader):
 
         # better evaluation metrics for multilabel: precision, recall, f1_score
         # report is string, dict to extract results
-        report_dict = classification_report(graph.y, trafo_output, target_names=defined_labels, output_dict=True)
-        class_report = classification_report(graph.y, trafo_output, target_names=defined_labels)
+        report_dict = classification_report(
+            graph.y, trafo_output, target_names=defined_labels, output_dict=True)
+        class_report = classification_report(
+            graph.y, trafo_output, target_names=defined_labels)
 
     return loss_test / total, class_report, report_dict
 
@@ -142,10 +146,12 @@ best_avg = - np.inf
 for f, fold in enumerate(kfold.split(dataset)):
     # split into train and testset
     trainset, testset = random_split(dataset, [0.9, 0.1])
-    print(f'size of train dataset: {len(trainset)}, test dataset: {len(testset)}')
+    print(
+        f'size of train dataset: {len(trainset)}, test dataset: {len(testset)}')
     trainloader = DataLoader(trainset, batch_size=32, shuffle=True)
     testloader = DataLoader(testset, batch_size=32, shuffle=False)
-    print(f'number of batches in train dataset: {len(trainloader)}, test dataset: {len(testloader)}')
+    print(
+        f'number of batches in train dataset: {len(trainloader)}, test dataset: {len(testloader)}')
 
     # log model parameters
     params = {"lr": learning_rate}
@@ -175,7 +181,8 @@ for f, fold in enumerate(kfold.split(dataset)):
 
             # log loss
             metrics = {"training loss": train_loss, "test loss": test_loss}
-            mlflow.log_metrics(metrics,step=epoch)  # one folder per fold, because metrics needs to be key value pairs not dicts
+            # one folder per fold, because metrics needs to be key value pairs not dicts
+            mlflow.log_metrics(metrics, step=epoch)
             reports[f'Fold_{f}_Epoch_{epoch}_train'] = train_report
             reports[f'Fold_{f}_Epoch_{epoch}_test'] = test_report
 
@@ -220,7 +227,8 @@ for f, fold in enumerate(kfold.split(dataset)):
             print(f'f1-score of plugin during testing: {plugin_f1_test}')
             av_test = test_rep_dict['weighted avg']
             f1_test = av_test['f1-score']
-            print(f'weighted average of labels (f1-score) during testing: {f1_test}')
+            print(
+                f'weighted average of labels (f1-score) during testing: {f1_test}')
             print('==============================================')
 
             # save trained model with best performance

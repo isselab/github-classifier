@@ -27,7 +27,8 @@ class RepositoryDataset(Dataset):
                 self.encoded_labels = self.convert_labeled_graphs(label_list)
             except Exception as e:
                 print(e)
-        self.num_node_features = 11  # nodes have 11 features, their one hot encoded node type, hashed name, and one hot encoded library flag
+        # nodes have 11 features, their one hot encoded node type, hashed name, and one hot encoded library flag
+        self.num_node_features = 11
         self.num_classes = len(defined_labels)
         self.directory = directory
         self.graph_names = []
@@ -71,15 +72,19 @@ class RepositoryDataset(Dataset):
         for g, graph in enumerate(self.graph_dir):
             try:
                 if f'{graph_name}_nodefeatures.csv' == graph:
-                    node_features = pd.read_csv(f'{self.directory}/{graph}', header=None)  # load csv file
+                    node_features = pd.read_csv(
+                        f'{self.directory}/{graph}', header=None)  # load csv file
                     self.x = convert_hashed_names_to_float(node_features)
                 if f'{graph_name}_A.csv' == graph:
-                    adjacency = pd.read_csv(f'{self.directory}/{graph}', header=None)
+                    adjacency = pd.read_csv(
+                        f'{self.directory}/{graph}', header=None)
                     edge_tensor = convert_list_to_longtensor(adjacency)
                     self.edge_index = convert_edge_dim(edge_tensor)
                 if f'{graph_name}_edge_attributes.csv' == graph:
-                    edge_attributes = pd.read_csv(f'{self.directory}/{graph}', header=None)
-                    self.edge_attr = convert_list_to_floattensor(edge_attributes)
+                    edge_attributes = pd.read_csv(
+                        f'{self.directory}/{graph}', header=None)
+                    self.edge_attr = convert_list_to_floattensor(
+                        edge_attributes)
             except Exception as e:
                 print(graph, e)
         if hasattr(self, 'x') and hasattr(self, 'edge_index'):
@@ -138,13 +143,16 @@ class RepositoryDataset(Dataset):
         # iterate over loaded file and retrieve labels
         for row in resource.iterrows():
             object = row[1]
-            url = object.get('html_url')  # column header containing repository url
+            # column header containing repository url
+            url = object.get('html_url')
             repo_name = url.split('/')[-1]  # last element is repository name
             graph_names.append(repo_name)
-            type_label = object.get('final type')  # column header containing label
+            # column header containing label
+            type_label = object.get('final type')
             graph_labels.append(type_label)
 
-        self.class_elements = self.count_class_elements(graph_labels)  # count how many repos are in each class
+        self.class_elements = self.count_class_elements(
+            graph_labels)  # count how many repos are in each class
 
         # encode labels
         encoded_nodes = multi_hot_encoding(defined_labels, graph_labels)
@@ -204,11 +212,14 @@ class RepositoryDataset(Dataset):
             for g, graph in enumerate(self.graph_dir):
                 try:
                     if f'{graph_name}_nodefeatures.csv' == graph:
-                        node_features = pd.read_csv(f'{self.directory}/{graph}', header=None)
+                        node_features = pd.read_csv(
+                            f'{self.directory}/{graph}', header=None)
                     if f'{graph_name}_A.csv' == graph:
-                        adjacency = pd.read_csv(f'{self.directory}/{graph}', header=None)
+                        adjacency = pd.read_csv(
+                            f'{self.directory}/{graph}', header=None)
                     if f'{graph_name}_edge_attributes.csv' == graph:
-                        edge_attributes = pd.read_csv(f'{self.directory}/{graph}', header=None)
+                        edge_attributes = pd.read_csv(
+                            f'{self.directory}/{graph}', header=None)
                 except Exception as e:
                     if graph_name in self.graph_names:
                         self.graph_names.remove(graph_name)

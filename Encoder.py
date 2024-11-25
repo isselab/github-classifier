@@ -15,7 +15,8 @@ def one_hot_encoding(labels, matrix):
     Returns:
         np.ndarray: A one-hot encoded array representing the input labels.
     """
-    one_hot_encoder = OneHotEncoder(handle_unknown='ignore', sparse_output=False)
+    one_hot_encoder = OneHotEncoder(
+        handle_unknown='ignore', sparse_output=False)
     labels = pd.DataFrame(labels)
     one_hot_encoder.fit(labels)
     matrix = pd.DataFrame(matrix)
