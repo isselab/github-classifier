@@ -1,0 +1,15 @@
+artifact_uri: file:///C:/Users/Tim/Documents/GitHub/github-classifier/mlruns/432142085983707736/1e3a55830ad0434092c05f9d3696971a/artifacts
+end_time: 1732222348799
+entry_point_name: ''
+experiment_id: '432142085983707736'
+lifecycle_stage: active
+run_id: 1e3a55830ad0434092c05f9d3696971a
+run_name: smiling-quail-189
+run_uuid: 1e3a55830ad0434092c05f9d3696971a
+source_name: ''
+source_type: 4
+source_version: ''
+start_time: 1732215925408
+status: 3
+tags: []
+user_id: Tim

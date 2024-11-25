@@ -1,4 +1,5 @@
 from Pipeline import prepare_dataset
+from settings import CONFIG
 
 '''this file is for preparing the dataset you want to train the tool with
 
@@ -7,14 +8,19 @@ from Pipeline import prepare_dataset
     if there is only one repository the output of the converter is saved in return variables and can be
     piped into the gcn as input without needing to load the data from files'''
 
-repository_directory = 'D:/new_15' #github repositories
-output_directory = 'D:/new_15_output'
-repository_list = 'data/new_15.xlsx'
+repository_directory = CONFIG['dataset_preparation']['repository_directory']  # GitHub repositories
+output_directory = CONFIG['dataset_preparation']['output_directory']
+repository_list = CONFIG['dataset_preparation']['repository_list_file']
+download_from_repository_list = CONFIG['dataset_preparation']['download_from_repository_list']
 
 if __name__ == '__main__':
-    
-    #create the graph dataset of the repositories
+
+    # create the graph dataset of the repositories
     try:
-        nodes, edges, edge_attributes = prepare_dataset(repository_directory, output_directory)
+        if download_from_repository_list:
+            nodes, edges, edge_attributes = prepare_dataset(repository_directory, output_directory,repository_list)
+        else:
+            nodes, edges, edge_attributes = prepare_dataset(repository_directory, output_directory)
     except Exception as e:
         print(e)
+        exit('ubable to create graph dataset of the repositories')
