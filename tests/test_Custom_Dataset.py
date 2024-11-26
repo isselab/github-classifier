@@ -54,4 +54,5 @@ class TestCustomDataset(unittest.TestCase):
             element = dataset.__getitem__(g)
             self.assertEqual(element.edge_attr.dim(), 2, 'edge attribute tensor has wrong dimension')
 
-unittest.main()
+if __name__ == "__main__":
+    unittest.main()

@@ -930,4 +930,5 @@ class TestETMConv(unittest.TestCase):
         for item in full_features:
             self.assertEqual(len(item), 11, 'number of node features is wrong')
 
-unittest.main()
+if __name__ == "__main__":
+    unittest.main()

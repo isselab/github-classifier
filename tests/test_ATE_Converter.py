@@ -351,4 +351,5 @@ class TestATEConv(unittest.TestCase):
         self.assertEqual(ecore_graph.modules[2].contains[0].signature.method.tName, 'Tensor_ExternalLibrary', 'wrong method name in module in second subpackage')
         self.assertEqual(ecore_graph.modules[2].contains[0].accessedBy[0].eClass.name, NodeTypes.CALL.value, 'call is missing')
 
-unittest.main()
+if __name__ == "__main__":
+    unittest.main()
