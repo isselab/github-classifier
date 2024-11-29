@@ -15,9 +15,12 @@ from settings import CONFIG
     if you want to train the gcn, please use train.py, this file is for using the trained tool'''
 
 # Access the relevant settings from settings.py
-repository_directory = CONFIG['main']['input_directory']  # Path to directory containing the repositories you want to classify
-output_directory = CONFIG['main']['output_directory']  # Path for the output directory
-path_to_model = CONFIG['main']['model_path']  # Path to the trained classification model
+# Path to directory containing the repositories you want to classify
+repository_directory = CONFIG['main']['input_directory']
+# Path for the output directory
+output_directory = CONFIG['main']['output_directory']
+# Path to the trained classification model
+path_to_model = CONFIG['main']['model_path']
 threshold = CONFIG['main']['threshold']
 
 if __name__ == '__main__':
@@ -27,7 +30,8 @@ if __name__ == '__main__':
 
     # create the graph dataset of the repositories
     try:
-        nodes, edges, edge_attributes = prepare_dataset(repository_directory, output_directory)
+        nodes, edges, edge_attributes = prepare_dataset(
+            repository_directory, output_directory)
     except Exception as e:
         print(e)
         exit('can not create graph dataset of the repositories')
@@ -49,7 +53,8 @@ if __name__ == '__main__':
 
         output = model(nodes, edges, edge_attributes)
         output = output.cpu().detach().numpy()
-        output = (output > 0.5)  # threshold for when label is considered predicted, model is trained with threshold 0.5!
+        # threshold for when label is considered predicted, model is trained with threshold 0.5!
+        output = (output > 0.5)
         print('Labels [Application, Framework, Library, Plugin]:')
         print(f'Prediction: {output}')
 
@@ -76,6 +81,7 @@ if __name__ == '__main__':
                 graph.edge_attr = graph.edge_attr.to(device)
             output = model(graph.x, graph.edge_index, graph.edge_attr)
             output = output.cpu().detach().numpy()
-            output = (output > threshold)  # threshold for when label is considered predicted, model is trained with threshold 0.5!
+            # threshold for when label is considered predicted, model is trained with threshold 0.5!
+            output = (output > threshold)
             print('Labels [Application, Framework, Library, Plugin]:')
             print(f'Prediction: {output}')

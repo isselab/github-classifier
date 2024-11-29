@@ -7,13 +7,15 @@ from pyecore.resources import ResourceSet, URI
 from NodeFeatures import NodeTypes
 
 logger = logging.getLogger(__name__)
-logging.basicConfig(filename='skipped_files.log', level=logging.WARNING, filemode='a')
+logging.basicConfig(filename='skipped_files.log',
+                    level=logging.WARNING, filemode='a')
 
 
 class ProjectEcoreGraph:
     """
     Class to represent a project Ecore graph, processing Python files to create a type graph.
     """
+
     def __init__(self, resource_set: ResourceSet, repository, write_in_file, output_directory=None):
         """
         Initializes the ProjectEcoreGraph.
@@ -31,11 +33,9 @@ class ProjectEcoreGraph:
             raise ValueError('Directory is required')
 
         self.root_directory = repository.replace('\\', '/')
-
-        metamodel_resource = resource_set.get_resource(URI('Basic.ecore'))
-
-        self.epackage = metamodel_resource.contents[0]
-        self.graph = self.epackage.getEClassifier('TypeGraph')(tName=self.root_directory.split('/')[-1])
+        self.epackage = resource_set.get_resource(URI('Basic.ecore')).contents[0]
+        self.graph = self.epackage.getEClassifier('TypeGraph')(
+            tName=self.root_directory.split('/')[-1])
 
         # initialize internal structures
         self.package_list = []  # entries: [package_node, name, parent]
@@ -47,10 +47,12 @@ class ProjectEcoreGraph:
         self.classes_without_module = []
         self.method_list = []  # entries: [method_node, name, module_node]
         self.check_list = []  # entries: class_node
-        self.call_in_module = []  # entries: [caller_node_module, caller_node, called_function_name] both methods in the same module
+        # entries: [caller_node_module, caller_node, called_function_name] both methods in the same module
+        self.call_in_module = []
         self.call_external_module = []  # entries: [imported instance, caller node]
         self.call_imported_library = []  # entries: [caller_node, imported_instance]
-        self.imported_libraries = []  # entries: [module_node, module_name, package_node, package_name]
+        # entries: [module_node, module_name, package_node, package_name]
+        self.imported_libraries = []
         self.imported_package = None
 
         python_files = [os.path.join(root, file) for root, _, files in os.walk(
@@ -72,13 +74,15 @@ class ProjectEcoreGraph:
                 parent = None
                 for item in dir_path:
                     if parent is None:
-                        package_node = self.create_ecore_instance(NodeTypes.PACKAGE)
+                        package_node = self.create_ecore_instance(
+                            NodeTypes.PACKAGE)
                         package_node.tName = item
                         self.graph.packages.append(package_node)
                         self.package_list.append([package_node, item, None])
                         parent = package_node
                     else:
-                        package_node = self.create_ecore_instance(NodeTypes.PACKAGE)
+                        package_node = self.create_ecore_instance(
+                            NodeTypes.PACKAGE)
                         package_node.tName = item
                         package_node.parent = parent
                         self.package_list.append([package_node, item, parent])
@@ -120,7 +124,8 @@ class ProjectEcoreGraph:
             imported = item[1]
             split_import = imported.split('.')
 
-            package_name, subpackage_names, module_name, class_name, method_name = self.set_import_names(split_import)
+            package_name, subpackage_names, module_name, class_name, method_name = self.set_import_names(
+                split_import)
             # flag tLib only works for classes, use name for other types
             package_name += '_ExternalLibrary'
             module_name += '_ExternalLibrary'
@@ -143,16 +148,22 @@ class ProjectEcoreGraph:
                                                 if meth.eClass.name == NodeTypes.METHOD_DEFINITION.value:
                                                     if meth.signature.method.tName == method_name:
                                                         found_method = True
-                                                        call_check = self.get_calls(caller_node, meth)
+                                                        call_check = self.get_calls(
+                                                            caller_node, meth)
                                                         if call_check is False:
-                                                            self.create_calls(caller_node, meth)
+                                                            self.create_calls(
+                                                                caller_node, meth)
                                         if found_method is False:
-                                            method_node = self.create_ecore_instance(NodeTypes.METHOD_DEFINITION)
-                                            self.create_method_signature(method_node, method_name, [])
+                                            method_node = self.create_ecore_instance(
+                                                NodeTypes.METHOD_DEFINITION)
+                                            self.create_method_signature(
+                                                method_node, method_name, [])
                                             obj.defines.append(method_node)
-                                            self.create_calls(caller_node, method_node)
+                                            self.create_calls(
+                                                caller_node, method_node)
                         if found_class is False:
-                            self.create_imported_class_call(module_node, class_name, method_name, caller_node)
+                            self.create_imported_class_call(
+                                module_node, class_name, method_name, caller_node)
                     if class_name is None:
                         found_method = False
                         if hasattr(module_node, 'contains'):
@@ -160,19 +171,24 @@ class ProjectEcoreGraph:
                                 if meth_def.eClass.name == NodeTypes.METHOD_DEFINITION.value:
                                     if meth_def.signature.method.tName == method_name:
                                         found_method = True
-                                        call_check = self.get_calls(caller_node, meth_def)
+                                        call_check = self.get_calls(
+                                            caller_node, meth_def)
                                         if call_check is False:
-                                            self.create_calls(caller_node, meth_def)
+                                            self.create_calls(
+                                                caller_node, meth_def)
                         if found_method is False:
-                            self.create_imported_method_call(module_node, method_name, caller_node)
+                            self.create_imported_method_call(
+                                module_node, method_name, caller_node)
                 if module_node is None:
                     module_node = self.create_ecore_instance(NodeTypes.MODULE)
                     module_node.location = module_name
                     self.graph.modules.append(module_node)
                     if class_name is not None:
-                        self.create_imported_class_call(module_node, class_name, method_name, caller_node)
+                        self.create_imported_class_call(
+                            module_node, class_name, method_name, caller_node)
                     if class_name is None:
-                        self.create_imported_method_call(module_node, method_name, caller_node)
+                        self.create_imported_method_call(
+                            module_node, method_name, caller_node)
                     # get package in whose namespace imported module is
                     pack_name = None
                     if isinstance(subpackage_names, str):
@@ -180,43 +196,54 @@ class ProjectEcoreGraph:
                     if isinstance(subpackage_names, list):
                         pack_name = subpackage_names[-1] + '_ExternalLibrary'
                     if pack_name is not None:
-                        current_package_node = self.get_imported_library_package(pack_name)
+                        current_package_node = self.get_imported_library_package(
+                            pack_name)
                         # subpackage exists
                         if current_package_node is not None:
                             module_node.namespace = current_package_node
-                            self.imported_libraries.append([module_node, module_name, current_package_node, pack_name])
+                            self.imported_libraries.append(
+                                [module_node, module_name, current_package_node, pack_name])
                         # subpackage does not exist
                         if current_package_node is None:
-                            subpackage_node = self.create_ecore_instance(NodeTypes.PACKAGE)
+                            subpackage_node = self.create_ecore_instance(
+                                NodeTypes.PACKAGE)
                             subpackage_node.tName = pack_name
                             subpackage_node.parent = package_node
                             module_node.namespace = subpackage_node
-                            self.imported_libraries.append([module_node, module_name, subpackage_node, pack_name])
+                            self.imported_libraries.append(
+                                [module_node, module_name, subpackage_node, pack_name])
                     if subpackage_names is None:
-                        self.imported_libraries.append([module_node, module_name, None, None])
+                        self.imported_libraries.append(
+                            [module_node, module_name, None, None])
             if package_node is None:
                 if len(split_import) == 2:
-                    package_node = self.create_ecore_instance(NodeTypes.PACKAGE)
+                    package_node = self.create_ecore_instance(
+                        NodeTypes.PACKAGE)
                     package_node.tName = package_name
                     module_node = self.create_ecore_instance(NodeTypes.MODULE)
                     module_node.location = package_name
                     module_node.namespace = package_node
-                    method_node = self.create_ecore_instance(NodeTypes.METHOD_DEFINITION)
+                    method_node = self.create_ecore_instance(
+                        NodeTypes.METHOD_DEFINITION)
                     self.create_method_signature(method_node, method_name, [])
                     module_node.contains.append(method_node)
-                    self.imported_libraries.append([module_node, package_name, package_node, package_name])
+                    self.imported_libraries.append(
+                        [module_node, package_name, package_node, package_name])
                     self.graph.modules.append(module_node)
                     self.graph.packages.append(package_node)
                     self.create_calls(caller_node, method_node)
                 if len(split_import) > 2:
                     # create package hierarchy
-                    package_node = self.create_ecore_instance(NodeTypes.PACKAGE)  # parent package
+                    package_node = self.create_ecore_instance(
+                        NodeTypes.PACKAGE)  # parent package
                     package_node.tName = package_name
                     self.graph.packages.append(package_node)
-                    self.imported_libraries.append([None, None, package_node, package_name])
+                    self.imported_libraries.append(
+                        [None, None, package_node, package_name])
                     self.imported_package = package_node
                     if subpackage_names is not None:
-                        self.create_package_hierarchy(package_node, subpackage_names)
+                        self.create_package_hierarchy(
+                            package_node, subpackage_names)
                     # create module
                     module_node = self.create_ecore_instance(NodeTypes.MODULE)
                     module_node.location = module_name
@@ -224,22 +251,27 @@ class ProjectEcoreGraph:
                     if self.imported_package is not None:
                         module_node.namespace = self.imported_package
 
-                        package_key = self.get_imported_library_package_key(self.imported_package.tName)
+                        package_key = self.get_imported_library_package_key(
+                            self.imported_package.tName)
                         import_entry = self.imported_libraries[package_key]
                         import_entry[0] = module_node
                         import_entry[1] = module_name
                     else:
                         # self.imported_package can be None (very rarely) due to complex import possibilities
-                        package_node = self.create_ecore_instance(NodeTypes.PACKAGE)
+                        package_node = self.create_ecore_instance(
+                            NodeTypes.PACKAGE)
                         package_node.tName = module_name
                         module_node.namespace = package_node
                         self.graph.packages.append(package_node)
-                        self.imported_libraries.append([module_node, module_name, package_node, module_name])
+                        self.imported_libraries.append(
+                            [module_node, module_name, package_node, module_name])
                     # create called method
-                    method_node = self.create_ecore_instance(NodeTypes.METHOD_DEFINITION)
+                    method_node = self.create_ecore_instance(
+                        NodeTypes.METHOD_DEFINITION)
                     self.create_method_signature(method_node, method_name, [])
                     if class_name is not None:
-                        class_node = self.create_ecore_instance(NodeTypes.CLASS)
+                        class_node = self.create_ecore_instance(
+                            NodeTypes.CLASS)
                         class_node.tName = class_name
                         class_node.tLib = True
                         class_node.defines.append(method_node)
@@ -268,7 +300,8 @@ class ProjectEcoreGraph:
             package_node.tName = name
             package_node.parent = parent_package
             if lib_flag is True:
-                self.imported_libraries.append([None, None, package_node, name])
+                self.imported_libraries.append(
+                    [None, None, package_node, name])
             else:
                 self.package_list.append([package_node, name, parent_package])
             self.imported_package = package_node
@@ -285,12 +318,15 @@ class ProjectEcoreGraph:
                 else:
                     package_node.parent = current_parent
                 if lib_flag is True:
-                    self.imported_libraries.append([None, None, package_node, element_lib])
+                    self.imported_libraries.append(
+                        [None, None, package_node, element_lib])
                 else:
                     if e == 0:
-                        self.package_list.append([package_node, element_lib, parent_package])
+                        self.package_list.append(
+                            [package_node, element_lib, parent_package])
                     else:
-                        self.package_list.append([package_node, element_lib, current_parent])
+                        self.package_list.append(
+                            [package_node, element_lib, current_parent])
                 current_parent = package_node
                 self.imported_package = package_node
 
@@ -380,7 +416,8 @@ class ProjectEcoreGraph:
             imported_instance = item[0]
             caller_node = item[1]
             split_import = imported_instance.split('.')
-            package_name, subpackage_names, module_name, class_name, method_name = self.set_import_names(split_import)
+            package_name, subpackage_names, module_name, class_name, method_name = self.set_import_names(
+                split_import)
 
             module_node = self.get_module_by_name(module_name)
             if module_node is not None:
@@ -388,12 +425,15 @@ class ProjectEcoreGraph:
                     if class_name is not None:
                         if obj.eClass.name == NodeTypes.CLASS.value:
                             if obj.tName == class_name:
-                                self.create_method_in_class_call(method_name, obj, caller_node)
+                                self.create_method_in_class_call(
+                                    method_name, obj, caller_node)
                     if obj.eClass.name == NodeTypes.METHOD_DEFINITION.value:
                         self.create_method_call(obj, method_name, caller_node)
             if module_node is None:
-                if len(split_import) > 1:  # if len==1 simple import .. statement, included only if import is used (in that case len>1)
-                    self.call_imported_library.append([caller_node, imported_instance])
+                # if len==1 simple import .. statement, included only if import is used (in that case len>1)
+                if len(split_import) > 1:
+                    self.call_imported_library.append(
+                        [caller_node, imported_instance])
 
     def set_import_names(self, split_import):
         """
@@ -465,10 +505,12 @@ class ProjectEcoreGraph:
                 if obj.eClass.name == NodeTypes.CLASS.value:
                     found_class = obj
                     if obj.tName == class_name:
-                        self.create_method_in_class_call(method_name, obj, caller_node)
+                        self.create_method_in_class_call(
+                            method_name, obj, caller_node)
                     # if class name is self because both methods are in same class
                     if found_class is not None:
-                        self.create_method_in_class_call(method_name, found_class, caller_node)
+                        self.create_method_in_class_call(
+                            method_name, found_class, caller_node)
 
     def create_method_in_class_call(self, method_name, class_node, caller_node):
         """
@@ -521,13 +563,16 @@ class ProjectEcoreGraph:
         # create missing modules/packages the TClass nodes belong to (from imports)
         if len(self.check_list) > 0:
             for obj in self.check_list:
-                ref, ty = self.get_reference_by_name(obj.tName)  # get names of packages and modules
+                # get names of packages and modules
+                ref, ty = self.get_reference_by_name(obj.tName)
                 if ref is not None:
                     imported = ref.split('.')
-                    if len(imported) > 1:  # if len==1 simple import .. statement, included only if import is used (in that case len>1)
+                    # if len==1 simple import .. statement, included only if import is used (in that case len>1)
+                    if len(imported) > 1:
                         package_name, subpackage_names, module_name, class_name, method_name = self.set_import_names(
                             imported)
-                        package_node = self.check_package_list(package_name, None)
+                        package_node = self.check_package_list(
+                            package_name, None)
                         # (parent) package exists
                         if package_node is not None:
                             # package has no subpackages
@@ -538,7 +583,8 @@ class ProjectEcoreGraph:
                                         if mod.location == module_name:
                                             mod_found = True
                                     if mod_found is False:
-                                        module_node = self.create_ecore_instance(NodeTypes.MODULE)
+                                        module_node = self.create_ecore_instance(
+                                            NodeTypes.MODULE)
                                         module_node.location = module_name
                                         module_node.contains.append(obj)
                                         module_node.namespace = package_node
@@ -547,7 +593,8 @@ class ProjectEcoreGraph:
                             if subpackage_names is not None:
                                 # single subpackage
                                 if isinstance(subpackage_names, str):
-                                    subpackage_node = self.check_package_list(subpackage_names, package_node)
+                                    subpackage_node = self.check_package_list(
+                                        subpackage_names, package_node)
                                     if subpackage_node is not None:
                                         mod_found = False
                                         if hasattr(package_node, 'modules'):
@@ -555,24 +602,30 @@ class ProjectEcoreGraph:
                                                 if mod.location == module_name:
                                                     mod_found = True
                                             if mod_found is False:
-                                                self.create_missing_module(module_name, obj, subpackage_node)
+                                                self.create_missing_module(
+                                                    module_name, obj, subpackage_node)
                                     if subpackage_node is None:
-                                        subpackage_node = self.create_ecore_instance(NodeTypes.PACKAGE)
+                                        subpackage_node = self.create_ecore_instance(
+                                            NodeTypes.PACKAGE)
                                         subpackage_node.tName = subpackage_names
                                         subpackage_node.parent = package_node
-                                        self.package_list.append([subpackage_node, subpackage_names, package_node])
-                                        self.create_missing_module(module_name, obj, subpackage_node)
+                                        self.package_list.append(
+                                            [subpackage_node, subpackage_names, package_node])
+                                        self.create_missing_module(
+                                            module_name, obj, subpackage_node)
                                 # multiple subpackages
                                 if isinstance(subpackage_names, list):
                                     for i, item in enumerate(subpackage_names):
                                         if i == 0:
-                                            subpackage_node = self.check_package_list(item, package_node)
+                                            subpackage_node = self.check_package_list(
+                                                item, package_node)
                                             # package hierarchy does not exist
                                             if subpackage_node is None:
                                                 self.create_package_hierarchy(package_node, subpackage_names,
                                                                               lib_flag=False)
                                                 # last subpackage in hierarchy is in self.imported_package
-                                                self.create_missing_module(module_name, obj, self.imported_package)
+                                                self.create_missing_module(
+                                                    module_name, obj, self.imported_package)
                                         # subpackages lower in hierarchy, continue searching as long as sub package exists
                                         if i > 0:
                                             subpackage_node = self.get_package_from_list_by_parent_name(
@@ -583,20 +636,26 @@ class ProjectEcoreGraph:
                                                 self.create_package_hierarchy(subpackage_node, missing_subpackages,
                                                                               lib_flag=False)
                                                 # last subpackage in hierarchy is in self.imported_package
-                                                self.create_missing_module(module_name, obj, self.imported_package)
+                                                self.create_missing_module(
+                                                    module_name, obj, self.imported_package)
                         # (parent) package does not exist
                         if package_node is None:
                             # create package and module
-                            package_node = self.create_ecore_instance(NodeTypes.PACKAGE)
+                            package_node = self.create_ecore_instance(
+                                NodeTypes.PACKAGE)
                             package_node.tName = package_name
                             self.graph.packages.append(package_node)
-                            self.package_list.append([package_node, package_name, None])
+                            self.package_list.append(
+                                [package_node, package_name, None])
                             if subpackage_names is None:
-                                self.create_missing_module(module_name, obj, package_node)
+                                self.create_missing_module(
+                                    module_name, obj, package_node)
                             if subpackage_names is not None:
-                                self.create_package_hierarchy(package_node, subpackage_names, lib_flag=False)
+                                self.create_package_hierarchy(
+                                    package_node, subpackage_names, lib_flag=False)
                                 # last subpackage in hierarchy is in self.imported_package
-                                self.create_missing_module(module_name, obj, self.imported_package)
+                                self.create_missing_module(
+                                    module_name, obj, self.imported_package)
 
     def create_missing_module(self, module_name, class_node, package_node):
         """
@@ -702,9 +761,11 @@ class ProjectEcoreGraph:
         self.current_module = self.create_ecore_instance(NodeTypes.MODULE)
         self.current_module.location = path.removesuffix('.py')
         self.current_module.namespace = current_package
-        path_split = self.current_module.location.replace(f"{self.root_directory}/", '').split('/')
+        path_split = self.current_module.location.replace(
+            f"{self.root_directory}/", '').split('/')
         self.current_module_name = path_split[-1]
-        self.module_list.append([self.current_module, self.current_module_name])
+        self.module_list.append(
+            [self.current_module, self.current_module_name])
 
         # necessary to create inheritance structure for classes
         for class_object in self.classes_without_module:
@@ -739,12 +800,14 @@ class ProjectEcoreGraph:
         Returns:
             The package node or None if not found.
         """
-        package_hierarchy = path.replace(f"{self.root_directory}/", '').split('/')[:-1]
+        package_hierarchy = path.replace(
+            f"{self.root_directory}/", '').split('/')[:-1]
         parent_package = None
         package_node = None
         # first element is highest in package hierarchy
         for package_name in package_hierarchy:
-            package_node = self.get_package_by_name_and_parent(package_name, parent_package)
+            package_node = self.get_package_by_name_and_parent(
+                package_name, parent_package)
             parent_package = package_node
         return package_node
 
@@ -760,10 +823,12 @@ class ProjectEcoreGraph:
             The package node.
         """
         for package_node in self.graph.packages:
-            return_package = self.get_package_recursive(package_node, name, parent)
+            return_package = self.get_package_recursive(
+                package_node, name, parent)
             if return_package is not None:
                 return return_package
-        my_package = self.check_package_list(name, parent)  # checks if subpackage already exists
+        # checks if subpackage already exists
+        my_package = self.check_package_list(name, parent)
         if my_package is not None:
             return my_package
         package_node = self.create_ecore_instance(NodeTypes.PACKAGE)
@@ -866,7 +931,8 @@ class ProjectEcoreGraph:
                 if hasattr(current_class[0], 'childClasses'):
                     for child in current_class[0].childClasses:
                         if child.tName == child_name:
-                            return current_class[2]  # return module of parent class
+                            # return module of parent class
+                            return current_class[2]
         return None
 
     def get_class_by_name(self, name, structure=None, create_if_not_found=True, module=None, move_to_module=True):
@@ -1033,7 +1099,8 @@ class ProjectEcoreGraph:
             name (str?): The name of the method.
             arguments (list?): The list of arguments for the method.
         """
-        method_signature = self.create_ecore_instance(NodeTypes.METHOD_SIGNATURE)
+        method_signature = self.create_ecore_instance(
+            NodeTypes.METHOD_SIGNATURE)
         method = self.create_ecore_instance(NodeTypes.METHOD)
         method.tName = name
         self.graph.methods.append(method)
@@ -1137,9 +1204,11 @@ class ASTVisitor(ast.NodeVisitor):
         """
         for name in node.names:
             if name.asname is None:
-                self.graph_class.add_import(f"{node.module}.{name.name}", name.name)
+                self.graph_class.add_import(
+                    f"{node.module}.{name.name}", name.name)
             else:
-                self.graph_class.add_import(f"{node.module}.{name.name}", name.asname)
+                self.graph_class.add_import(
+                    f"{node.module}.{name.name}", name.asname)
 
     def create_inheritance_structure(self, node, child):
         """Creates the inheritance structure for classes.
@@ -1155,12 +1224,14 @@ class ASTVisitor(ast.NodeVisitor):
         if isinstance(node, ast.Name):
             base_node, type = self.graph_class.get_reference_by_name(node.id)
             if base_node is None:
-                base_node = self.graph_class.get_class_by_name(node.id, module=self.graph_class.get_current_module())
+                base_node = self.graph_class.get_class_by_name(
+                    node.id, module=self.graph_class.get_current_module())
                 base_node.childClasses.append(child)
             elif isinstance(base_node, str) and type == 0:
                 import_parent = None
                 for import_class in base_node.split('.'):
-                    import_node = self.graph_class.get_class_by_name(import_class)  # module is None here
+                    import_node = self.graph_class.get_class_by_name(
+                        import_class)  # module is None here
                     if import_parent is not None:  # if import_node does not have parent, it becomes parent itself
                         import_parent.childClasses.append(import_node)
                     import_parent = import_node
@@ -1181,7 +1252,8 @@ class ASTVisitor(ast.NodeVisitor):
         """
         class_name = node.name
         self.current_module = self.graph_class.get_current_module()
-        class_node = self.graph_class.get_class_by_name(class_name, module=self.graph_class.get_current_module())
+        class_node = self.graph_class.get_class_by_name(
+            class_name, module=self.graph_class.get_current_module())
         self.current_class = class_node
 
         for base in node.bases:
@@ -1191,10 +1263,13 @@ class ASTVisitor(ast.NodeVisitor):
             if isinstance(item, ast.FunctionDef):
                 self.current_indentation = item.col_offset
                 method_name = item.name
-                method_node = self.graph_class.get_method_def_in_class(method_name, class_node)
+                method_node = self.graph_class.get_method_def_in_class(
+                    method_name, class_node)
                 if method_node is None:
-                    method_node = self.graph_class.create_ecore_instance(NodeTypes.METHOD_DEFINITION)
-                    self.graph_class.create_method_signature(method_node, method_name, item.args.args)
+                    method_node = self.graph_class.create_ecore_instance(
+                        NodeTypes.METHOD_DEFINITION)
+                    self.graph_class.create_method_signature(
+                        method_node, method_name, item.args.args)
                     class_node.defines.append(method_node)
                     # to search for missing meth defs later
                     self.graph_class.check_list.append(class_node)
@@ -1209,11 +1284,14 @@ class ASTVisitor(ast.NodeVisitor):
         """
         self.current_method = None
         if self.current_class is not None:
-            self.current_method = self.graph_class.get_method_def_in_class(node.name, self.current_class)
+            self.current_method = self.graph_class.get_method_def_in_class(
+                node.name, self.current_class)
         if self.current_method is None:
             self.current_class = None
-            self.current_method = self.graph_class.create_ecore_instance(NodeTypes.METHOD_DEFINITION)
-            self.graph_class.create_method_signature(self.current_method, node.name, node.args.args)
+            self.current_method = self.graph_class.create_ecore_instance(
+                NodeTypes.METHOD_DEFINITION)
+            self.graph_class.create_method_signature(
+                self.current_method, node.name, node.args.args)
             module_node = self.graph_class.get_current_module()
             self.current_module = module_node
             module_node.contains.append(self.current_method)
@@ -1246,7 +1324,8 @@ class ASTVisitor(ast.NodeVisitor):
                         current_target = current_target.value
                     if isinstance(current_target, ast.Name):
                         target_name = f"{current_target.id}.{target_name}"
-                        self.graph_class.add_instance(target_name[:-1], instance[:-1])
+                        self.graph_class.add_instance(
+                            target_name[:-1], instance[:-1])
         self.generic_visit(node)
 
     def visit_Call(self, node):
@@ -1266,16 +1345,21 @@ class ASTVisitor(ast.NodeVisitor):
         if self.current_method is not None:
             caller_node = self.current_method
         else:
-            module_node = self.graph_class.get_module_by_location(self.graph_class.get_current_module().location)
+            module_node = self.graph_class.get_module_by_location(
+                self.graph_class.get_current_module().location)
             self.current_module = module_node
             method_location = self.graph_class.get_current_module().location
             method_name = method_location.split('/')[-1]
-            caller_node = self.graph_class.get_method_def_in_module(method_name, module_node)
+            caller_node = self.graph_class.get_method_def_in_module(
+                method_name, module_node)
             if caller_node is None:
-                caller_node = self.graph_class.get_method_def_from_internal_structure(method_name, module_node)
+                caller_node = self.graph_class.get_method_def_from_internal_structure(
+                    method_name, module_node)
                 if caller_node is None:
-                    caller_node = self.graph_class.create_ecore_instance(NodeTypes.METHOD_DEFINITION)
-                    self.graph_class.create_method_signature(caller_node, method_name, [])
+                    caller_node = self.graph_class.create_ecore_instance(
+                        NodeTypes.METHOD_DEFINITION)
+                    self.graph_class.create_method_signature(
+                        caller_node, method_name, [])
                     module_node.contains.append(caller_node)
 
         # call node can contain different node types
@@ -1290,7 +1374,8 @@ class ASTVisitor(ast.NodeVisitor):
             instance = instance[:-1]
 
         # for calls within one module
-        self.graph_class.call_in_module.append([self.current_module, caller_node, instance])
+        self.graph_class.call_in_module.append(
+            [self.current_module, caller_node, instance])
 
         # for calls of imported instances, both within repo and external libraries
         instance_from_graph, type = self.graph_class.get_reference_by_name(
@@ -1306,6 +1391,7 @@ class ASTVisitor(ast.NodeVisitor):
         instances[0] = instance_from_graph
         instance_name = ".".join(instances)
 
-        self.graph_class.call_external_module.append([instance_name, caller_node])
+        self.graph_class.call_external_module.append(
+            [instance_name, caller_node])
 
         self.generic_visit(node)

@@ -18,7 +18,8 @@ class GCN(torch.nn.Module):
        edge_index is sparse edge matrix with shape edge_index=[2, E], E=number of edges
        edge_attr is edge attribute matrix with shape edge_attr=[E, 17], E=number of edges'''
 
-    def forward(self, x, edge_index, edge_attr, batch=None):  # runs single iteration of a forward pass
+    # runs single iteration of a forward pass
+    def forward(self, x, edge_index, edge_attr, batch=None):
         x = self.conv1(x, edge_index, edge_attr)
         x = x.relu()  # relu for non-linearity
         x = self.conv2(x, edge_index, edge_attr)
