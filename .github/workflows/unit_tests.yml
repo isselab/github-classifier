@@ -22,6 +22,4 @@ jobs:
 
       - name: Run tests
         run: |
-          pytest test_ATE_converter.py
-          pytest test_Custom_Dataset.py
-          pytest test_ETM_Converter.py
+          run: python -m unittest discover -s tests
