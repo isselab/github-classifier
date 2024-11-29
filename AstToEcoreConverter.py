@@ -33,10 +33,7 @@ class ProjectEcoreGraph:
             raise ValueError('Directory is required')
 
         self.root_directory = repository.replace('\\', '/')
-
-        metamodel_resource = resource_set.get_resource(URI('Basic.ecore'))
-
-        self.epackage = metamodel_resource.contents[0]
+        self.epackage = resource_set.get_resource(URI('Basic.ecore')).contents[0]
         self.graph = self.epackage.getEClassifier('TypeGraph')(
             tName=self.root_directory.split('/')[-1])
 
