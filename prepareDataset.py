@@ -26,4 +26,4 @@ if __name__ == '__main__':
                 repository_directory, output_directory)
     except Exception as e:
         print(e)
-        exit('ubable to create graph dataset of the repositories')
+        exit('unable to create graph dataset of the repositories')
