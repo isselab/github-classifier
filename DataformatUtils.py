@@ -70,7 +70,7 @@ def convert_hashed_names_to_float(features):
         torch.FloatTensor: A FloatTensor representation of the modified features.
     """
     features = np.array(features)
-    for h, hash in enumerate(features):
+    for hash in features:
         helper = hash[8]
         dec_hash = int(str(helper), 16)
         dec_hash = dec_hash % 16  # fixed NaN issue with GCN
