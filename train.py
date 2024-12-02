@@ -61,6 +61,7 @@ def train():
 
 
 def test(loader):
+    global class_report, report_dict
     model.eval()
     loss_test = 0
     total = 0
@@ -76,29 +77,25 @@ def test(loader):
             graph.batch = graph.batch.to(device)
 
         # prepare input
-        size = int(len(graph.y) / num_classes)
-        graph.y = torch.reshape(graph.y, (size, num_classes))
+        size = graph.y.size(0) # Get the number of samples
+        graph.y = graph.y.view(size,num_classes) # Reshape to (size,num_classes)
 
         # evaluate model
         output = model(graph.x, graph.edge_index, graph.edge_attr, graph.batch)
         loss = criterion(output, graph.y)
         loss_test += loss.item()
-        total += len(loader)
+        total += size # Increment total by the number of samples in the batch
 
         output = output.cpu().detach().numpy()
         graph.y = graph.y.cpu().detach().numpy()
 
-        # transform output, if value above threshold label is considered to be predicted
-        trafo_output = []
-        for slice in output:
-            new_item = []
-            for item in slice:
-                if item >= threshold:
-                    new_item.append(1.0)
-                else:
-                    new_item.append(0.0)
-            trafo_output.append(new_item)
-        trafo_output = np.reshape(trafo_output, (size, num_classes))
+        output = np.array(output)
+
+        # Transform output based on the threshold T -> 1 , F -> 0
+        trafo_output = (output >= threshold).astype(float)
+
+        # Reshape the output to the desired shape
+        trafo_output = trafo_output.reshape((size, num_classes))
 
         # better evaluation metrics for multilabel: precision, recall, f1_score
         # report is string, dict to extract results
