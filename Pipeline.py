@@ -88,6 +88,7 @@ def create_ecore_graphs(repository, write_in_file, output_directory=None):
           Exception: Any exceptions raised during the graph creation process will be printed,
                       and the function will skip the problematic repository.
       """
+    global ecore_graph
     skip_counter = 0
     resource_set = ResourceSet()
     if os.path.isdir(repository):
@@ -147,6 +148,7 @@ def create_matrix_structure(write_in_file, xmi_file=None, ecore_graph=None, outp
         Exception: Any exceptions raised during the conversion process will be printed,
                     and the function will skip the problematic XMI file if applicable.
     """
+    global node_features, adj_list, edge_attr
     skip_xmi = 0
 
     if write_in_file is True:
@@ -224,6 +226,7 @@ def prepare_dataset(repository_directory, output_directory=None, repository_list
             Exception: If no repositories are found or if the output directory is missing
                         when processing multiple repositories.
         """
+    global repo_multiprocess, ecore_graph
     node_features = None
     adj_list = None
     edge_attr = None
