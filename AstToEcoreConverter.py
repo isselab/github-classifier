@@ -91,7 +91,7 @@ class ProjectEcoreGraph:
         # create and process modules with contained program entities
         for file_path in python_files:
             try:
-                self.process_file(file_path)
+                self.process_file(str(file_path))
             except Exception as e:
                 if 'invalid syntax' in str(e):
                     logger.warning(f'skipped: {file_path}')
@@ -291,6 +291,7 @@ class ProjectEcoreGraph:
             subpackage_names: The names of the subpackages to create.
             lib_flag (bool): Flag indicating if the packages are for libraries.
         """
+        global current_parent
         if isinstance(subpackage_names, str):
             package_node = self.create_ecore_instance(NodeTypes.PACKAGE)
             if lib_flag is True:
