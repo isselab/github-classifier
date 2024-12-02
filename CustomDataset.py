@@ -68,23 +68,24 @@ class RepositoryDataset(Dataset):
             Data: A PyTorch Geometric Data object containing the graph features, edge indices,
                   and optionally the label.
         """
+        global graph
         graph_name = self.graph_names[index]
         for g, graph in enumerate(self.graph_dir):
             try:
                 if f'{graph_name}_nodefeatures.csv' == graph:
                     node_features = pd.read_csv(
                         f'{self.directory}/{graph}', header=None)  # load csv file
-                    self.x = convert_hashed_names_to_float(node_features)
+                    self.x = convert_hashed_names_to_float(node_features.to_numpy())
                 if f'{graph_name}_A.csv' == graph:
                     adjacency = pd.read_csv(
                         f'{self.directory}/{graph}', header=None)
-                    edge_tensor = convert_list_to_longtensor(adjacency)
+                    edge_tensor = convert_list_to_longtensor(adjacency.values.tolist())
                     self.edge_index = convert_edge_dim(edge_tensor)
                 if f'{graph_name}_edge_attributes.csv' == graph:
                     edge_attributes = pd.read_csv(
                         f'{self.directory}/{graph}', header=None)
                     self.edge_attr = convert_list_to_floattensor(
-                        edge_attributes)
+                        edge_attributes.values.tolist())
             except Exception as e:
                 print(graph, e)
         if hasattr(self, 'x') and hasattr(self, 'edge_index'):
