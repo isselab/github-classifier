@@ -5,7 +5,7 @@ import pandas as pd
 from pyecore.resources import ResourceSet, URI
 
 from AstToEcoreConverter import ProjectEcoreGraph
-from DataformatUtils import convert_edge_dim, convert_list_to_floattensor, convert_list_to_longtensor, \
+from DataformatUtils import convert_edge_dim, convert_list_to_float_tensor, convert_list_to_long_tensor, \
     convert_hashed_names_to_float
 from EcoreToMatrixConverter import EcoreToMatrixConverter
 
@@ -282,8 +282,8 @@ def prepare_dataset(repository_directory, output_directory=None, repository_list
     # if only one repository is converted for classification, adjust data format needed by the gcn
     if node_features is not None and adj_list is not None and edge_attr is not None:
         node_features = convert_hashed_names_to_float(node_features)
-        adj_list = convert_list_to_longtensor(adj_list)
+        adj_list = convert_list_to_long_tensor(adj_list)
         adj_list = convert_edge_dim(adj_list)
-        edge_attr = convert_list_to_floattensor(edge_attr)
+        edge_attr = convert_list_to_float_tensor(edge_attr)
 
     return node_features, adj_list, edge_attr
