@@ -245,7 +245,7 @@ for f, fold in enumerate(kfold.split(dataset)):
         # plot visualization for training
         fig_n = f + k_folds + 1  # so figures are separate for training and testing
         fig = plt.figure(fig_n)
-        fig, (ax1, ax2) = plt.subplots(2)
+        _, (ax1, ax2) = plt.subplots(2)
         fig.suptitle(f'Fold {f}')
         ax1.plot(plt_epoch, plt_train_loss, 'k', label='test loss')
         ax1.set(ylabel='train loss')
@@ -259,7 +259,7 @@ for f, fold in enumerate(kfold.split(dataset)):
 
         # plot visualization for testing
         fig = plt.figure(f)
-        fig, (ax1, ax2) = plt.subplots(2)
+        _, (ax1, ax2) = plt.subplots(2)
         fig.suptitle(f'Fold {f}')
         ax1.plot(plt_epoch, plt_test_loss, 'k', label='test loss')
         ax1.set(ylabel='test loss')
