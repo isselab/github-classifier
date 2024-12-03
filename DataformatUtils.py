@@ -20,7 +20,7 @@ def convert_edge_dim(edge_tensor):
     return edge_tensor
 
 
-def convert_list_to_floattensor(list):
+def convert_list_to_float_tensor(input_list):
     """
     Converts a list to a FloatTensor.
 
@@ -28,16 +28,16 @@ def convert_list_to_floattensor(list):
     FloatTensor, which is suitable for use in deep learning models.
 
     Args:
-        list (list): The input list containing numerical values.
+        input_list (list): The input list containing numerical values.
 
     Returns:
         torch.FloatTensor: A FloatTensor representation of the input list.
     """
-    tensor = torch.FloatTensor(np.array(list, dtype=float))
+    tensor = torch.FloatTensor(np.array(input_list, dtype=float))
     return tensor
 
 
-def convert_list_to_longtensor(list):
+def convert_list_to_long_tensor(input_list):
     """
     Converts a list to a LongTensor.
 
@@ -45,12 +45,12 @@ def convert_list_to_longtensor(list):
     LongTensor, which is useful for representing indices or counts in models.
 
     Args:
-        list (list): The input list containing integer values.
+        input_list (list): The input list containing integer values.
 
     Returns:
         torch.LongTensor: A LongTensor representation of the input list.
       """
-    tensor = torch.LongTensor(np.array(list, dtype=int))
+    tensor = torch.LongTensor(np.array(input_list, dtype=int))
     return tensor
 
 
@@ -70,10 +70,10 @@ def convert_hashed_names_to_float(features):
         torch.FloatTensor: A FloatTensor representation of the modified features.
     """
     features = np.array(features)
-    for hash in features:
-        helper = hash[8]
+    for hash_value in features:
+        helper = hash_value[8]
         dec_hash = int(str(helper), 16)
         dec_hash = dec_hash % 16  # fixed NaN issue with GCN
-        hash[8] = dec_hash
+        hash_value[8] = dec_hash
     tensor = torch.FloatTensor(np.array(features, dtype=float))
     return tensor
