@@ -97,6 +97,10 @@ class RepositoryDataset(Dataset):
             graph.edge_attr = self.edge_attr
         return graph
 
+    def __iter__(self):
+        for index in range(len(self)):
+            yield self[index]
+
     def sort_labels(self):
         """
         Sorts labels according to the order of graphs, ensuring that the labels
