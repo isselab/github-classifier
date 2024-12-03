@@ -1,10 +1,8 @@
 import torch
-import torch.nn.functional as F
-from torch_geometric.nn import GATConv
-from torch_geometric.nn import global_mean_pool
+import torch.nn.functional as f
+from torch_geometric.nn import GATConv, global_mean_pool
 
 '''defines the architecture of the graph convolutional network'''
-
 
 class GCN(torch.nn.Module):
     def __init__(self, num_node_features, num_classes, hidden_channels):
@@ -31,8 +29,8 @@ class GCN(torch.nn.Module):
         x = global_mean_pool(x, batch)
 
         # dropout for regularization
-        x = F.dropout(x, p=0.5, training=self.training)
+        x = f.dropout(x, p=0.5, training=self.training)
         # sigmoid activation function for multi-label
-        x = F.sigmoid(x)
+        x = f.sigmoid(x)
 
         return x
