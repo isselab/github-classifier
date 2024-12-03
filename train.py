@@ -92,17 +92,17 @@ def test(loader):
         output = np.array(output)
 
         # Transform output based on the threshold T -> 1 , F -> 0
-        trafo_output = (output >= threshold).astype(float)
+        output_after_threshold = (output >= threshold).astype(float)
 
         # Reshape the output to the desired shape
-        trafo_output = trafo_output.reshape((size, num_classes))
+        output_after_threshold = output_after_threshold.reshape((size, num_classes))
 
         # better evaluation metrics for multilabel: precision, recall, f1_score
         # report is string, dict to extract results
         report_dict = classification_report(
-            graph.y, trafo_output, target_names=defined_labels, output_dict=True)
+            graph.y, output_after_threshold, target_names=defined_labels, output_dict=True)
         class_report = classification_report(
-            graph.y, trafo_output, target_names=defined_labels)
+            graph.y, output_after_threshold, target_names=defined_labels)
 
     return loss_test / total, class_report, report_dict
 
