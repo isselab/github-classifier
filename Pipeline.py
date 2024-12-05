@@ -11,6 +11,13 @@ from EcoreToMatrixConverter import EcoreToMatrixConverter
 
 '''in this file are the pipeline components put into reusable functions'''
 
+ecore_graph = None
+node_features = None
+adj_list = None
+edge_attr = None
+repo_multiprocess = None
+edge_attribute = None
+
 
 def create_output_folders(directory):
     """
@@ -49,7 +56,7 @@ def download_repositories(repository_directory, repository_list):
     """
     working_directory = os.getcwd()
 
-    # load labeled repository from excel/ods file
+    # load labeled repository from Excel/ods file
     # requirements for format: no empty rows in between and header name html_url
     resource = pd.read_excel(repository_list)
 
@@ -60,8 +67,8 @@ def download_repositories(repository_directory, repository_list):
 
     # retrieve urls and clone repositories
     for row in resource.iterrows():
-        object = row[1]
-        url = object.get('html_url')
+        row_data = row[1]
+        url = row_data.get('html_url')
         os.system(f'git clone {url}')
 
     # change working directory back to github-classifier, otherwise cannot load resources from there and run tool
@@ -122,7 +129,7 @@ def create_ecore_graphs(repository, write_in_file, output_directory=None):
         return None
 
 
-def create_matrix_structure(write_in_file, xmi_file=None, ecore_graph=None, output_directory=None):
+def create_matrix_structure(write_in_file, xmi_file=None, local_ecore_graph=None, output_directory=None):
     """
     Convert an Ecore graph or XMI file into three matrices: node features, adjacency list,
     and edge attributes.
@@ -134,7 +141,7 @@ def create_matrix_structure(write_in_file, xmi_file=None, ecore_graph=None, outp
     Args:
         write_in_file: A boolean indicating whether to write the matrices to files.
         xmi_file: Optional; the name of the XMI file to be processed.
-        ecore_graph: Optional; the Ecore graph to be converted into matrices.
+        local_ecore_graph: Optional; the Ecore graph to be converted into matrices.
         output_directory: The directory where output files will be written.
 
     Returns:
@@ -152,12 +159,12 @@ def create_matrix_structure(write_in_file, xmi_file=None, ecore_graph=None, outp
     skip_xmi = 0
 
     if write_in_file is True:
-        rset = ResourceSet()
-        resource = rset.get_resource(URI('Basic.ecore'))
+        resource_set = ResourceSet()
+        resource = resource_set.get_resource(URI('Basic.ecore'))
         mm_root = resource.contents[0]
-        rset.metamodel_registry[mm_root.nsURI] = mm_root
+        resource_set.metamodel_registry[mm_root.nsURI] = mm_root
 
-        resource = rset.get_resource(
+        resource = resource_set.get_resource(
             URI(f'{output_directory}/xmi_files/{xmi_file}'))
         try:
             EcoreToMatrixConverter(
@@ -168,7 +175,7 @@ def create_matrix_structure(write_in_file, xmi_file=None, ecore_graph=None, outp
             skip_xmi += 1
     if write_in_file is False:
         try:
-            matrix = EcoreToMatrixConverter(ecore_graph, write_in_file)
+            matrix = EcoreToMatrixConverter(local_ecore_graph, write_in_file)
             node_features = matrix.get_node_features()
             adj_list = matrix.get_adjacency_list()
             edge_attr = matrix.get_encoded_edge_attributes()
@@ -227,9 +234,8 @@ def prepare_dataset(repository_directory, output_directory=None, repository_list
                         when processing multiple repositories.
         """
     global repo_multiprocess, ecore_graph
-    node_features = None
-    adj_list = None
-    edge_attr = None
+    global node_features, adj_list, edge_attribute
+
 
     # clone repositories for the dataset
     if repository_list is not None:
@@ -251,7 +257,7 @@ def prepare_dataset(repository_directory, output_directory=None, repository_list
             print(e)
             # exit program because of missing output directory
             exit('output directory is required!')
-        # create pool for multiprocessing/parallelisation
+        # create pool for multiprocessing/parallelization
         repo_multiprocess = []
         for repository in repositories:
             current_directory = os.path.join(repository_directory, repository)
@@ -276,14 +282,14 @@ def prepare_dataset(repository_directory, output_directory=None, repository_list
                 (write_in_file, xmi_file, None, output_directory))
         parallel_processing(create_matrix_structure, xmi_multiprocess)
     else:
-        node_features, adj_list, edge_attr = create_matrix_structure(
+        node_features, adj_list, edge_attribute = create_matrix_structure(
             write_in_file, None, ecore_graph)
 
     # if only one repository is converted for classification, adjust data format needed by the gcn
-    if node_features is not None and adj_list is not None and edge_attr is not None:
+    if node_features is not None and adj_list is not None and edge_attribute is not None:
         node_features = convert_hashed_names_to_float(node_features)
         adj_list = convert_list_to_long_tensor(adj_list)
         adj_list = convert_edge_dim(adj_list)
-        edge_attr = convert_list_to_float_tensor(edge_attr)
+        edge_attribute = convert_list_to_float_tensor(edge_attribute)
 
-    return node_features, adj_list, edge_attr
+    return node_features, adj_list, edge_attribute
