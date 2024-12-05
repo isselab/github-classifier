@@ -22,6 +22,7 @@ class RepositoryDataset(Dataset):
             label_list (str, optional): The path to the Excel file containing labeled graphs.
                                          If provided, the labels will be processed and encoded.
         """
+        self.class_elements = []
         if label_list is not None:
             try:
                 self.encoded_labels = self.convert_labeled_graphs(label_list)
@@ -33,6 +34,8 @@ class RepositoryDataset(Dataset):
         self.directory = directory
         self.graph_names = []
         self.graph_dir = os.listdir(directory)
+        self.graph = None
+
         for g, graph in enumerate(self.graph_dir):
             if '_nodefeatures.csv' in graph:
                 graph_name = graph.removesuffix('_nodefeatures.csv')
@@ -68,34 +71,33 @@ class RepositoryDataset(Dataset):
             Data: A PyTorch Geometric Data object containing the graph features, edge indices,
                   and optionally the label.
         """
-        global graph
         graph_name = self.graph_names[index]
-        for g, graph in enumerate(self.graph_dir):
+        for g, self.graph in enumerate(self.graph_dir):
             try:
-                if f'{graph_name}_nodefeatures.csv' == graph:
+                if f'{graph_name}_nodefeatures.csv' == self.graph:
                     node_features = pd.read_csv(
-                        f'{self.directory}/{graph}', header=None)  # load csv file
+                        f'{self.directory}/{self.graph}', header=None)  # load csv file
                     self.x = convert_hashed_names_to_float(node_features.to_numpy())
-                if f'{graph_name}_A.csv' == graph:
+                if f'{graph_name}_A.csv' == self.graph:
                     adjacency = pd.read_csv(
-                        f'{self.directory}/{graph}', header=None)
+                        f'{self.directory}/{self.graph}', header=None)
                     edge_tensor = convert_list_to_long_tensor(adjacency.values.tolist())
                     self.edge_index = convert_edge_dim(edge_tensor)
-                if f'{graph_name}_edge_attributes.csv' == graph:
+                if f'{graph_name}_edge_attributes.csv' == self.graph:
                     edge_attributes = pd.read_csv(
-                        f'{self.directory}/{graph}', header=None)
+                        f'{self.directory}/{self.graph}', header=None)
                     self.edge_attr = convert_list_to_float_tensor(
                         edge_attributes.values.tolist())
             except Exception as e:
-                print(graph, e)
+                print(self.graph, e)
         if hasattr(self, 'x') and hasattr(self, 'edge_index'):
-            graph = Data(x=self.x, edge_index=self.edge_index)
+            self.graph = Data(x=self.x, edge_index=self.edge_index)
         if hasattr(self, 'y'):
             label = self.y[index]
-            graph.y = label
+            self.graph.y = label
         if hasattr(self, 'edge_attr'):
-            graph.edge_attr = self.edge_attr
-        return graph
+            self.graph.edge_attr = self.edge_attr
+        return self.graph
 
     def __iter__(self):
         for index in range(len(self)):
