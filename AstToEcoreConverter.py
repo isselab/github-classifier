@@ -55,6 +55,7 @@ class ProjectEcoreGraph:
         # entries: [module_node, module_name, package_node, package_name]
         self.imported_libraries = []
         self.imported_package = None
+        self.current_parent = None
 
         python_files = [os.path.join(root, file) for root, _, files in os.walk(
             self.root_directory) for file in files if file.endswith('.py')]
@@ -292,7 +293,6 @@ class ProjectEcoreGraph:
             subpackage_names: The names of the subpackages to create.
             lib_flag (bool): Flag indicating if the packages are for libraries.
         """
-        global current_parent
         if isinstance(subpackage_names, str):
             package_node = self.create_ecore_instance(NodeTypes.PACKAGE)
             if lib_flag is True:
@@ -318,7 +318,7 @@ class ProjectEcoreGraph:
                 if e == 0:
                     package_node.parent = parent_package
                 else:
-                    package_node.parent = current_parent
+                    package_node.parent = self.current_parent
                 if lib_flag is True:
                     self.imported_libraries.append(
                         [None, None, package_node, element_lib])
@@ -328,8 +328,8 @@ class ProjectEcoreGraph:
                             [package_node, element_lib, parent_package])
                     else:
                         self.package_list.append(
-                            [package_node, element_lib, current_parent])
-                current_parent = package_node
+                            [package_node, element_lib, self.current_parent])
+                self.current_parent = package_node
                 self.imported_package = package_node
 
     def create_imported_method_call(self, module_node, method_name, caller_node):
