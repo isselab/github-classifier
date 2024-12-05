@@ -1,6 +1,6 @@
 import torch
 import torch.nn.functional as f
-from torch_geometric.nn import GATConv, global_mean_pool
+import torch_geometric.nn
 
 '''defines the architecture of the graph convolutional network'''
 
@@ -8,9 +8,9 @@ class GCN(torch.nn.Module):
     def __init__(self, num_node_features, num_classes, hidden_channels):
         super(GCN, self).__init__()
         torch.manual_seed(12345)
-        self.conv1 = GATConv(num_node_features, hidden_channels)
-        self.conv2 = GATConv(hidden_channels, hidden_channels)
-        self.conv3 = GATConv(hidden_channels, num_classes)
+        self.conv1 = torch_geometric.nn.GATConv(num_node_features, hidden_channels)
+        self.conv2 = torch_geometric.nn.GATConv(hidden_channels, hidden_channels)
+        self.conv3 = torch_geometric.nn.GATConv(hidden_channels, num_classes)
 
     '''x is node feature matrix with shape x=[N, 11], N=number of nodes
        edge_index is sparse edge matrix with shape edge_index=[2, E], E=number of edges
@@ -26,7 +26,7 @@ class GCN(torch.nn.Module):
         x = x.relu()
 
         # readout layer
-        x = global_mean_pool(x, batch)
+        x = torch_geometric.nn.global_mean_pool(x, batch)
 
         # dropout for regularization
         x = f.dropout(x, p=0.5, training=self.training)
