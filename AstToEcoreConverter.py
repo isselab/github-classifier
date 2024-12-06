@@ -29,12 +29,13 @@ class ProjectEcoreGraph:
         Raises:
             ValueError: If the repository is None or empty.
         """
+        self.current_module_name = None
         if repository is None or repository == '':
             raise ValueError('Directory is required')
 
         self.root_directory = repository.replace('\\', '/')
-        self.epackage = resource_set.get_resource(URI('Basic.ecore')).contents[0]
-        self.graph = self.epackage.getEClassifier('TypeGraph')(
+        self.e_package = resource_set.get_resource(URI('Basic.ecore')).contents[0]
+        self.graph = self.e_package.getEClassifier('TypeGraph')(
             tName=self.root_directory.split('/')[-1])
 
         # initialize internal structures
@@ -54,6 +55,7 @@ class ProjectEcoreGraph:
         # entries: [module_node, module_name, package_node, package_name]
         self.imported_libraries = []
         self.imported_package = None
+        self.current_parent = None
 
         python_files = [os.path.join(root, file) for root, _, files in os.walk(
             self.root_directory) for file in files if file.endswith('.py')]
@@ -91,7 +93,7 @@ class ProjectEcoreGraph:
         # create and process modules with contained program entities
         for file_path in python_files:
             try:
-                self.process_file(file_path)
+                self.process_file(str(file_path))
             except Exception as e:
                 if 'invalid syntax' in str(e):
                     logger.warning(f'skipped: {file_path}')
@@ -316,7 +318,7 @@ class ProjectEcoreGraph:
                 if e == 0:
                     package_node.parent = parent_package
                 else:
-                    package_node.parent = current_parent
+                    package_node.parent = self.current_parent
                 if lib_flag is True:
                     self.imported_libraries.append(
                         [None, None, package_node, element_lib])
@@ -326,8 +328,8 @@ class ProjectEcoreGraph:
                             [package_node, element_lib, parent_package])
                     else:
                         self.package_list.append(
-                            [package_node, element_lib, current_parent])
-                current_parent = package_node
+                            [package_node, element_lib, self.current_parent])
+                self.current_parent = package_node
                 self.imported_package = package_node
 
     def create_imported_method_call(self, module_node, method_name, caller_node):
@@ -430,12 +432,13 @@ class ProjectEcoreGraph:
                     if obj.eClass.name == NodeTypes.METHOD_DEFINITION.value:
                         self.create_method_call(obj, method_name, caller_node)
             if module_node is None:
-                # if len==1 simple import .. statement, included only if import is used (in that case len>1)
+                # if len==1 simple import … statement, included only if import is used (in that case len>1)
                 if len(split_import) > 1:
                     self.call_imported_library.append(
                         [caller_node, imported_instance])
 
-    def set_import_names(self, split_import):
+    @staticmethod
+    def set_import_names(split_import):
         """
         Sets the names for imported modules, classes, and methods.
 
@@ -539,9 +542,9 @@ class ProjectEcoreGraph:
                 self.create_calls(caller_node, method_node)
 
     def check_for_missing_nodes(self):
-        """check_list contains all classes with method defs that are created during conversion.
-        They are compared to the classes with meth defs found in modules in the type graph at the end,
-        those not found need to be appended to a module, otherwise the meth defs are missing.
+        """check_list contains all classes with method def that are created during conversion.
+        They are compared to the classes with meth def found in modules in the type graph at the end,
+        those not found need to be appended to a module, otherwise the meth def are missing.
         Entire modules are missing! Perhaps because only .py files are processed. They are created and appended to
         their packages, which are also created when they are not in the type graph."""
         # check if every created TClass node is in type graph
@@ -567,7 +570,7 @@ class ProjectEcoreGraph:
                 ref, ty = self.get_reference_by_name(obj.tName)
                 if ref is not None:
                     imported = ref.split('.')
-                    # if len==1 simple import .. statement, included only if import is used (in that case len>1)
+                    # if len==1 simple import … statement, included only if import is used (in that case len>1)
                     if len(imported) > 1:
                         package_name, subpackage_names, module_name, class_name, method_name = self.set_import_names(
                             imported)
@@ -672,14 +675,14 @@ class ProjectEcoreGraph:
         module_node.namespace = package_node
         self.graph.modules.append(module_node)
 
-    def get_epackage(self):
+    def get_e_package(self):
         """
         Retrieves the EPackage associated with the graph.
 
         Returns:
             The EPackage instance.
         """
-        return self.epackage
+        return self.e_package
 
     def get_graph(self):
         """
@@ -690,17 +693,17 @@ class ProjectEcoreGraph:
         """
         return self.graph
 
-    def create_ecore_instance(self, type):
+    def create_ecore_instance(self, ecore_type):
         """
         Creates an Ecore instance of the specified type.
 
         Args:
-            type: The type of the Ecore instance to create.
+            ecore_type: The type of the Ecore instance to create.
 
         Returns:
             The created Ecore instance.
         """
-        return self.epackage.getEClassifier(type.value)()
+        return self.e_package.getEClassifier(ecore_type.value)()
 
     def get_current_module(self):
         """
@@ -780,7 +783,7 @@ class ProjectEcoreGraph:
                         self.classes_without_module.remove(class_object)
                         class_object.delete()
 
-        # added errors='ignore' to fix encoding issues in some repositories ('charmap cannot decode byte..')
+        # added errors='ignore' to fix encoding issues in some repositories ('char-map cannot decode byte…')
         with open(path, 'r', errors='ignore') as file:
             code = file.read()
         # added following to fix some invalid character and syntax errors
@@ -1015,8 +1018,8 @@ class ProjectEcoreGraph:
            instance_name (str?): The name of the instance.
            class_name (str?): The name of the class to which the instance belongs.
        """
-        reference, type = self.get_reference_by_name(class_name)
-        if reference is not None and type == 0:
+        reference, reference_type = self.get_reference_by_name(class_name)
+        if reference is not None and reference_type == 0:
             classes = class_name.split('.')[1:]
             classes.insert(0, reference)
             class_name = ".".join(classes)
@@ -1033,7 +1036,8 @@ class ProjectEcoreGraph:
             if instance[1] == class_name:
                 self.instances.remove(instance)
 
-    def get_method_def_in_class(self, name, class_node):
+    @staticmethod
+    def get_method_def_in_class(name, class_node):
         """
         Checks if a method definition exists in a class.
 
@@ -1049,7 +1053,8 @@ class ProjectEcoreGraph:
                 return method_def
         return None
 
-    def get_method_def_in_module(self, method_name, module):
+    @staticmethod
+    def get_method_def_in_module(method_name, module):
         """
         Checks if a method definition exists in a module.
 
@@ -1060,12 +1065,12 @@ class ProjectEcoreGraph:
         Returns:
             The method definition node or None if not found.
         """
-        for object in module.contains:
-            if object.eClass.name == NodeTypes.METHOD_DEFINITION.value:
-                if object.signature.method.tName == method_name:
-                    return object
-            if object.eClass.name == NodeTypes.CLASS.value:
-                for meth in object.defines:
+        for module_object in module.contains:
+            if module_object.eClass.name == NodeTypes.METHOD_DEFINITION.value:
+                if module_object.signature.method.tName == method_name:
+                    return module_object
+            if module_object.eClass.name == NodeTypes.CLASS.value:
+                for meth in module_object.defines:
                     if meth.signature.method.tName == method_name:
                         return meth
         return None
@@ -1116,11 +1121,12 @@ class ProjectEcoreGraph:
 
         method_node.signature = method_signature
 
-        # for interal structure
+        # for internal structure
         module_node = self.get_current_module()
         self.method_list.append([method_node, name, module_node])
 
-    def get_calls(self, caller_node, called_node):
+    @staticmethod
+    def get_calls(caller_node, called_node):
         """
         Checks if a call already exists between two nodes.
 
@@ -1222,12 +1228,12 @@ class ASTVisitor(ast.NodeVisitor):
            """
         base_node = None
         if isinstance(node, ast.Name):
-            base_node, type = self.graph_class.get_reference_by_name(node.id)
+            base_node, base_type = self.graph_class.get_reference_by_name(node.id)
             if base_node is None:
                 base_node = self.graph_class.get_class_by_name(
                     node.id, module=self.graph_class.get_current_module())
                 base_node.childClasses.append(child)
-            elif isinstance(base_node, str) and type == 0:
+            elif isinstance(base_node, str) and base_type == 0:
                 import_parent = None
                 for import_class in base_node.split('.'):
                     import_node = self.graph_class.get_class_by_name(
@@ -1271,7 +1277,7 @@ class ASTVisitor(ast.NodeVisitor):
                     self.graph_class.create_method_signature(
                         method_node, method_name, item.args.args)
                     class_node.defines.append(method_node)
-                    # to search for missing meth defs later
+                    # to search for missing meth def later
                     self.graph_class.check_list.append(class_node)
         self.generic_visit(node)
 
@@ -1378,7 +1384,7 @@ class ASTVisitor(ast.NodeVisitor):
             [self.current_module, caller_node, instance])
 
         # for calls of imported instances, both within repo and external libraries
-        instance_from_graph, type = self.graph_class.get_reference_by_name(
+        instance_from_graph, instance_type = self.graph_class.get_reference_by_name(
             instance.replace(f".{instance.split('.')[-1]}", ''))
 
         # this is necessary to get all the called methods' names correctly

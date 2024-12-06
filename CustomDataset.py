@@ -6,7 +6,7 @@ import torch
 from torch.utils.data import Dataset
 from torch_geometric.data import Data
 
-from DataformatUtils import convert_edge_dim, convert_list_to_floattensor, convert_list_to_longtensor, \
+from DataformatUtils import convert_edge_dim, convert_list_to_float_tensor, convert_list_to_long_tensor, \
     convert_hashed_names_to_float
 from Encoder import multi_hot_encoding
 from GraphClasses import defined_labels
@@ -22,6 +22,7 @@ class RepositoryDataset(Dataset):
             label_list (str, optional): The path to the Excel file containing labeled graphs.
                                          If provided, the labels will be processed and encoded.
         """
+        self.class_elements = []
         if label_list is not None:
             try:
                 self.encoded_labels = self.convert_labeled_graphs(label_list)
@@ -33,6 +34,8 @@ class RepositoryDataset(Dataset):
         self.directory = directory
         self.graph_names = []
         self.graph_dir = os.listdir(directory)
+        self.graph = None
+
         for g, graph in enumerate(self.graph_dir):
             if '_nodefeatures.csv' in graph:
                 graph_name = graph.removesuffix('_nodefeatures.csv')
@@ -69,32 +72,36 @@ class RepositoryDataset(Dataset):
                   and optionally the label.
         """
         graph_name = self.graph_names[index]
-        for g, graph in enumerate(self.graph_dir):
+        for g, self.graph in enumerate(self.graph_dir):
             try:
-                if f'{graph_name}_nodefeatures.csv' == graph:
+                if f'{graph_name}_nodefeatures.csv' == self.graph:
                     node_features = pd.read_csv(
-                        f'{self.directory}/{graph}', header=None)  # load csv file
-                    self.x = convert_hashed_names_to_float(node_features)
-                if f'{graph_name}_A.csv' == graph:
+                        f'{self.directory}/{self.graph}', header=None)  # load csv file
+                    self.x = convert_hashed_names_to_float(node_features.to_numpy())
+                if f'{graph_name}_A.csv' == self.graph:
                     adjacency = pd.read_csv(
-                        f'{self.directory}/{graph}', header=None)
-                    edge_tensor = convert_list_to_longtensor(adjacency)
+                        f'{self.directory}/{self.graph}', header=None)
+                    edge_tensor = convert_list_to_long_tensor(adjacency.values.tolist())
                     self.edge_index = convert_edge_dim(edge_tensor)
-                if f'{graph_name}_edge_attributes.csv' == graph:
+                if f'{graph_name}_edge_attributes.csv' == self.graph:
                     edge_attributes = pd.read_csv(
-                        f'{self.directory}/{graph}', header=None)
-                    self.edge_attr = convert_list_to_floattensor(
-                        edge_attributes)
+                        f'{self.directory}/{self.graph}', header=None)
+                    self.edge_attr = convert_list_to_float_tensor(
+                        edge_attributes.values.tolist())
             except Exception as e:
-                print(graph, e)
+                print(self.graph, e)
         if hasattr(self, 'x') and hasattr(self, 'edge_index'):
-            graph = Data(x=self.x, edge_index=self.edge_index)
+            self.graph = Data(x=self.x, edge_index=self.edge_index)
         if hasattr(self, 'y'):
             label = self.y[index]
-            graph.y = label
+            self.graph.y = label
         if hasattr(self, 'edge_attr'):
-            graph.edge_attr = self.edge_attr
-        return graph
+            self.graph.edge_attr = self.edge_attr
+        return self.graph
+
+    def __iter__(self):
+        for index in range(len(self)):
+            yield self[index]
 
     def sort_labels(self):
         """
@@ -105,16 +112,16 @@ class RepositoryDataset(Dataset):
             torch.FloatTensor: A tensor containing the sorted labels for the graphs.
         """
         label_list = list(self.encoded_labels)
-        sorted = None
+        sorted_labels = None
         for n, item in enumerate(self.graph_names):
             for i, name in enumerate(label_list):
                 if item == name[0]:
                     label = name[1]
-                    if sorted is None:
-                        sorted = np.array(label, dtype=np.float16)
+                    if sorted_labels is None:
+                        sorted_labels = np.array(label, dtype=np.float16)
                     else:
-                        sorted = np.vstack((sorted, label)).astype(np.float16)
-        y = torch.FloatTensor(sorted)
+                        sorted_labels = np.vstack((sorted_labels, label)).astype(np.float16)
+        y = torch.FloatTensor(sorted_labels)
         return y
 
     '''takes directory path of excel file with labeled repositories as input and converts the 
@@ -142,13 +149,13 @@ class RepositoryDataset(Dataset):
 
         # iterate over loaded file and retrieve labels
         for row in resource.iterrows():
-            object = row[1]
+            row_data = row[1]
             # column header containing repository url
-            url = object.get('html_url')
+            url = row_data.get('html_url')
             repo_name = url.split('/')[-1]  # last element is repository name
             graph_names.append(repo_name)
             # column header containing label
-            type_label = object.get('final type')
+            type_label = row_data.get('final type')
             graph_labels.append(type_label)
 
         self.class_elements = self.count_class_elements(
@@ -159,7 +166,8 @@ class RepositoryDataset(Dataset):
         file = zip(graph_names, encoded_nodes)
         return file
 
-    def count_class_elements(self, labels):
+    @staticmethod
+    def count_class_elements(labels):
         """
         Counts the number of occurrences of each class type in the provided labels.
 
@@ -209,18 +217,18 @@ class RepositoryDataset(Dataset):
         """
         for i, item in enumerate(self.graph_names):
             graph_name = self.graph_names[i]
-            for g, graph in enumerate(self.graph_dir):
+            for g in self.graph_dir:
                 try:
-                    if f'{graph_name}_nodefeatures.csv' == graph:
-                        node_features = pd.read_csv(
-                            f'{self.directory}/{graph}', header=None)
-                    if f'{graph_name}_A.csv' == graph:
-                        adjacency = pd.read_csv(
-                            f'{self.directory}/{graph}', header=None)
-                    if f'{graph_name}_edge_attributes.csv' == graph:
-                        edge_attributes = pd.read_csv(
-                            f'{self.directory}/{graph}', header=None)
+                    if f'{graph_name}_nodefeatures.csv' == g:
+                        pd.read_csv(
+                            f'{self.directory}/{g}', header=None)
+                    if f'{graph_name}_A.csv' == g:
+                        pd.read_csv(
+                            f'{self.directory}/{g}', header=None)
+                    if f'{graph_name}_edge_attributes.csv' == g:
+                        pd.read_csv(
+                            f'{self.directory}/{g}', header=None)
                 except Exception as e:
                     if graph_name in self.graph_names:
                         self.graph_names.remove(graph_name)
-                        print(f'{graph}, {e}, removing {graph_name} from dataset')
+                        print(f'{g}, {e}, removing {graph_name} from dataset')

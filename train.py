@@ -16,14 +16,13 @@ from settings import CONFIG
 '''please prepare the dataset you want to train the tool with by using prepareDataset.py,
 this file is for training the tool'''
 
-# path to the folder containing the converted repositories
+# Load settings from Config
 output_directory = CONFIG['training']['output_directory']
-labels = CONFIG['main']['repository_list_file']
+labels = CONFIG['training']['labels_file']
 n_epoch = CONFIG['training']['n_epoch']
-k_folds = CONFIG['training']['k_folds']  # has to be at least 2
+k_folds = CONFIG['training']['k_folds']
 learning_rate = CONFIG['training']['learning_rate']
 figure_output = CONFIG['training']['figure_output']
-# value above which label is considered to be predicted by model
 threshold = CONFIG['training']['threshold']
 save_classification_reports = CONFIG['training']['save_classification_reports']
 experiment_name = CONFIG['training']['experiment_name']
@@ -61,6 +60,7 @@ def train():
 
 
 def test(loader):
+    global class_report, report_dict
     model.eval()
     loss_test = 0
     total = 0
@@ -89,23 +89,17 @@ def test(loader):
         graph.y = graph.y.cpu().detach().numpy()
 
         # transform output, if value above threshold label is considered to be predicted
-        trafo_output = []
-        for slice in output:
-            new_item = []
-            for item in slice:
-                if item >= threshold:
-                    new_item.append(1.0)
-                else:
-                    new_item.append(0.0)
-            trafo_output.append(new_item)
-        trafo_output = np.reshape(trafo_output, (size, num_classes))
+        output = np.array(output)
+        # Transform output based on the threshold T -> 1 , F -> 0
+        output_after_threshold = (output >= threshold).astype(float)
+        # Reshape the output to the desired shape
+        output_after_threshold = output_after_threshold.reshape((size, num_classes))
 
         # better evaluation metrics for multilabel: precision, recall, f1_score
         # report is string, dict to extract results
-        report_dict = classification_report(
-            graph.y, trafo_output, target_names=defined_labels, output_dict=True)
-        class_report = classification_report(
-            graph.y, trafo_output, target_names=defined_labels)
+        report_dict = classification_report(graph.y, output_after_threshold, target_names=defined_labels,
+                                            output_dict=True)
+        class_report = classification_report(graph.y, output_after_threshold, target_names=defined_labels)
 
     return loss_test / total, class_report, report_dict
 
@@ -148,6 +142,7 @@ for f, fold in enumerate(kfold.split(dataset)):
     trainset, testset = random_split(dataset, [0.9, 0.1])
     print(
         f'size of train dataset: {len(trainset)}, test dataset: {len(testset)}')
+
     trainloader = DataLoader(trainset, batch_size=32, shuffle=True)
     testloader = DataLoader(testset, batch_size=32, shuffle=False)
     print(
@@ -174,15 +169,16 @@ for f, fold in enumerate(kfold.split(dataset)):
         mlflow.log_params(params)
 
         for epoch in range(n_epoch):
-            print(f'Fold {f}, Epoch {epoch}')
+            print(
+                f'Fold {f}, Epoch {epoch}')
             train()
             train_loss, train_report, train_rep_dict = test(trainloader)
             test_loss, test_report, test_rep_dict = test(testloader)
 
             # log loss
             metrics = {"training loss": train_loss, "test loss": test_loss}
-            # one folder per fold, because metrics needs to be key value pairs not dicts
-            mlflow.log_metrics(metrics, step=epoch)
+            mlflow.log_metrics(metrics,
+                               step=epoch)  # one folder per fold, because metrics needs to be key value pairs not dicts
             reports[f'Fold_{f}_Epoch_{epoch}_train'] = train_report
             reports[f'Fold_{f}_Epoch_{epoch}_test'] = test_report
 
@@ -227,8 +223,7 @@ for f, fold in enumerate(kfold.split(dataset)):
             print(f'f1-score of plugin during testing: {plugin_f1_test}')
             av_test = test_rep_dict['weighted avg']
             f1_test = av_test['f1-score']
-            print(
-                f'weighted average of labels (f1-score) during testing: {f1_test}')
+            print(f'weighted average of labels (f1-score) during testing: {f1_test}')
             print('==============================================')
 
             # save trained model with best performance
@@ -248,7 +243,7 @@ for f, fold in enumerate(kfold.split(dataset)):
         # plot visualization for training
         fig_n = f + k_folds + 1  # so figures are separate for training and testing
         fig = plt.figure(fig_n)
-        fig, (ax1, ax2) = plt.subplots(2)
+        _, (ax1, ax2) = plt.subplots(2)
         fig.suptitle(f'Fold {f}')
         ax1.plot(plt_epoch, plt_train_loss, 'k', label='test loss')
         ax1.set(ylabel='train loss')
@@ -262,7 +257,7 @@ for f, fold in enumerate(kfold.split(dataset)):
 
         # plot visualization for testing
         fig = plt.figure(f)
-        fig, (ax1, ax2) = plt.subplots(2)
+        _, (ax1, ax2) = plt.subplots(2)
         fig.suptitle(f'Fold {f}')
         ax1.plot(plt_epoch, plt_test_loss, 'k', label='test loss')
         ax1.set(ylabel='test loss')
