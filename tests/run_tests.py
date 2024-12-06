@@ -2,6 +2,13 @@ import os.path
 import subprocess
 
 def run_tests():
+
+    try:
+        import coverage
+    except ImportError:
+        print("Coverage is not installed. Please install it using 'pip install coverage'.")
+        exit("coverage is not installed")
+
     # Set dir to test dir:
     test_directory = os.path.dirname(os.path.abspath(__file__))
     # Run tests with coverage
