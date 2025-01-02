@@ -1164,7 +1164,10 @@ class ProjectEcoreGraph:
             repository (str?): The repository name for the output file.
         """
         repository_name = repository.split('\\')[-1]
-        resource = resource_set.create_resource(URI(f'{output_directory}/xmi_files/{repository_name}.xmi'),
+        # Replace slashes in the repository name with underscores
+        safe_repository_name = repository_name.replace('/', '_').replace('\\', '_')
+
+        resource = resource_set.create_resource(URI(f'{output_directory}/{safe_repository_name}.xmi'),
                                                 use_uuid=True)
         resource.append(self.graph)
         resource.save()
