@@ -22,36 +22,45 @@ test_output_dir = 'tests/test_results'
 class TestATEConv(unittest.TestCase):
 
 
-       #buggy unit test -> missing file
-    # def test_package(self):
-    #     repo = 'unit_tests/test_package'
-    #     check_path_exists(repo)
-    #     resource_set = ResourceSet()
-    #     graph = ProjectEcoreGraph(resource_set, repo, False, test_output_dir)
-    #     ecore_graph = graph.get_graph()
-    #     self.assertEqual(len(ecore_graph.packages), 1, 'wrong number of packages')
-    #     self.assertEqual(ecore_graph.packages[0].eClass.name, NodeTypes.PACKAGE.value, 'package is wrong type')
-    #     self.assertEqual(ecore_graph.packages[0].tName, 'my_package', 'wrong package name')
-    #     self.assertEqual(len(ecore_graph.packages[0].subpackages), 0, 'package should not have subpackage')
-    #     self.assertEqual(len(ecore_graph.modules), 0, 'wrong number of modules')
-    #     self.assertEqual(len(ecore_graph.classes), 0, 'wrong number of classes')
-    #     self.assertEqual(len(ecore_graph.methods), 0, 'wrong number of methods')
 
-    #buggy unit test -> missing file
-    # def test_subpackage(self):
-    #     repo = 'unit_tests/test_subpackage'
-    #     check_path_exists(repo)
-    #     resource_set = ResourceSet()
-    #     graph = ProjectEcoreGraph(resource_set, repo, False, test_output_dir)
-    #     ecore_graph = graph.get_graph()
-    #     self.assertEqual(len(ecore_graph.packages), 1, 'wrong number of packages')
-    #     self.assertEqual(ecore_graph.packages[0].tName, 'parent', 'wrong package name')
-    #     self.assertEqual(ecore_graph.packages[0].eClass.name, NodeTypes.PACKAGE.value, 'package is wrong type')
-    #     self.assertEqual(ecore_graph.packages[0].subpackages[0].tName, 'child', 'wrong submodule name')
-    #     self.assertEqual(ecore_graph.packages[0].subpackages[0].eClass.name, NodeTypes.PACKAGE.value, 'package is wrong type')
-    #     self.assertEqual(len(ecore_graph.modules), 0, 'wrong number of modules')
-    #     self.assertEqual(len(ecore_graph.classes), 0, 'wrong number of classes')
-    #     self.assertEqual(len(ecore_graph.methods), 0, 'wrong number of methods')
+    def test_package(self):
+        """
+        Unit test recovered by hand.
+        in Dir 'test_package' is a Dir named 'my_package'
+        I do not know why she named it this way :(
+        """
+        repo = 'unit_tests/test_package'
+        check_path_exists(repo)
+        resource_set = ResourceSet()
+        graph = ProjectEcoreGraph(resource_set, repo, False, test_output_dir)
+        ecore_graph = graph.get_graph()
+        self.assertEqual(len(ecore_graph.packages), 1, 'wrong number of packages')
+        self.assertEqual(ecore_graph.packages[0].eClass.name, NodeTypes.PACKAGE.value, 'package is wrong type')
+        self.assertEqual(ecore_graph.packages[0].tName, 'my_package', 'wrong package name')
+        self.assertEqual(len(ecore_graph.packages[0].subpackages), 0, 'package should not have subpackage')
+        self.assertEqual(len(ecore_graph.modules), 0, 'wrong number of modules')
+        self.assertEqual(len(ecore_graph.classes), 0, 'wrong number of classes')
+        self.assertEqual(len(ecore_graph.methods), 0, 'wrong number of methods')
+
+    def test_subpackage(self):
+        """
+        Unit test recovered by hand.
+        in Dir 'test_subpackage' is a Dir named 'parent' is a Dir named 'child'
+        I do not know why she named it this way :(
+        """
+        repo = 'unit_tests/test_subpackage'
+        check_path_exists(repo)
+        resource_set = ResourceSet()
+        graph = ProjectEcoreGraph(resource_set, repo, False, test_output_dir)
+        ecore_graph = graph.get_graph()
+        self.assertEqual(len(ecore_graph.packages), 1, 'wrong number of packages')
+        self.assertEqual(ecore_graph.packages[0].tName, 'parent', 'wrong package name')
+        self.assertEqual(ecore_graph.packages[0].eClass.name, NodeTypes.PACKAGE.value, 'package is wrong type')
+        self.assertEqual(ecore_graph.packages[0].subpackages[0].tName, 'child', 'wrong submodule name')
+        self.assertEqual(ecore_graph.packages[0].subpackages[0].eClass.name, NodeTypes.PACKAGE.value, 'package is wrong type')
+        self.assertEqual(len(ecore_graph.modules), 0, 'wrong number of modules')
+        self.assertEqual(len(ecore_graph.classes), 0, 'wrong number of classes')
+        self.assertEqual(len(ecore_graph.methods), 0, 'wrong number of methods')
 
     def test_module(self):
         repo = 'unit_tests/test_module'
