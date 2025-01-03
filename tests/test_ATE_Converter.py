@@ -17,7 +17,7 @@ from NodeFeatures import NodeTypes
 from test_utils import check_path_exists
 
 # puts xmi files when
-test_output_dir = 'tests/test_results'
+test_output_dir = 'test_results'
 
 class TestATEConv(unittest.TestCase):
 
