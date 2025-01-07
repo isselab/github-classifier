@@ -1,6 +1,7 @@
 import ast
 import logging
 import os
+from logging import warning
 
 from pyecore.resources import ResourceSet, URI
 
@@ -1190,6 +1191,7 @@ class ASTVisitor(ast.NodeVisitor):
         self.current_class = None
         self.current_indentation = 0
         self.current_module = None
+        self.names_in_scope: set = set()
 
     def visit_Import(self, node):
         """
@@ -1259,6 +1261,9 @@ class ASTVisitor(ast.NodeVisitor):
         Args:
             node: The AST node representing the class definition.
         """
+        temp_scope = self.names_in_scope  # save previous scope in temp for later access.
+        self.names_in_scope = set()
+
         class_name = node.name
         self.current_module = self.ecore_graph.get_current_module()
         class_node = self.ecore_graph.get_class_by_name(
@@ -1284,6 +1289,8 @@ class ASTVisitor(ast.NodeVisitor):
                     self.ecore_graph.check_list.append(class_node)
         self.generic_visit(node)
 
+        self.names_in_scope = temp_scope  # Restore Scope from node before
+
     def visit_FunctionDef(self, node):
         """
         Visits a function definition in the AST.
@@ -1291,6 +1298,13 @@ class ASTVisitor(ast.NodeVisitor):
         Args:
             node: The AST node representing the function definition.
         """
+        # Check if Function already in Scope
+        if node.name in self.names_in_scope:
+            warning(f"Def {node.name} already in Scope")
+        self.names_in_scope.add(node.name)
+        temp_scope = self.names_in_scope # save previous scope in temp for later access.
+        self.names_in_scope = set()
+
         self.current_method = None
         if self.current_class is not None:
             self.current_method = self.ecore_graph.get_method_def_in_class(
@@ -1305,7 +1319,10 @@ class ASTVisitor(ast.NodeVisitor):
             self.current_module = module_node
             module_node.contains.append(self.current_method)
         self.current_indentation = node.col_offset
+
         self.generic_visit(node)
+
+        self.names_in_scope = temp_scope # Restore Scope from node before
 
     def visit_Assign(self, node):
         """
