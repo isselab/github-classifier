@@ -1192,6 +1192,7 @@ class ASTVisitor(ast.NodeVisitor):
         self.current_indentation = 0
         self.current_module = None
         self.names_in_scope: set = set()
+        self.fields_per_class: dict = dict()
 
     def visit_Import(self, node):
         """
@@ -1268,6 +1269,7 @@ class ASTVisitor(ast.NodeVisitor):
         self.current_module = self.ecore_graph.get_current_module()
         class_node = self.ecore_graph.get_class_by_name(
             class_name, module=self.ecore_graph.get_current_module())
+        temp_class = self.current_class
         self.current_class = class_node
 
         for base in node.bases:
@@ -1289,6 +1291,7 @@ class ASTVisitor(ast.NodeVisitor):
                     self.ecore_graph.check_list.append(class_node)
         self.generic_visit(node)
 
+        self.current_class = temp_class
         self.names_in_scope = temp_scope  # Restore Scope from node before
 
     def visit_FunctionDef(self, node):
@@ -1304,12 +1307,13 @@ class ASTVisitor(ast.NodeVisitor):
         self.names_in_scope.add(node.name)
         temp_scope = self.names_in_scope # save previous scope in temp for later access.
         self.names_in_scope = set()
-
+        temp_class, temp_method = self.current_class, self.current_method
         self.current_method = None
         if self.current_class is not None:
             self.current_method = self.ecore_graph.get_method_def_in_class(
                 node.name, self.current_class)
         if self.current_method is None:
+
             self.current_class = None
             self.current_method = self.ecore_graph.create_ecore_instance(
                 NodeTypes.METHOD_DEFINITION)
@@ -1322,6 +1326,8 @@ class ASTVisitor(ast.NodeVisitor):
 
         self.generic_visit(node)
 
+        self.current_class,self.current_method = temp_class, temp_method # Restore current class and method
+
         self.names_in_scope = temp_scope # Restore Scope from node before
 
     def visit_Assign(self, node):
@@ -1331,6 +1337,17 @@ class ASTVisitor(ast.NodeVisitor):
        Args:
            node: The AST node representing the assignment statement.
        """
+        # Find all field assignments in a class
+        if self.current_class is not None:
+            for target in node.targets:
+                if isinstance(target,ast.Attribute):
+                    if isinstance(target.value,ast.Name):
+                        if target.value.id == 'self':
+                            if self.current_class not in self.fields_per_class:
+                                self.fields_per_class[self.current_class] = set()
+                            self.fields_per_class[self.current_class].add(target.attr)
+                            # Todo: Use class fields in ecore model here
+
         if node.col_offset <= self.current_indentation:
             self.current_method = None
             self.current_indentation = node.col_offset
