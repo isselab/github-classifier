@@ -154,7 +154,7 @@ class ProjectEcoreGraph:
                                                         call_check = self.get_calls(
                                                             caller_node, meth)
                                                         if call_check is False:
-                                                            self.create_calls(
+                                                            self.create_call(
                                                                 caller_node, meth)
                                         if found_method is False:
                                             method_node = self.create_ecore_instance(
@@ -162,7 +162,7 @@ class ProjectEcoreGraph:
                                             self.create_method_signature(
                                                 method_node, method_name, [])
                                             obj.defines.append(method_node)
-                                            self.create_calls(
+                                            self.create_call(
                                                 caller_node, method_node)
                         if found_class is False:
                             self.create_imported_class_call(
@@ -177,7 +177,7 @@ class ProjectEcoreGraph:
                                         call_check = self.get_calls(
                                             caller_node, meth_def)
                                         if call_check is False:
-                                            self.create_calls(
+                                            self.create_call(
                                                 caller_node, meth_def)
                         if found_method is False:
                             self.create_imported_method_call(
@@ -234,7 +234,7 @@ class ProjectEcoreGraph:
                         [module_node, package_name, package_node, package_name])
                     self.graph.modules.append(module_node)
                     self.graph.packages.append(package_node)
-                    self.create_calls(caller_node, method_node)
+                    self.create_call(caller_node, method_node)
                 if len(split_import) > 2:
                     # create package hierarchy
                     package_node = self.create_ecore_instance(
@@ -283,7 +283,7 @@ class ProjectEcoreGraph:
                     if class_name is None:
                         module_node.contains.append(method_node)
                     # set call
-                    self.create_calls(caller_node, method_node)
+                    self.create_call(caller_node, method_node)
 
     def create_package_hierarchy(self, parent_package, subpackage_names, lib_flag=True):
         """
@@ -345,7 +345,7 @@ class ProjectEcoreGraph:
         method_node = self.create_ecore_instance(NodeTypes.METHOD_DEFINITION)
         self.create_method_signature(method_node, method_name, [])
         module_node.contains.append(method_node)
-        self.create_calls(caller_node, method_node)
+        self.create_call(caller_node, method_node)
 
     def create_imported_class_call(self, module_node, class_name, method_name, caller_node):
         """
@@ -365,7 +365,7 @@ class ProjectEcoreGraph:
         method_node = self.create_ecore_instance(NodeTypes.METHOD_DEFINITION)
         self.create_method_signature(method_node, method_name, [])
         class_node.defines.append(method_node)
-        self.create_calls(caller_node, method_node)
+        self.create_call(caller_node, method_node)
 
     def get_imported_library_package(self, package_name):
         """
@@ -540,7 +540,7 @@ class ProjectEcoreGraph:
         if method_node.signature.method.tName == method_name:
             call_check = self.get_calls(caller_node, method_node)
             if call_check is False:
-                self.create_calls(caller_node, method_node)
+                self.create_call(caller_node, method_node)
 
     def check_for_missing_nodes(self):
         """check_list contains all classes with method def that are created during conversion.
@@ -1143,7 +1143,7 @@ class ProjectEcoreGraph:
                 return True
         return False
 
-    def create_calls(self, caller_node, called_node):
+    def create_call(self, caller_node, called_node):
         """
         Creates a call between two nodes.
 
