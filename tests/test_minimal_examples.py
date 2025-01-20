@@ -48,3 +48,15 @@ class TestMinimalExamples(unittest.TestCase):
         resource_set = ResourceSet()
         graph = ProjectEcoreGraph(resource_set, repo, True, test_output_dir)
         ecore_graph = graph.get_graph()
+
+    #def test_pyinputplus(self):
+        """
+        This test for pyinputplus as a test
+        Create a dir in minimal_examples named "test_pyinputplus"
+        use cd tests; cd minimal_examples;cd test_pyinputplus; git clone https://github.com/asweigart/pyinputplus.git
+        """
+        #repo = 'minimal_examples/test_pyinputplus/pyinputplus'
+        #check_path_exists(repo)
+        #resource_set = ResourceSet()
+        #graph = ProjectEcoreGraph(resource_set, repo, True, test_output_dir)
+        #ecore_graph = graph.get_graph()
