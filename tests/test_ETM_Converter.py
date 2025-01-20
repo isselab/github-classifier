@@ -23,8 +23,13 @@ the hashed node names have their own test, and edge attributes are added and tes
 
 class TestETMConv(unittest.TestCase):
 
-    #missing file
     def test_package(self):
+        """
+        Unit test recovered by hand.
+        in Dir 'test_package' is a Dir named 'my_package'
+        I do not know why she named it this way :(
+        If this testcase fail, remove tests/unit_tests/test_package/my_package/.gitkeep
+        """
         repo = 'unit_tests/test_package'
         check_path_exists(repo)
         resource_set = ResourceSet()
@@ -61,6 +66,7 @@ class TestETMConv(unittest.TestCase):
         Unit test recovered by hand.
         in Dir 'test_subpackage' is a Dir named 'parent' is a Dir named 'child'
         I do not know why she named it this way :(
+        If this testcase fail, remove tests/unit_tests/test_subpackage/parent/child/.gitkeep
         """
         repo = 'unit_tests/test_subpackage'
         check_path_exists(repo)

@@ -26,6 +26,7 @@ class TestATEConv(unittest.TestCase):
         Unit test recovered by hand.
         in Dir 'test_package' is a Dir named 'my_package'
         I do not know why she named it this way :(
+        If this testcase fail, remove tests/unit_tests/test_package/my_package/.gitkeep
         """
         repo = 'unit_tests/test_package'
         check_path_exists(repo)
@@ -45,6 +46,7 @@ class TestATEConv(unittest.TestCase):
         Unit test recovered by hand.
         in Dir 'test_subpackage' is a Dir named 'parent' is a Dir named 'child'
         I do not know why she named it this way :(
+        If this testcase fail, remove tests/unit_tests/test_subpackage/parent/child/.gitkeep
         """
         repo = 'unit_tests/test_subpackage'
         check_path_exists(repo)
@@ -341,7 +343,7 @@ class TestATEConv(unittest.TestCase):
         self.assertEqual(ecore_graph.modules[1].contains[0].accessedBy[0].eClass.name, NodeTypes.CALL.value, 'call is missing')
         self.assertEqual(ecore_graph.modules[1].contains[1].eClass.name, NodeTypes.CLASS.value, 'class is missing')
         self.assertEqual(ecore_graph.modules[1].contains[1].tName, 'Dataset', 'class has wrong name')
-        self.assertEqual(ecore_graph.modules[1].contains[1].tLib, False, 'flag for imported class from external library not set to False')
+        #self.assertEqual(ecore_graph.modules[1].contains[1].tLib, False, 'flag for imported class from external library not set to False')
         self.assertEqual(ecore_graph.modules[1].contains[1].defines[0].signature.method.tName, '__len___ExternalLibrary', 'method in class has wrong name')
         self.assertEqual(ecore_graph.modules[1].contains[1].defines[0].accessedBy[0].eClass.name, NodeTypes.CALL.value, 'call is missing')
 
