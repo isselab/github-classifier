@@ -9,11 +9,28 @@ class NodeTypes(Enum):
        Each node type corresponds to a specific element in the type system,
        providing a way to categorize and manage these elements programmatically.
        """
-    CALL = "TCall"
-    CLASS = "TClass"
+    # TPackage
+    PACKAGE = "TPackage"
+    # TModule
     MODULE = "TModule"
+    # TClass
+    CLASS = "TClass"
+    # TMethod
     METHOD = "TMethod"
     METHOD_SIGNATURE = "TMethodSignature"
     METHOD_DEFINITION = "TMethodDefinition"
-    PACKAGE = "TPackage"
     PARAMETER = "TParameter"
+    # TField
+    FIELD = "TField" # Todo implement this in AstToEcoreConverter
+    FIELD_SIGNATURE = "TFieldSignature" # Todo implement this in AstToEcoreConverter
+    FIELD_DEFINITION = "TFieldDefinition" # Todo implement this in AstToEcoreConverter
+    # TAccess
+    CALL = "TCall"
+    READ = "TRead"  # Todo implement this in AstToEcoreConverter
+    WRITE = "TWrite"  # Todo implement this in AstToEcoreConverter
+    READ_WRITE = "TReadWrite"  # Todo implement this in AstToEcoreConverter
+    #TInterface
+    INTERFACE = "TInterface"
+    # In Python, there is no formal concept of interfaces as found in some other programming languages like Java or C#.
+    # However, Python supports a similar concept through the use of abstract base classes (ABCs) and duck typing.
+    # The return on investment probably is not sufficient to justify the implementation.
