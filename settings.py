@@ -14,7 +14,7 @@ BASE_DIR = os.path.dirname(os.path.abspath(__file__))
 # Training Configuration
 TRAINING_SETTINGS = {
     # Path to the folder containing the converted repositories
-    'output_directory': os.path.join('data/output'),
+    'output_directory': os.path.join('data/output/xmi_files'),
     # Path to the Excel file containing labeled dataset information
     'labels_file': os.path.join(BASE_DIR, 'data/labeled_dataset_repos.xlsx'),
     'n_epoch': 100,  # Number of epochs for training the model
@@ -35,7 +35,7 @@ DATASET_PREPARATION_SETTINGS = {
     # Path to GitHub repositories used as input
     'repository_directory': os.path.join('data/input'),
     # Path to the folder containing the converted repositories
-    'output_directory': os.path.join('data/output'),
+    'output_directory': os.path.join('data/output/xmi_files'),
     # Path to the Excel file containing labeled dataset information
     'repository_list_file': os.path.join(BASE_DIR, 'data/labeled_dataset_repos.xlsx'),
     # Boolean flag; True -> Download all repos from repository_list_files; False -> Do not download from repository_list
@@ -47,7 +47,7 @@ MAIN_SETTINGS = {
     # Path to directory containing repositories to classify
     'input_directory': os.path.join(BASE_DIR, 'data/input'),
     # Path for the output directory
-    'output_directory': os.path.join(BASE_DIR, 'data/output'),
+    'output_directory': os.path.join(BASE_DIR, 'data/output/xmi_files'),
     # Trained classification model
     'model_path': os.path.join(BASE_DIR, 'graph_classification_model.pt'),
     'threshold': 0.5  # Value above label is considered predicted by model

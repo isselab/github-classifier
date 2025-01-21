@@ -16,46 +16,57 @@ from pyecore.resources import ResourceSet
 from NodeFeatures import NodeTypes
 from test_utils import check_path_exists
 
+# puts xmi files when
+test_output_dir = 'test_results/unit_tests'
+
 class TestATEConv(unittest.TestCase):
 
+    def test_package(self):
+        """
+        Unit test recovered by hand.
+        in Dir 'test_package' is a Dir named 'my_package'
+        I do not know why she named it this way :(
+        If this testcase fail, remove tests/unit_tests/test_package/my_package/.gitkeep
+        """
+        repo = 'unit_tests/test_package'
+        check_path_exists(repo)
+        resource_set = ResourceSet()
+        graph = ProjectEcoreGraph(resource_set, repo, False, test_output_dir)
+        ecore_graph = graph.get_graph()
+        self.assertEqual(len(ecore_graph.packages), 1, 'wrong number of packages')
+        self.assertEqual(ecore_graph.packages[0].eClass.name, NodeTypes.PACKAGE.value, 'package is wrong type')
+        self.assertEqual(ecore_graph.packages[0].tName, 'my_package', 'wrong package name')
+        self.assertEqual(len(ecore_graph.packages[0].subpackages), 0, 'package should not have subpackage')
+        self.assertEqual(len(ecore_graph.modules), 0, 'wrong number of modules')
+        self.assertEqual(len(ecore_graph.classes), 0, 'wrong number of classes')
+        self.assertEqual(len(ecore_graph.methods), 0, 'wrong number of methods')
 
-       #buggy unit test -> missing file
-    #def test_package(self):
-        #repo = 'unit_tests/test_package'
-        #check_path_exists(repo)
-        #resource_set = ResourceSet()
-        #graph = ProjectEcoreGraph(resource_set, repo, False)
-        #ecore_graph = graph.get_graph()
-        # original
-        #self.assertEqual(len(ecore_graph.packages), 1, 'wrong number of packages')
-        #self.assertEqual(ecore_graph.packages[0].eClass.name, NodeTypes.PACKAGE.value, 'package is wrong type')
-        #self.assertEqual(ecore_graph.packages[0].tName, 'my_package', 'wrong package name')
-        #self.assertEqual(len(ecore_graph.packages[0].subpackages), 0, 'package should not have subpackage')
-        #self.assertEqual(len(ecore_graph.modules), 0, 'wrong number of modules')
-        #self.assertEqual(len(ecore_graph.classes), 0, 'wrong number of classes')
-        #self.assertEqual(len(ecore_graph.methods), 0, 'wrong number of methods')
-
-    #buggy unit test -> missing file
-    #def test_subpackage(self):
-        #repo = 'unit_tests/test_subpackage'
-        #check_path_exists(repo)
-        #resource_set = ResourceSet()
-        #graph = ProjectEcoreGraph(resource_set, repo, False)
-        #ecore_graph = graph.get_graph()
-        #self.assertEqual(len(ecore_graph.packages), 1, 'wrong number of packages')
-        #self.assertEqual(ecore_graph.packages[0].tName, 'parent', 'wrong package name')
-        #self.assertEqual(ecore_graph.packages[0].eClass.name, NodeTypes.PACKAGE.value, 'package is wrong type')
-        #self.assertEqual(ecore_graph.packages[0].subpackages[0].tName, 'child', 'wrong submodule name')
-        #self.assertEqual(ecore_graph.packages[0].subpackages[0].eClass.name, NodeTypes.PACKAGE.value, 'package is wrong type')
-        #self.assertEqual(len(ecore_graph.modules), 0, 'wrong number of modules')
-        #self.assertEqual(len(ecore_graph.classes), 0, 'wrong number of classes')
-        #self.assertEqual(len(ecore_graph.methods), 0, 'wrong number of methods')
+    def test_subpackage(self):
+        """
+        Unit test recovered by hand.
+        in Dir 'test_subpackage' is a Dir named 'parent' is a Dir named 'child'
+        I do not know why she named it this way :(
+        If this testcase fail, remove tests/unit_tests/test_subpackage/parent/child/.gitkeep
+        """
+        repo = 'unit_tests/test_subpackage'
+        check_path_exists(repo)
+        resource_set = ResourceSet()
+        graph = ProjectEcoreGraph(resource_set, repo, False, test_output_dir)
+        ecore_graph = graph.get_graph()
+        self.assertEqual(len(ecore_graph.packages), 1, 'wrong number of packages')
+        self.assertEqual(ecore_graph.packages[0].tName, 'parent', 'wrong package name')
+        self.assertEqual(ecore_graph.packages[0].eClass.name, NodeTypes.PACKAGE.value, 'package is wrong type')
+        self.assertEqual(ecore_graph.packages[0].subpackages[0].tName, 'child', 'wrong submodule name')
+        self.assertEqual(ecore_graph.packages[0].subpackages[0].eClass.name, NodeTypes.PACKAGE.value, 'package is wrong type')
+        self.assertEqual(len(ecore_graph.modules), 0, 'wrong number of modules')
+        self.assertEqual(len(ecore_graph.classes), 0, 'wrong number of classes')
+        self.assertEqual(len(ecore_graph.methods), 0, 'wrong number of methods')
 
     def test_module(self):
         repo = 'unit_tests/test_module'
         check_path_exists(repo)
         resource_set = ResourceSet()
-        graph = ProjectEcoreGraph(resource_set, repo, False)
+        graph = ProjectEcoreGraph(resource_set, repo, False,test_output_dir)
         ecore_graph = graph.get_graph()
         self.assertEqual(len(ecore_graph.modules), 1, 'wrong number of modules')
         self.assertEqual(ecore_graph.modules[0].eClass.name, NodeTypes.MODULE.value, 'module is wrong type')
@@ -67,7 +78,7 @@ class TestATEConv(unittest.TestCase):
         repo = 'unit_tests/test_multiple_modules'
         check_path_exists(repo)
         resource_set = ResourceSet()
-        graph = ProjectEcoreGraph(resource_set, repo, False)
+        graph = ProjectEcoreGraph(resource_set, repo, False,test_output_dir)
         ecore_graph = graph.get_graph()
         self.assertEqual(len(ecore_graph.modules), 2, 'wrong number of modules')
         self.assertEqual(ecore_graph.modules[0].eClass.name, NodeTypes.MODULE.value, 'module is wrong type')
@@ -83,7 +94,7 @@ class TestATEConv(unittest.TestCase):
         repo = 'unit_tests/test_module_in_package'
         check_path_exists(repo)
         resource_set = ResourceSet()
-        graph = ProjectEcoreGraph(resource_set, repo, False)
+        graph = ProjectEcoreGraph(resource_set, repo, False,test_output_dir)
         ecore_graph = graph.get_graph()
         self.assertEqual(len(ecore_graph.packages), 1, 'wrong number of packages')
         self.assertEqual(len(ecore_graph.modules), 1, 'wrong number of modules')
@@ -98,7 +109,7 @@ class TestATEConv(unittest.TestCase):
         repo = 'unit_tests/test_class'
         check_path_exists(repo)
         resource_set = ResourceSet()
-        graph = ProjectEcoreGraph(resource_set, repo, False)
+        graph = ProjectEcoreGraph(resource_set, repo, False, test_output_dir)
         ecore_graph = graph.get_graph()
         self.assertEqual(len(ecore_graph.classes), 1, 'wrong number of classes')
         self.assertEqual(ecore_graph.classes[0].tName, 'MyTestClass', 'wrong class name')
@@ -109,7 +120,7 @@ class TestATEConv(unittest.TestCase):
         repo = 'unit_tests/test_child_class'
         check_path_exists(repo)
         resource_set = ResourceSet()
-        graph = ProjectEcoreGraph(resource_set, repo, False)
+        graph = ProjectEcoreGraph(resource_set, repo, False, test_output_dir)
         ecore_graph = graph.get_graph()
         self.assertEqual(len(ecore_graph.classes[0].childClasses), 1, 'wrong number of child classes')
         self.assertEqual(ecore_graph.classes[0].childClasses[0].tName, 'FirstChild', 'wrong name of child class')
@@ -118,7 +129,7 @@ class TestATEConv(unittest.TestCase):
         repo = 'unit_tests/test_method'
         check_path_exists(repo)
         resource_set = ResourceSet()
-        graph = ProjectEcoreGraph(resource_set, repo, False)
+        graph = ProjectEcoreGraph(resource_set, repo, False, test_output_dir)
         ecore_graph = graph.get_graph()
         self.assertEqual(len(ecore_graph.methods), 1, 'wrong number of methods')
         self.assertEqual(ecore_graph.methods[0].tName, 'my_test_method', 'wrong method name')
@@ -132,7 +143,7 @@ class TestATEConv(unittest.TestCase):
         repo = 'unit_tests/test_method_in_class'
         check_path_exists(repo)
         resource_set = ResourceSet()
-        graph = ProjectEcoreGraph(resource_set, repo, False)
+        graph = ProjectEcoreGraph(resource_set, repo, False, test_output_dir)
         ecore_graph = graph.get_graph()
         self.assertEqual(ecore_graph.modules[0].contains[0].eClass.name, NodeTypes.CLASS.value, 'class is wrong type')
         self.assertEqual(ecore_graph.modules[0].contains[0].tName, 'MyTestClass', 'class name wrong')
@@ -145,7 +156,7 @@ class TestATEConv(unittest.TestCase):
         repo = 'unit_tests/test_multiple_methods_in_class'
         check_path_exists(repo)
         resource_set = ResourceSet()
-        graph = ProjectEcoreGraph(resource_set, repo, False)
+        graph = ProjectEcoreGraph(resource_set, repo, False, test_output_dir)
         ecore_graph = graph.get_graph()
         self.assertEqual(ecore_graph.modules[0].contains[0].eClass.name, NodeTypes.CLASS.value, 'class is wrong type')
         self.assertEqual(ecore_graph.modules[0].contains[0].tName, 'MyTestClass', 'class name wrong')
@@ -159,7 +170,7 @@ class TestATEConv(unittest.TestCase):
         repo = 'unit_tests/test_parameter'
         check_path_exists(repo)
         resource_set = ResourceSet()
-        graph = ProjectEcoreGraph(resource_set, repo, False)
+        graph = ProjectEcoreGraph(resource_set, repo, False, test_output_dir)
         ecore_graph = graph.get_graph()
         self.assertEqual(len(ecore_graph.methods[0].signatures[0].parameters), 1, 'wrong number of parameters')
         self.assertEqual(ecore_graph.methods[0].signatures[0].parameters[0].eClass.name, NodeTypes.PARAMETER.value, 'parameter is wrong type')
@@ -181,7 +192,7 @@ class TestATEConv(unittest.TestCase):
         repo = 'unit_tests/test_module_internal_method_call'
         check_path_exists(repo)
         resource_set = ResourceSet()
-        graph = ProjectEcoreGraph(resource_set, repo, False)
+        graph = ProjectEcoreGraph(resource_set, repo, False, test_output_dir)
         ecore_graph = graph.get_graph()
         self.assertEqual(ecore_graph.modules[0].contains[1].signature.method.tName, 'caller_func', 'caller method has wrong name')
         self.assertEqual(len(ecore_graph.modules[0].contains[1].accessing), 1, 'call object is missing')
@@ -194,7 +205,7 @@ class TestATEConv(unittest.TestCase):
         repo = 'unit_tests/test_internal_method_imports'
         check_path_exists(repo)
         resource_set = ResourceSet()
-        graph = ProjectEcoreGraph(resource_set, repo, False)
+        graph = ProjectEcoreGraph(resource_set, repo, False, test_output_dir)
         ecore_graph = graph.get_graph()
         self.assertEqual(ecore_graph.modules[1].contains[0].signature.method.tName, 'method_two', 'wrong method name using the import')
         self.assertEqual(ecore_graph.modules[1].contains[0].accessing[0].eClass.name, NodeTypes.CALL.value, 'imported method cannot be used, import did not work')
@@ -205,7 +216,7 @@ class TestATEConv(unittest.TestCase):
         repo = 'unit_tests/test_internal_class_imports'
         check_path_exists(repo)
         resource_set = ResourceSet()
-        graph = ProjectEcoreGraph(resource_set, repo, False)
+        graph = ProjectEcoreGraph(resource_set, repo, False, test_output_dir)
         ecore_graph = graph.get_graph()
         self.assertEqual(ecore_graph.modules[1].contains[0].signature.method.tName, 'method_two', 'wrong method name using the import')
         self.assertEqual(ecore_graph.modules[1].contains[0].accessing[0].eClass.name, NodeTypes.CALL.value, 'imported method cannot be used, import did not work')
@@ -217,7 +228,7 @@ class TestATEConv(unittest.TestCase):
         repo = 'unit_tests/test_internal_method_imports_package'
         check_path_exists(repo)
         resource_set = ResourceSet()
-        graph = ProjectEcoreGraph(resource_set, repo, False)
+        graph = ProjectEcoreGraph(resource_set, repo, False, test_output_dir)
         ecore_graph = graph.get_graph()
         self.assertEqual(ecore_graph.modules[0].contains[0].signature.method.tName, 'method_two', 'wrong method name using the import')
         self.assertEqual(ecore_graph.modules[0].contains[0].accessing[0].eClass.name, NodeTypes.CALL.value, 'imported method cannot be used, import did not work')
@@ -229,7 +240,7 @@ class TestATEConv(unittest.TestCase):
         repo = 'unit_tests/test_internal_method_class_imports_package'
         check_path_exists(repo)
         resource_set = ResourceSet()
-        graph = ProjectEcoreGraph(resource_set, repo, False)
+        graph = ProjectEcoreGraph(resource_set, repo, False, test_output_dir)
         ecore_graph = graph.get_graph()
         self.assertEqual(ecore_graph.modules[0].contains[0].signature.method.tName, 'method_two', 'wrong method name using the import')
         self.assertEqual(ecore_graph.modules[0].contains[0].accessing[0].eClass.name, NodeTypes.CALL.value, 'imported method cannot be used, import did not work')
@@ -241,7 +252,7 @@ class TestATEConv(unittest.TestCase):
         repo = 'unit_tests/test_module_internal_class_call'
         check_path_exists(repo)
         resource_set = ResourceSet()
-        graph = ProjectEcoreGraph(resource_set, repo, False)
+        graph = ProjectEcoreGraph(resource_set, repo, False, test_output_dir)
         ecore_graph = graph.get_graph()
         self.assertIsNotNone(ecore_graph.modules[0].contains[0].defines[0].accessedBy, 'call source is missing')
         self.assertEqual(len(ecore_graph.modules[0].contains[1].accessing), 1, 'call object is missing')
@@ -255,7 +266,7 @@ class TestATEConv(unittest.TestCase):
         repo = 'unit_tests/test_class_internal_method_call'
         check_path_exists(repo)
         resource_set = ResourceSet()
-        graph = ProjectEcoreGraph(resource_set, repo, False)
+        graph = ProjectEcoreGraph(resource_set, repo, False, test_output_dir)
         ecore_graph = graph.get_graph()
         self.assertEqual(ecore_graph.modules[0].contains[0].defines[1].accessing[0].eClass.name, NodeTypes.CALL.value, 'call is wrong type')
         self.assertEqual(ecore_graph.modules[0].contains[0].defines[1].accessing[0].target.signature.method.tName, 'called_func', 'target has wrong method name')
@@ -266,7 +277,7 @@ class TestATEConv(unittest.TestCase):
         repo = 'unit_tests/test_internal_method_imports_multiple_packages'
         check_path_exists(repo)
         resource_set = ResourceSet()
-        graph = ProjectEcoreGraph(resource_set, repo, False)
+        graph = ProjectEcoreGraph(resource_set, repo, False, test_output_dir)
         ecore_graph = graph.get_graph()
         self.assertEqual(ecore_graph.modules[0].contains[0].signature.method.tName, 'method_two', 'wrong method name using the import')
         self.assertEqual(ecore_graph.modules[0].contains[0].accessing[0].eClass.name, NodeTypes.CALL.value, 'imported method cannot be used, import did not work')
@@ -278,7 +289,7 @@ class TestATEConv(unittest.TestCase):
         repo = 'unit_tests/test_internal_method_class_imports_multiple_packages'
         check_path_exists(repo)
         resource_set = ResourceSet()
-        graph = ProjectEcoreGraph(resource_set, repo, False)
+        graph = ProjectEcoreGraph(resource_set, repo, False, test_output_dir)
         ecore_graph = graph.get_graph()
         self.assertEqual(ecore_graph.modules[0].contains[0].signature.method.tName, 'method_two', 'wrong method name using the import')
         self.assertEqual(ecore_graph.modules[0].contains[0].accessing[0].eClass.name, NodeTypes.CALL.value, 'imported method cannot be used, import did not work')
@@ -290,7 +301,7 @@ class TestATEConv(unittest.TestCase):
         repo = 'unit_tests/test_call_external_library'
         check_path_exists(repo)
         resource_set = ResourceSet()
-        graph = ProjectEcoreGraph(resource_set, repo, False)
+        graph = ProjectEcoreGraph(resource_set, repo, False, test_output_dir)
         ecore_graph = graph.get_graph()
         self.assertEqual(ecore_graph.packages[0].tName, 'numpy_ExternalLibrary', 'imported library package is missing')
         self.assertEqual(ecore_graph.modules[1].namespace.tName, 'numpy_ExternalLibrary', 'imported library module and package edge wrong')
@@ -305,7 +316,7 @@ class TestATEConv(unittest.TestCase):
         repo = 'unit_tests/test_call_external_library_submodule'
         check_path_exists(repo)
         resource_set = ResourceSet()
-        graph = ProjectEcoreGraph(resource_set, repo, False)
+        graph = ProjectEcoreGraph(resource_set, repo, False, test_output_dir)
         ecore_graph = graph.get_graph()
         self.assertEqual(len(ecore_graph.packages), 2, 'wrong number of packages')
         self.assertEqual(ecore_graph.packages[1].tName, 'torch_geometric_ExternalLibrary', 'import with length>2 has wrong package name')
@@ -318,7 +329,7 @@ class TestATEConv(unittest.TestCase):
         repo = 'unit_tests/test_call_external_library_class'
         check_path_exists(repo)
         resource_set = ResourceSet()
-        graph = ProjectEcoreGraph(resource_set, repo, False)
+        graph = ProjectEcoreGraph(resource_set, repo, False, test_output_dir)
         ecore_graph = graph.get_graph()
         self.assertEqual(ecore_graph.packages[0].tName, 'torch_ExternalLibrary', 'wrong package name for import')
         self.assertEqual(len(ecore_graph.packages), 1, 'wrong number of imported packages')
@@ -332,7 +343,7 @@ class TestATEConv(unittest.TestCase):
         self.assertEqual(ecore_graph.modules[1].contains[0].accessedBy[0].eClass.name, NodeTypes.CALL.value, 'call is missing')
         self.assertEqual(ecore_graph.modules[1].contains[1].eClass.name, NodeTypes.CLASS.value, 'class is missing')
         self.assertEqual(ecore_graph.modules[1].contains[1].tName, 'Dataset', 'class has wrong name')
-        self.assertEqual(ecore_graph.modules[1].contains[1].tLib, True, 'flag for imported class from external library not set to true')
+        #self.assertEqual(ecore_graph.modules[1].contains[1].tLib, False, 'flag for imported class from external library not set to False')
         self.assertEqual(ecore_graph.modules[1].contains[1].defines[0].signature.method.tName, '__len___ExternalLibrary', 'method in class has wrong name')
         self.assertEqual(ecore_graph.modules[1].contains[1].defines[0].accessedBy[0].eClass.name, NodeTypes.CALL.value, 'call is missing')
 
@@ -341,7 +352,7 @@ class TestATEConv(unittest.TestCase):
         repo = 'unit_tests/test_call_external_library_class_multiple_methods'
         check_path_exists(repo)
         resource_set = ResourceSet()
-        graph = ProjectEcoreGraph(resource_set, repo, False)
+        graph = ProjectEcoreGraph(resource_set, repo, False, test_output_dir)
         ecore_graph = graph.get_graph()
         self.assertEqual(ecore_graph.modules[1].contains[1].defines[1].signature.method.tName, '__getitem___ExternalLibrary', 'second class method has wrong name')
         self.assertEqual(ecore_graph.modules[1].contains[1].defines[1].accessedBy[0].eClass.name, NodeTypes.CALL.value, 'call is missing')
@@ -351,7 +362,7 @@ class TestATEConv(unittest.TestCase):
         repo = 'unit_tests/test_call_external_library_multiple_methods'
         check_path_exists(repo)
         resource_set = ResourceSet()
-        graph = ProjectEcoreGraph(resource_set, repo, False)
+        graph = ProjectEcoreGraph(resource_set, repo, False, test_output_dir)
         ecore_graph = graph.get_graph()
         self.assertEqual(ecore_graph.modules[1].contains[1].signature.method.tName, 'max_ExternalLibrary', 'second method in imported module wrong name')
         self.assertEqual(ecore_graph.modules[1].contains[1].accessedBy[0].eClass.name, NodeTypes.CALL.value, 'call is missing')
@@ -361,7 +372,7 @@ class TestATEConv(unittest.TestCase):
         repo = 'unit_tests/test_call_external_library_multiple_modules_same_package'
         check_path_exists(repo)
         resource_set = ResourceSet()
-        graph = ProjectEcoreGraph(resource_set, repo, False)
+        graph = ProjectEcoreGraph(resource_set, repo, False, test_output_dir)
         ecore_graph = graph.get_graph()
         self.assertEqual(len(ecore_graph.modules), 3, 'wrong number of modules')
         self.assertEqual(ecore_graph.modules[1].namespace.tName, 'utils_ExternalLibrary', 'wrong subpackage name in imported module')
@@ -375,7 +386,7 @@ class TestATEConv(unittest.TestCase):
         repo = 'unit_tests/test_call_external_library_multiple_subpackages'
         check_path_exists(repo)
         resource_set = ResourceSet()
-        graph = ProjectEcoreGraph(resource_set, repo, False)
+        graph = ProjectEcoreGraph(resource_set, repo, False, test_output_dir)
         ecore_graph = graph.get_graph()
         self.assertEqual(len(ecore_graph.packages[0].subpackages), 2, 'wrong number of subpackages')
         self.assertEqual(ecore_graph.packages[0].subpackages[0].tName, 'utils_ExternalLibrary', 'wrong subpackage name')

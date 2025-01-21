@@ -1,6 +1,7 @@
 import ast
 import logging
 import os
+from logging import warning
 
 from pyecore.resources import ResourceSet, URI
 
@@ -153,7 +154,7 @@ class ProjectEcoreGraph:
                                                         call_check = self.get_calls(
                                                             caller_node, meth)
                                                         if call_check is False:
-                                                            self.create_calls(
+                                                            self.create_call(
                                                                 caller_node, meth)
                                         if found_method is False:
                                             method_node = self.create_ecore_instance(
@@ -161,7 +162,7 @@ class ProjectEcoreGraph:
                                             self.create_method_signature(
                                                 method_node, method_name, [])
                                             obj.defines.append(method_node)
-                                            self.create_calls(
+                                            self.create_call(
                                                 caller_node, method_node)
                         if found_class is False:
                             self.create_imported_class_call(
@@ -176,7 +177,7 @@ class ProjectEcoreGraph:
                                         call_check = self.get_calls(
                                             caller_node, meth_def)
                                         if call_check is False:
-                                            self.create_calls(
+                                            self.create_call(
                                                 caller_node, meth_def)
                         if found_method is False:
                             self.create_imported_method_call(
@@ -233,7 +234,7 @@ class ProjectEcoreGraph:
                         [module_node, package_name, package_node, package_name])
                     self.graph.modules.append(module_node)
                     self.graph.packages.append(package_node)
-                    self.create_calls(caller_node, method_node)
+                    self.create_call(caller_node, method_node)
                 if len(split_import) > 2:
                     # create package hierarchy
                     package_node = self.create_ecore_instance(
@@ -282,7 +283,7 @@ class ProjectEcoreGraph:
                     if class_name is None:
                         module_node.contains.append(method_node)
                     # set call
-                    self.create_calls(caller_node, method_node)
+                    self.create_call(caller_node, method_node)
 
     def create_package_hierarchy(self, parent_package, subpackage_names, lib_flag=True):
         """
@@ -344,7 +345,7 @@ class ProjectEcoreGraph:
         method_node = self.create_ecore_instance(NodeTypes.METHOD_DEFINITION)
         self.create_method_signature(method_node, method_name, [])
         module_node.contains.append(method_node)
-        self.create_calls(caller_node, method_node)
+        self.create_call(caller_node, method_node)
 
     def create_imported_class_call(self, module_node, class_name, method_name, caller_node):
         """
@@ -364,7 +365,7 @@ class ProjectEcoreGraph:
         method_node = self.create_ecore_instance(NodeTypes.METHOD_DEFINITION)
         self.create_method_signature(method_node, method_name, [])
         class_node.defines.append(method_node)
-        self.create_calls(caller_node, method_node)
+        self.create_call(caller_node, method_node)
 
     def get_imported_library_package(self, package_name):
         """
@@ -539,7 +540,7 @@ class ProjectEcoreGraph:
         if method_node.signature.method.tName == method_name:
             call_check = self.get_calls(caller_node, method_node)
             if call_check is False:
-                self.create_calls(caller_node, method_node)
+                self.create_call(caller_node, method_node)
 
     def check_for_missing_nodes(self):
         """check_list contains all classes with method def that are created during conversion.
@@ -1142,7 +1143,7 @@ class ProjectEcoreGraph:
                 return True
         return False
 
-    def create_calls(self, caller_node, called_node):
+    def create_call(self, caller_node, called_node):
         """
         Creates a call between two nodes.
 
@@ -1164,7 +1165,10 @@ class ProjectEcoreGraph:
             repository (str?): The repository name for the output file.
         """
         repository_name = repository.split('\\')[-1]
-        resource = resource_set.create_resource(URI(f'{output_directory}/xmi_files/{repository_name}.xmi'),
+        # Replace slashes in the repository name with underscores
+        safe_repository_name = repository_name.replace('/', '_').replace('\\', '_')
+
+        resource = resource_set.create_resource(URI(f'{output_directory}/{safe_repository_name}.xmi'),
                                                 use_uuid=True)
         resource.append(self.graph)
         resource.save()
@@ -1174,19 +1178,21 @@ class ASTVisitor(ast.NodeVisitor):
     """Defines the visits of the different node types of the AST,
        ASTVisitor calls the functions of ProjectEcoreGraph to create Ecore instances."""
 
-    def __init__(self, graph_class):
+    def __init__(self, ecore_graph):
         """
         Initializes the ASTVisitor.
 
         Args:
-            graph_class (ProjectEcoreGraph): The instance of ProjectEcoreGraph to interact with.
+            ecore_graph (ProjectEcoreGraph): The instance of ProjectEcoreGraph to interact with.
         """
-        self.graph = graph_class.get_graph()
-        self.graph_class = graph_class  # ProjectEcoreGraph instance
+        self.graph = ecore_graph.get_graph()
+        self.ecore_graph = ecore_graph  # ProjectEcoreGraph instance
         self.current_method = None
         self.current_class = None
         self.current_indentation = 0
         self.current_module = None
+        self.names_in_scope: set = set()
+        self.fields_per_class: dict = dict()
 
     def visit_Import(self, node):
         """
@@ -1197,9 +1203,9 @@ class ASTVisitor(ast.NodeVisitor):
         """
         for name in node.names:
             if name.asname is None:
-                self.graph_class.add_import(name.name, name.name)
+                self.ecore_graph.add_import(name.name, name.name)
             else:
-                self.graph_class.add_import(name.name, name.asname)
+                self.ecore_graph.add_import(name.name, name.asname)
 
     def visit_ImportFrom(self, node):
         """
@@ -1210,10 +1216,10 @@ class ASTVisitor(ast.NodeVisitor):
         """
         for name in node.names:
             if name.asname is None:
-                self.graph_class.add_import(
+                self.ecore_graph.add_import(
                     f"{node.module}.{name.name}", name.name)
             else:
-                self.graph_class.add_import(
+                self.ecore_graph.add_import(
                     f"{node.module}.{name.name}", name.asname)
 
     def create_inheritance_structure(self, node, child):
@@ -1228,15 +1234,15 @@ class ASTVisitor(ast.NodeVisitor):
            """
         base_node = None
         if isinstance(node, ast.Name):
-            base_node, base_type = self.graph_class.get_reference_by_name(node.id)
+            base_node, base_type = self.ecore_graph.get_reference_by_name(node.id)
             if base_node is None:
-                base_node = self.graph_class.get_class_by_name(
-                    node.id, module=self.graph_class.get_current_module())
+                base_node = self.ecore_graph.get_class_by_name(
+                    node.id, module=self.ecore_graph.get_current_module())
                 base_node.childClasses.append(child)
             elif isinstance(base_node, str) and base_type == 0:
                 import_parent = None
                 for import_class in base_node.split('.'):
-                    import_node = self.graph_class.get_class_by_name(
+                    import_node = self.ecore_graph.get_class_by_name(
                         import_class)  # module is None here
                     if import_parent is not None:  # if import_node does not have parent, it becomes parent itself
                         import_parent.childClasses.append(import_node)
@@ -1244,7 +1250,7 @@ class ASTVisitor(ast.NodeVisitor):
                     base_node = import_node
                     base_node.childClasses.append(child)
         elif isinstance(node, ast.Attribute):
-            base_node = self.graph_class.get_class_by_name(node.attr)
+            base_node = self.ecore_graph.get_class_by_name(node.attr)
             base_node.childClasses.append(child)
             self.create_inheritance_structure(node.value, base_node)
         return base_node
@@ -1256,10 +1262,14 @@ class ASTVisitor(ast.NodeVisitor):
         Args:
             node: The AST node representing the class definition.
         """
+        temp_scope = self.names_in_scope  # save previous scope in temp for later access.
+        self.names_in_scope = set()
+
         class_name = node.name
-        self.current_module = self.graph_class.get_current_module()
-        class_node = self.graph_class.get_class_by_name(
-            class_name, module=self.graph_class.get_current_module())
+        self.current_module = self.ecore_graph.get_current_module()
+        class_node = self.ecore_graph.get_class_by_name(
+            class_name, module=self.ecore_graph.get_current_module())
+        temp_class = self.current_class
         self.current_class = class_node
 
         for base in node.bases:
@@ -1269,17 +1279,20 @@ class ASTVisitor(ast.NodeVisitor):
             if isinstance(item, ast.FunctionDef):
                 self.current_indentation = item.col_offset
                 method_name = item.name
-                method_node = self.graph_class.get_method_def_in_class(
+                method_node = self.ecore_graph.get_method_def_in_class(
                     method_name, class_node)
                 if method_node is None:
-                    method_node = self.graph_class.create_ecore_instance(
+                    method_node = self.ecore_graph.create_ecore_instance(
                         NodeTypes.METHOD_DEFINITION)
-                    self.graph_class.create_method_signature(
+                    self.ecore_graph.create_method_signature(
                         method_node, method_name, item.args.args)
                     class_node.defines.append(method_node)
                     # to search for missing meth def later
-                    self.graph_class.check_list.append(class_node)
+                    self.ecore_graph.check_list.append(class_node)
         self.generic_visit(node)
+
+        self.current_class = temp_class
+        self.names_in_scope = temp_scope  # Restore Scope from node before
 
     def visit_FunctionDef(self, node):
         """
@@ -1288,21 +1301,34 @@ class ASTVisitor(ast.NodeVisitor):
         Args:
             node: The AST node representing the function definition.
         """
+        # Check if Function already in Scope
+        if node.name in self.names_in_scope:
+            warning(f"Def {node.name} already in Scope")
+        self.names_in_scope.add(node.name)
+        temp_scope = self.names_in_scope # save previous scope in temp for later access.
+        self.names_in_scope = set()
+        temp_class, temp_method = self.current_class, self.current_method
         self.current_method = None
         if self.current_class is not None:
-            self.current_method = self.graph_class.get_method_def_in_class(
+            self.current_method = self.ecore_graph.get_method_def_in_class(
                 node.name, self.current_class)
         if self.current_method is None:
+
             self.current_class = None
-            self.current_method = self.graph_class.create_ecore_instance(
+            self.current_method = self.ecore_graph.create_ecore_instance(
                 NodeTypes.METHOD_DEFINITION)
-            self.graph_class.create_method_signature(
+            self.ecore_graph.create_method_signature(
                 self.current_method, node.name, node.args.args)
-            module_node = self.graph_class.get_current_module()
+            module_node = self.ecore_graph.get_current_module()
             self.current_module = module_node
             module_node.contains.append(self.current_method)
         self.current_indentation = node.col_offset
+
         self.generic_visit(node)
+
+        self.current_class,self.current_method = temp_class, temp_method # Restore current class and method
+
+        self.names_in_scope = temp_scope # Restore Scope from node before
 
     def visit_Assign(self, node):
         """
@@ -1311,6 +1337,17 @@ class ASTVisitor(ast.NodeVisitor):
        Args:
            node: The AST node representing the assignment statement.
        """
+        # Find all field assignments in a class
+        if self.current_class is not None:
+            for target in node.targets:
+                if isinstance(target,ast.Attribute):
+                    if isinstance(target.value,ast.Name):
+                        if target.value.id == 'self':
+                            if self.current_class not in self.fields_per_class:
+                                self.fields_per_class[self.current_class] = set()
+                            self.fields_per_class[self.current_class].add(target.attr)
+                            # Todo: Use class fields in ecore model here
+
         if node.col_offset <= self.current_indentation:
             self.current_method = None
             self.current_indentation = node.col_offset
@@ -1330,7 +1367,7 @@ class ASTVisitor(ast.NodeVisitor):
                         current_target = current_target.value
                     if isinstance(current_target, ast.Name):
                         target_name = f"{current_target.id}.{target_name}"
-                        self.graph_class.add_instance(
+                        self.ecore_graph.add_instance(
                             target_name[:-1], instance[:-1])
         self.generic_visit(node)
 
@@ -1351,20 +1388,20 @@ class ASTVisitor(ast.NodeVisitor):
         if self.current_method is not None:
             caller_node = self.current_method
         else:
-            module_node = self.graph_class.get_module_by_location(
-                self.graph_class.get_current_module().location)
+            module_node = self.ecore_graph.get_module_by_location(
+                self.ecore_graph.get_current_module().location)
             self.current_module = module_node
-            method_location = self.graph_class.get_current_module().location
+            method_location = self.ecore_graph.get_current_module().location
             method_name = method_location.split('/')[-1]
-            caller_node = self.graph_class.get_method_def_in_module(
+            caller_node = self.ecore_graph.get_method_def_in_module(
                 method_name, module_node)
             if caller_node is None:
-                caller_node = self.graph_class.get_method_def_from_internal_structure(
+                caller_node = self.ecore_graph.get_method_def_from_internal_structure(
                     method_name, module_node)
                 if caller_node is None:
-                    caller_node = self.graph_class.create_ecore_instance(
+                    caller_node = self.ecore_graph.create_ecore_instance(
                         NodeTypes.METHOD_DEFINITION)
-                    self.graph_class.create_method_signature(
+                    self.ecore_graph.create_method_signature(
                         caller_node, method_name, [])
                     module_node.contains.append(caller_node)
 
@@ -1380,11 +1417,11 @@ class ASTVisitor(ast.NodeVisitor):
             instance = instance[:-1]
 
         # for calls within one module
-        self.graph_class.call_in_module.append(
+        self.ecore_graph.call_in_module.append(
             [self.current_module, caller_node, instance])
 
         # for calls of imported instances, both within repo and external libraries
-        instance_from_graph, instance_type = self.graph_class.get_reference_by_name(
+        instance_from_graph, instance_type = self.ecore_graph.get_reference_by_name(
             instance.replace(f".{instance.split('.')[-1]}", ''))
 
         # this is necessary to get all the called methods' names correctly
@@ -1397,7 +1434,7 @@ class ASTVisitor(ast.NodeVisitor):
         instances[0] = instance_from_graph
         instance_name = ".".join(instances)
 
-        self.graph_class.call_external_module.append(
+        self.ecore_graph.call_external_module.append(
             [instance_name, caller_node])
 
         self.generic_visit(node)
