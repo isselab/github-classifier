@@ -42,7 +42,7 @@ class ProjectEcoreGraph:
         # initialize internal structures
         self.package_list = []  # entries: [package_node, name, parent]
         self.module_list = []  # entries: [module_node, module_name]
-        self.field_list = [] # entries: [field_node, name, type, module_node]
+        self.field_list = []  # entries: [field_node, name, type, module_node]
         self.current_module = None
         self.instances = []  # entries: [instance_name, class_name]
         self.imports = []  # entries: [module, alias]
@@ -101,7 +101,8 @@ class ProjectEcoreGraph:
                     logger.warning(f'skipped: {file_path}')
                     skipped_files += 1
                     continue  # skip file
-                else: raise e
+                else:
+                    raise e
 
         # append modules and possibly missing nodes to type graph to set calls after
         self.append_modules()
@@ -1176,9 +1177,7 @@ class ProjectEcoreGraph:
         field.signature = field_signature
         field.tName = name
 
-        if field_type is not None:
-            field_signature.type = field_type
-        #Todo currently field_type is bugged. It sets "" instead of the correct type
+        # field_signature.type = field_type #Todo currently bugged get str('datatype)') probably need TAbstractType
 
         self.graph.fields.append(field)
 
@@ -1370,7 +1369,7 @@ class ASTVisitor(ast.NodeVisitor):
         if node.name in self.names_in_scope:
             warning(f"Def {node.name} already in Scope")
         self.names_in_scope.add(node.name)
-        temp_scope = self.names_in_scope # save previous scope in temp for later access.
+        temp_scope = self.names_in_scope  # save previous scope in temp for later access.
         self.names_in_scope = set()
         temp_class, temp_method = self.current_class, self.current_method
         self.current_method = None
@@ -1378,7 +1377,6 @@ class ASTVisitor(ast.NodeVisitor):
             self.current_method = self.ecore_graph.get_method_def_in_class(
                 node.name, self.current_class)
         if self.current_method is None:
-
             self.current_class = None
             self.current_method = self.ecore_graph.create_ecore_instance(
                 NodeTypes.METHOD_DEFINITION)
@@ -1391,9 +1389,9 @@ class ASTVisitor(ast.NodeVisitor):
 
         self.generic_visit(node)
 
-        self.current_class,self.current_method = temp_class, temp_method # Restore current class and method
+        self.current_class, self.current_method = temp_class, temp_method  # Restore current class and method
 
-        self.names_in_scope = temp_scope # Restore Scope from node before
+        self.names_in_scope = temp_scope  # Restore Scope from node before
 
     def visit_Assign(self, node):
         """
@@ -1405,18 +1403,23 @@ class ASTVisitor(ast.NodeVisitor):
         # Find all field assignments in a class
         if self.current_class is not None:
             for target in node.targets:
-                if isinstance(target,ast.Attribute):
-                    if isinstance(target.value,ast.Name):
+                if isinstance(target, ast.Attribute):
+                    if isinstance(target.value, ast.Name):
                         if target.value.id == 'self':
                             field_name = target.attr
                             field_type = None
-                            if isinstance(node.value,ast.Call):
-                                field_type = node.value.func
-                            elif isinstance(node.value,ast.Name):
+                            if isinstance(node.value, ast.Constant):
+                                field_type = type(node.value.value).__name__
+                            elif isinstance(node.value, ast.Call):
+                                if isinstance(node.value.func, ast.Name):
+                                    field_type = node.value.func.id
+                                elif isinstance(node.value.func, ast.Attribute):
+                                    field_type = node.value.func.attr
+                            elif isinstance(node.value, ast.Name):
                                 field_type = node.value.id
-                            elif isinstance(node.value,ast.Attribute):
+                            elif isinstance(node.value, ast.Attribute):
                                 field_type = node.value.attr
-                            self.ecore_graph.create_field(self.current_class,field_name,field_type)
+                            self.ecore_graph.create_field(self.current_class, field_name, field_type)
                             if self.current_class not in self.fields_per_class:
                                 self.fields_per_class[self.current_class] = set()
                             self.fields_per_class[self.current_class].add(target.attr)
@@ -1427,10 +1430,13 @@ class ASTVisitor(ast.NodeVisitor):
                 if isinstance(target, ast.Name):
                     field_name = target.id
                     field_type = None
-                    if isinstance(node.value,ast.Constant):
-                        field_type = self.get_class_by_type(type(node.value.value))
+                    if isinstance(node.value, ast.Constant):
+                        field_type = type(node.value.value).__name__
                     elif isinstance(node.value, ast.Call):
-                        field_type = node.value.func
+                        if isinstance(node.value.func, ast.Name):
+                            field_type = node.value.func.id
+                        elif isinstance(node.value.func, ast.Attribute):
+                            field_type = node.value.func.attr
                     elif isinstance(node.value, ast.Name):
                         field_type = node.value.id
                     elif isinstance(node.value, ast.Attribute):
