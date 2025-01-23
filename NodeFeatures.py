@@ -21,9 +21,9 @@ class NodeTypes(Enum):
     METHOD_DEFINITION = "TMethodDefinition"
     PARAMETER = "TParameter"
     # TField
-    FIELD = "TField" # Todo implement this in AstToEcoreConverter
-    FIELD_SIGNATURE = "TFieldSignature" # Todo implement this in AstToEcoreConverter
-    FIELD_DEFINITION = "TFieldDefinition" # Todo implement this in AstToEcoreConverter
+    FIELD = "TField"
+    FIELD_SIGNATURE = "TFieldSignature" # Todo implement this in AstToEcoreConverter (only missing TFieldSignature.type)
+    FIELD_DEFINITION = "TFieldDefinition" # Todo implement this in AstToEcoreConverter (missing TFieldDefinition.hidden and ".hiddenBy)
     # TAccess
     CALL = "TCall"
     READ = "TRead"  # Todo implement this in AstToEcoreConverter
