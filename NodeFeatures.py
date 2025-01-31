@@ -17,13 +17,13 @@ class NodeTypes(Enum):
     CLASS = "TClass"
     # TMethod
     METHOD = "TMethod"
-    METHOD_SIGNATURE = "TMethodSignature"
-    METHOD_DEFINITION = "TMethodDefinition"
+    METHOD_SIGNATURE = "TMethodSignature" # missing firstParameter does not need to be implemented.
+    METHOD_DEFINITION = "TMethodDefinition"# missing "".overloading and "".overloadedBY does not need to be implemented.
     PARAMETER = "TParameter"
     # TField
     FIELD = "TField"
     FIELD_SIGNATURE = "TFieldSignature" # Todo implement this in AstToEcoreConverter (only missing TFieldSignature.type)
-    FIELD_DEFINITION = "TFieldDefinition" # Todo implement this in AstToEcoreConverter (missing TFieldDefinition.hidden and ".hiddenBy)
+    FIELD_DEFINITION = "TFieldDefinition" #  missing TFieldDefinition.hidden and "".hiddenBy does not to be implemented
     # TAccess
     CALL = "TCall"
     READ = "TRead"  # Todo implement this in AstToEcoreConverter
