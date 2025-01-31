@@ -1,5 +1,9 @@
 import pandas as pd
 import graphviz
+"""
+This script is WIP.
+In our Application we have 3 csv files storing the data needed to visualize.
+"""
 
 def read_node_features(file_path):
     """Read node features from CSV file."""
