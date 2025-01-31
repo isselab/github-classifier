@@ -1108,20 +1108,23 @@ class ProjectEcoreGraph:
             name (str?): The name of the method.
             arguments (list?): The list of arguments for the method.
         """
-        method_signature = self.create_ecore_instance(
-            NodeTypes.METHOD_SIGNATURE)
+        method_signature = self.create_ecore_instance(NodeTypes.METHOD_SIGNATURE)
         method = self.create_ecore_instance(NodeTypes.METHOD)
         method.tName = name
         self.graph.methods.append(method)
         method_signature.method = method
 
         previous = None
+        first_parameter = None
         for _ in arguments:
             parameter = self.create_ecore_instance(NodeTypes.PARAMETER)
             if previous is not None:
                 parameter.previous = previous
             previous = parameter
             method_signature.parameters.append(parameter)
+            if first_parameter is None:
+                first_parameter = parameter
+                method_signature.firstParameter = first_parameter
 
         method_node.signature = method_signature
 
@@ -1177,7 +1180,14 @@ class ProjectEcoreGraph:
         field.signature = field_signature
         field.tName = name
 
-        # field_signature.type = field_type #Todo currently bugged get str('datatype)') probably need TAbstractType
+        # Todo currently bugged get str('datatype)') probably need TAbstractType
+        #  -> tAbstractType can not be init bec. abstract.
+        #  -> Use TClass instead
+        #  -> if TClass used type will not be set in xmi
+        # Create a TClass instance and set its instanceClass attribute
+        type_class = self.create_ecore_instance(NodeTypes.CLASS)
+        type_class.tName = field_type
+        field_signature.type = type_class
 
         self.graph.fields.append(field)
 
@@ -1245,18 +1255,6 @@ class ASTVisitor(ast.NodeVisitor):
         self.current_module = None
         self.names_in_scope: set = set()
         self.fields_per_class: dict = dict()
-
-        self.INTEGER_TYPE = self.ecore_graph.get_class_by_name("int")
-        self.FLOAT_TYPE = self.ecore_graph.get_class_by_name("float")
-        self.STRING_TYPE = self.ecore_graph.get_class_by_name("str")
-        self.BOOL_TYPE = self.ecore_graph.get_class_by_name("bool")
-        self.LIST_TYPE = self.ecore_graph.get_class_by_name("list")
-        self.TUPLE_TYPE = self.ecore_graph.get_class_by_name("tuple")
-        self.DICT_TYPE = self.ecore_graph.get_class_by_name("dict")
-        self.SET_TYPE = self.ecore_graph.get_class_by_name("set")
-
-    def get_class_by_type(self, type_obj):
-        return self.ecore_graph.get_class_by_name(type_obj.__name__)
 
     def visit_Import(self, node):
         """
