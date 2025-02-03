@@ -1099,7 +1099,7 @@ class ProjectEcoreGraph:
                         return current_method[0]
         return None
 
-    def create_method_signature(self, method_node, name, arguments):
+    def create_method_signature(self, method_node, name, arguments, return_type = None):
         """
         Creates a method signature for a method definition.
 
@@ -1107,16 +1107,21 @@ class ProjectEcoreGraph:
             method_node: The method definition node.
             name (str?): The name of the method.
             arguments (list?): The list of arguments for the method.
+            return_type(str): the type as a string that gets returned from the func.
         """
         method_signature = self.create_ecore_instance(NodeTypes.METHOD_SIGNATURE)
         method = self.create_ecore_instance(NodeTypes.METHOD)
         method.tName = name
         self.graph.methods.append(method)
         method_signature.method = method
+        return_class = self.create_ecore_instance(NodeTypes.CLASS)
+        return_class.tName = return_type
+        method_signature.returnType = return_class
+
 
         previous = None
         first_parameter = None
-        for _ in arguments:
+        for arg in arguments:
             parameter = self.create_ecore_instance(NodeTypes.PARAMETER)
             if previous is not None:
                 parameter.previous = previous
@@ -1125,6 +1130,11 @@ class ProjectEcoreGraph:
             if first_parameter is None:
                 first_parameter = parameter
                 method_signature.firstParameter = first_parameter
+
+            # Add type for TParameter.type
+            parameter_type = self.create_ecore_instance(NodeTypes.CLASS)
+            parameter_type.tName = arg.annotation.id if arg.annotation else 'None'
+            parameter.type = parameter_type
 
         method_node.signature = method_signature
 
@@ -1376,10 +1386,24 @@ class ASTVisitor(ast.NodeVisitor):
                 node.name, self.current_class)
         if self.current_method is None:
             self.current_class = None
+            return_type = None
+            for statement in node.body:
+                if isinstance(statement, ast.Return):
+                    if isinstance(statement.value, ast.Constant):
+                        return_type = type(statement.value.value).__name__
+                    elif isinstance(statement.value, ast.Call):
+                        if isinstance(statement.value.func, ast.Name):
+                            return_type = statement.value.func.id
+                        elif isinstance(statement.value.func, ast.Attribute):
+                            return_type = statement.value.func.attr
+                    elif isinstance(statement.value, ast.Name):
+                        return_type = statement.value.id
+                    elif isinstance(statement.value, ast.Attribute):
+                        return_type = statement.value.attr
             self.current_method = self.ecore_graph.create_ecore_instance(
                 NodeTypes.METHOD_DEFINITION)
             self.ecore_graph.create_method_signature(
-                self.current_method, node.name, node.args.args)
+                self.current_method, node.name, node.args.args, return_type)
             module_node = self.ecore_graph.get_current_module()
             self.current_module = module_node
             module_node.contains.append(self.current_method)
