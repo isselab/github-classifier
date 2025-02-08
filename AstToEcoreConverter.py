@@ -1118,6 +1118,7 @@ class ProjectEcoreGraph:
         return_class.tName = return_type
         method_signature.returnType = return_class
 
+        method_node.returnType = return_class
 
         previous = None
         first_parameter = None
@@ -1204,8 +1205,6 @@ class ProjectEcoreGraph:
         # for internal structure
         module_node = self.get_current_module()
         self.field_list.append([field_node, name, field_type, module_node])
-
-        field_node.contains.append(field_definition)
 
     def get_field_from_internal_structure(self, field_name, module=None):
         """
@@ -1442,9 +1441,21 @@ class ASTVisitor(ast.NodeVisitor):
                             elif isinstance(node.value, ast.Attribute):
                                 field_type = node.value.attr
                             self.ecore_graph.create_field(self.current_class, field_name, field_type)
-                            if self.current_class not in self.fields_per_class:
-                                self.fields_per_class[self.current_class] = set()
-                            self.fields_per_class[self.current_class].add(target.attr)
+                elif isinstance(target, ast.Name):
+                    field_name = target.id
+                    field_type = None
+                    if isinstance(node.value, ast.Constant):
+                        field_type = type(node.value.value).__name__
+                    elif isinstance(node.value, ast.Call):
+                        if isinstance(node.value.func, ast.Name):
+                            field_type = node.value.func.id
+                        elif isinstance(node.value.func, ast.Attribute):
+                            field_type = node.value.func.attr
+                    elif isinstance(node.value, ast.Name):
+                        field_type = node.value.id
+                    elif isinstance(node.value, ast.Attribute):
+                        field_type = node.value.attr
+                    self.ecore_graph.create_field(self.current_class, field_name, field_type)
 
         # Find all module-level variables assignments:
         if self.current_class is None:
