@@ -63,9 +63,19 @@ class TestMinimalExamples(unittest.TestCase):
 
     def test_assignment(self) :
         """
-
+        This test tests  several assignments.
         """
         repo = 'minimal_examples/assignments'
+        check_path_exists(repo)
+        resource_set = ResourceSet()
+        graph = ProjectEcoreGraph(resource_set, repo, True, test_output_dir)
+        ecore_graph = graph.get_graph()
+
+    def test_assignments_in_class(self):
+        """
+         This test tests several assignments in a class.
+        """
+        repo = 'minimal_examples/field_assignments'
         check_path_exists(repo)
         resource_set = ResourceSet()
         graph = ProjectEcoreGraph(resource_set, repo, True, test_output_dir)
