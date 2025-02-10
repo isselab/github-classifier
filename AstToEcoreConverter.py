@@ -42,6 +42,7 @@ class ProjectEcoreGraph:
         # initialize internal structures
         self.package_list = []  # entries: [package_node, name, parent]
         self.module_list = []  # entries: [module_node, module_name]
+        self.field_list = []  # entries: [field_node, name, type, module_node]
         self.current_module = None
         self.instances = []  # entries: [instance_name, class_name]
         self.imports = []  # entries: [module, alias]
@@ -100,6 +101,8 @@ class ProjectEcoreGraph:
                     logger.warning(f'skipped: {file_path}')
                     skipped_files += 1
                     continue  # skip file
+                else:
+                    raise e
 
         # append modules and possibly missing nodes to type graph to set calls after
         self.append_modules()
@@ -1096,7 +1099,7 @@ class ProjectEcoreGraph:
                         return current_method[0]
         return None
 
-    def create_method_signature(self, method_node, name, arguments):
+    def create_method_signature(self, method_node, name, arguments, return_type = None):
         """
         Creates a method signature for a method definition.
 
@@ -1104,21 +1107,35 @@ class ProjectEcoreGraph:
             method_node: The method definition node.
             name (str?): The name of the method.
             arguments (list?): The list of arguments for the method.
+            return_type(str): the type as a string that gets returned from the func.
         """
-        method_signature = self.create_ecore_instance(
-            NodeTypes.METHOD_SIGNATURE)
+        method_signature = self.create_ecore_instance(NodeTypes.METHOD_SIGNATURE)
         method = self.create_ecore_instance(NodeTypes.METHOD)
         method.tName = name
         self.graph.methods.append(method)
         method_signature.method = method
+        return_class = self.create_ecore_instance(NodeTypes.CLASS)
+        return_class.tName = return_type
+        method_signature.returnType = return_class
+
+        method_node.returnType = return_class
 
         previous = None
-        for _ in arguments:
+        first_parameter = None
+        for arg in arguments:
             parameter = self.create_ecore_instance(NodeTypes.PARAMETER)
             if previous is not None:
                 parameter.previous = previous
             previous = parameter
             method_signature.parameters.append(parameter)
+            if first_parameter is None:
+                first_parameter = parameter
+                method_signature.firstParameter = first_parameter
+
+            # Add type for TParameter.type
+            parameter_type = self.create_ecore_instance(NodeTypes.CLASS)
+            parameter_type.tName = arg.annotation.id if arg.annotation else 'None'
+            parameter.type = parameter_type
 
         method_node.signature = method_signature
 
@@ -1127,7 +1144,7 @@ class ProjectEcoreGraph:
         self.method_list.append([method_node, name, module_node])
 
     @staticmethod
-    def get_calls(caller_node, called_node):
+    def get_calls(caller_node, called_node) -> bool:
         """
         Checks if a call already exists between two nodes.
 
@@ -1143,7 +1160,7 @@ class ProjectEcoreGraph:
                 return True
         return False
 
-    def create_call(self, caller_node, called_node):
+    def create_call(self, caller_node, called_node) -> None:
         """
         Creates a call between two nodes.
 
@@ -1154,6 +1171,60 @@ class ProjectEcoreGraph:
         call = self.create_ecore_instance(NodeTypes.CALL)
         call.source = caller_node
         call.target = called_node
+
+    def create_field(self, field_node, name, field_type=None) -> None:
+        """
+        Creates a field for a class or module.
+
+        Args:
+            field_node: The node to which the field belongs.
+            name (str): The name of the field.
+            field_type (str, optional): The type of the field. Defaults to None.
+        """
+        field = self.create_ecore_instance(NodeTypes.FIELD)
+        field_signature = self.create_ecore_instance(NodeTypes.FIELD_SIGNATURE)
+        field_definition = self.create_ecore_instance(NodeTypes.FIELD_DEFINITION)
+
+        field_definition.signature = field_signature
+        field_signature.definition = field_definition
+        field_signature.field = field
+        field.signature = field_signature
+        field.tName = name
+
+        # Todo currently bugged get str('datatype)') probably need TAbstractType
+        #  -> tAbstractType can not be init bec. abstract.
+        #  -> Use TClass instead
+        #  -> if TClass used type will not be set in xmi
+        # Create a TClass instance and set its instanceClass attribute
+        type_class = self.create_ecore_instance(NodeTypes.CLASS)
+        type_class.tName = field_type
+        field_signature.type = type_class
+
+        self.graph.fields.append(field)
+
+        # for internal structure
+        module_node = self.get_current_module()
+        self.field_list.append([field_node, name, field_type, module_node])
+
+    def get_field_from_internal_structure(self, field_name, module=None):
+        """
+        Retrieves a field from the internal structure by name and module.
+
+        Args:
+            field_name (str): The name of the field.
+            module: The module to which the field belongs.
+
+        Returns:
+            The field node or None if not found.
+        """
+        for current_field in self.field_list:
+            if field_name == current_field[1]:
+                if module is None and current_field[2] is None:
+                    return current_field[0]
+                if hasattr(module, 'location') and hasattr(current_field[2], 'location'):
+                    if module.location == current_field[2].location:
+                        return current_field[0]
+        return None
 
     def write_xmi(self, resource_set, output_directory, repository):
         """
@@ -1305,7 +1376,7 @@ class ASTVisitor(ast.NodeVisitor):
         if node.name in self.names_in_scope:
             warning(f"Def {node.name} already in Scope")
         self.names_in_scope.add(node.name)
-        temp_scope = self.names_in_scope # save previous scope in temp for later access.
+        temp_scope = self.names_in_scope  # save previous scope in temp for later access.
         self.names_in_scope = set()
         temp_class, temp_method = self.current_class, self.current_method
         self.current_method = None
@@ -1313,12 +1384,25 @@ class ASTVisitor(ast.NodeVisitor):
             self.current_method = self.ecore_graph.get_method_def_in_class(
                 node.name, self.current_class)
         if self.current_method is None:
-
             self.current_class = None
+            return_type = None
+            for statement in node.body:
+                if isinstance(statement, ast.Return):
+                    if isinstance(statement.value, ast.Constant):
+                        return_type = type(statement.value.value).__name__
+                    elif isinstance(statement.value, ast.Call):
+                        if isinstance(statement.value.func, ast.Name):
+                            return_type = statement.value.func.id
+                        elif isinstance(statement.value.func, ast.Attribute):
+                            return_type = statement.value.func.attr
+                    elif isinstance(statement.value, ast.Name):
+                        return_type = statement.value.id
+                    elif isinstance(statement.value, ast.Attribute):
+                        return_type = statement.value.attr
             self.current_method = self.ecore_graph.create_ecore_instance(
                 NodeTypes.METHOD_DEFINITION)
             self.ecore_graph.create_method_signature(
-                self.current_method, node.name, node.args.args)
+                self.current_method, node.name, node.args.args, return_type)
             module_node = self.ecore_graph.get_current_module()
             self.current_module = module_node
             module_node.contains.append(self.current_method)
@@ -1326,9 +1410,9 @@ class ASTVisitor(ast.NodeVisitor):
 
         self.generic_visit(node)
 
-        self.current_class,self.current_method = temp_class, temp_method # Restore current class and method
+        self.current_class, self.current_method = temp_class, temp_method  # Restore current class and method
 
-        self.names_in_scope = temp_scope # Restore Scope from node before
+        self.names_in_scope = temp_scope  # Restore Scope from node before
 
     def visit_Assign(self, node):
         """
@@ -1340,13 +1424,58 @@ class ASTVisitor(ast.NodeVisitor):
         # Find all field assignments in a class
         if self.current_class is not None:
             for target in node.targets:
-                if isinstance(target,ast.Attribute):
-                    if isinstance(target.value,ast.Name):
+                if isinstance(target, ast.Attribute):
+                    if isinstance(target.value, ast.Name):
                         if target.value.id == 'self':
-                            if self.current_class not in self.fields_per_class:
-                                self.fields_per_class[self.current_class] = set()
-                            self.fields_per_class[self.current_class].add(target.attr)
-                            # Todo: Use class fields in ecore model here
+                            field_name = target.attr
+                            field_type = None
+                            if isinstance(node.value, ast.Constant):
+                                field_type = type(node.value.value).__name__
+                            elif isinstance(node.value, ast.Call):
+                                if isinstance(node.value.func, ast.Name):
+                                    field_type = node.value.func.id
+                                elif isinstance(node.value.func, ast.Attribute):
+                                    field_type = node.value.func.attr
+                            elif isinstance(node.value, ast.Name):
+                                field_type = node.value.id
+                            elif isinstance(node.value, ast.Attribute):
+                                field_type = node.value.attr
+                            self.ecore_graph.create_field(self.current_class, field_name, field_type)
+                elif isinstance(target, ast.Name):
+                    field_name = target.id
+                    field_type = None
+                    if isinstance(node.value, ast.Constant):
+                        field_type = type(node.value.value).__name__
+                    elif isinstance(node.value, ast.Call):
+                        if isinstance(node.value.func, ast.Name):
+                            field_type = node.value.func.id
+                        elif isinstance(node.value.func, ast.Attribute):
+                            field_type = node.value.func.attr
+                    elif isinstance(node.value, ast.Name):
+                        field_type = node.value.id
+                    elif isinstance(node.value, ast.Attribute):
+                        field_type = node.value.attr
+                    self.ecore_graph.create_field(self.current_class, field_name, field_type)
+
+        # Find all module-level variables assignments:
+        if self.current_class is None:
+            for target in node.targets:
+                if isinstance(target, ast.Name):
+                    field_name = target.id
+                    field_type = None
+                    if isinstance(node.value, ast.Constant):
+                        field_type = type(node.value.value).__name__
+                    elif isinstance(node.value, ast.Call):
+                        if isinstance(node.value.func, ast.Name):
+                            field_type = node.value.func.id
+                        elif isinstance(node.value.func, ast.Attribute):
+                            field_type = node.value.func.attr
+                    elif isinstance(node.value, ast.Name):
+                        field_type = node.value.id
+                    elif isinstance(node.value, ast.Attribute):
+                        field_type = node.value.attr
+                    module_node = self.ecore_graph.get_current_module()
+                    self.ecore_graph.create_field(module_node, field_name, field_type)
 
         if node.col_offset <= self.current_indentation:
             self.current_method = None
