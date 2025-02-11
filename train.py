@@ -110,7 +110,9 @@ try:
     dataset = RepositoryDataset(f'{output_directory}/csv_files', labels)
     print(f'Dataset size: {dataset.__len__()}')
 except Exception as e:
-    print(e)
+    print(f'Error loading dataset: {e}')
+    print(f'Output directory: {output_directory}')
+    print(f'Labels: {labels}')
     exit('Dataset can not be loaded.')
 
 device = 'cuda' if torch.cuda.is_available() else 'cpu'
