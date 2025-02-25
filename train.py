@@ -7,6 +7,7 @@ from sklearn.metrics import classification_report
 from sklearn.model_selection import KFold
 from torch.utils.data import random_split
 from torch_geometric.loader import DataLoader
+from tqdm import tqdm
 
 from CustomDataset import RepositoryDataset
 from GCN import GCN
@@ -33,7 +34,7 @@ def train():
 
     num_classes = int(len(defined_labels))
 
-    for graph in trainloader:
+    for graph in tqdm(trainloader,desc = "Training"):
 
         if device == 'cuda':
             graph.x = graph.x.to(device)
@@ -66,7 +67,7 @@ def test(loader):
     total = 0
     num_classes = int(len(defined_labels))
 
-    for graph in loader:
+    for graph in tqdm(loader,desc = "Testing"):
 
         if device == 'cuda':
             graph.x = graph.x.to(device)
@@ -107,7 +108,7 @@ def test(loader):
 print('--------------load dataset---------------')
 
 try:
-    dataset = RepositoryDataset(f'{output_directory}/csv_files', labels)
+    dataset = RepositoryDataset(f'{output_directory}', labels)
     print(f'Dataset size: {dataset.__len__()}')
 except Exception as e:
     print(f'Error loading dataset: {e}')

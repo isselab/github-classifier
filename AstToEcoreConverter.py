@@ -1134,7 +1134,7 @@ class ProjectEcoreGraph:
 
             # Add type for TParameter.type
             parameter_type = self.create_ecore_instance(NodeTypes.CLASS)
-            parameter_type.tName = arg.annotation.id if arg.annotation else 'None'
+            #parameter_type.tName = arg.annotation if arg.annotation else 'None'
             parameter.type = parameter_type
 
         method_node.signature = method_signature
@@ -1239,7 +1239,7 @@ class ProjectEcoreGraph:
         # Replace slashes in the repository name with underscores
         safe_repository_name = repository_name.replace('/', '_').replace('\\', '_')
 
-        resource = resource_set.create_resource(URI(f'{output_directory}/{safe_repository_name}.xmi'),
+        resource = resource_set.create_resource(URI(f'{output_directory}/xmi_files/{safe_repository_name}.xmi'),
                                                 use_uuid=True)
         resource.append(self.graph)
         resource.save()

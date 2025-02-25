@@ -95,38 +95,40 @@ def create_ecore_graphs(repository, write_in_file, output_directory=None):
           Exception: Any exceptions raised during the graph creation process will be printed,
                       and the function will skip the problematic repository.
       """
-    global ecore_graph
-    skip_counter = 0
-    resource_set = ResourceSet()
-    if os.path.isdir(repository):
-        try:
-            ecore_graph = ProjectEcoreGraph(
-                resource_set, repository, write_in_file, output_directory)
-        except Exception as e:
-            print(e)
-            if 'inconsistent use of tabs and spaces in indentation' in str(e):
-                # format repository files using autopep8
-                python_files = [os.path.join(root, file) for root, _, files in os.walk(
-                    repository) for file in files if file.endswith('.py')]
-                for file_path in python_files:
-                    os.system(f'autopep8 --in-place {file_path}')
-                try:
-                    ecore_graph = ProjectEcoreGraph(
-                        resource_set, repository, write_in_file, output_directory)
-                except Exception as e:
-                    print(e)
-                    print(f'Problem with repository {repository}. Skipping.')
-                    skip_counter += 1
-            else:
-                print(f'Problem with repository {repository}. Skipping.')
-                skip_counter += 1
-    else:
+    if not os.path.isdir(repository):
         print(f'Problem with repository {repository}. Skipping.')
-        skip_counter += 1
-    if write_in_file is False:
-        return ecore_graph.get_graph()
-    else:
         return None
+
+    resource_set = ResourceSet()
+    try:
+        ecore_graph = ProjectEcoreGraph(
+            resource_set, repository, write_in_file, output_directory)
+        if write_in_file is False:
+            return ecore_graph.get_graph()
+        else:
+            return None
+    except Exception as e:
+        print(e)
+        if 'inconsistent use of tabs and spaces in indentation' in str(e):
+            # format repository files using autopep8
+            python_files = [os.path.join(root, file) for root, _, files in os.walk(
+                repository) for file in files if file.endswith('.py')]
+            for file_path in python_files:
+                os.system(f'autopep8 --in-place {file_path}')
+            try:
+                ecore_graph = ProjectEcoreGraph(
+                    resource_set, repository, write_in_file, output_directory)
+                if write_in_file is False:
+                    return ecore_graph.get_graph()
+                else:
+                    return None
+            except Exception as e:
+                print(e)
+                print(f'Problem with repository {repository}. Skipping.')
+                return None
+        else:
+            print(f'Problem with repository {repository}. Skipping.')
+            return None
 
 
 def create_matrix_structure(write_in_file, xmi_file=None, local_ecore_graph=None, output_directory=None):
@@ -203,8 +205,9 @@ def parallel_processing(func, repository_list):
         Exception: Any exceptions raised during the execution of the function
                     will be propagated.
     """
-    pool = Pool()  # number of processes is return value of os.cpu_count()
-    pool.starmap(func, repository_list)
+    with Pool() as pool:  # number of processes is return value of os.cpu_count()
+        results = pool.starmap(func, repository_list)
+    return results
 
 
 def prepare_dataset(repository_directory, output_directory=None, repository_list=None):

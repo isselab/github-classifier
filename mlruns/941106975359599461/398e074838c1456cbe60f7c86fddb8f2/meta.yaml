@@ -1,0 +1,15 @@
+artifact_uri: file:///C:/Users/Tim/Documents/GitHub/github-classifier/mlruns/941106975359599461/398e074838c1456cbe60f7c86fddb8f2/artifacts
+end_time: 1739916921405
+entry_point_name: ''
+experiment_id: '941106975359599461'
+lifecycle_stage: active
+run_id: 398e074838c1456cbe60f7c86fddb8f2
+run_name: amazing-shrew-897
+run_uuid: 398e074838c1456cbe60f7c86fddb8f2
+source_name: ''
+source_type: 4
+source_version: ''
+start_time: 1739915304328
+status: 3
+tags: []
+user_id: Tim

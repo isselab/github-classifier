@@ -1,0 +1,15 @@
+artifact_uri: file:///C:/Users/Tim/Documents/GitHub/github-classifier/mlruns/941106975359599461/9ab1c3fa490848e395a1200665f7452d/artifacts
+end_time: 1739920226158
+entry_point_name: ''
+experiment_id: '941106975359599461'
+lifecycle_stage: active
+run_id: 9ab1c3fa490848e395a1200665f7452d
+run_name: unruly-loon-269
+run_uuid: 9ab1c3fa490848e395a1200665f7452d
+source_name: ''
+source_type: 4
+source_version: ''
+start_time: 1739918555278
+status: 3
+tags: []
+user_id: Tim

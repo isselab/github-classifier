@@ -1,0 +1,15 @@
+artifact_uri: file:///C:/Users/Tim/Documents/GitHub/github-classifier/mlruns/941106975359599461/b0aa047c5f7c43328f3ca1da2e9f22bb/artifacts
+end_time: 1739918555266
+entry_point_name: ''
+experiment_id: '941106975359599461'
+lifecycle_stage: active
+run_id: b0aa047c5f7c43328f3ca1da2e9f22bb
+run_name: sedate-shrike-201
+run_uuid: b0aa047c5f7c43328f3ca1da2e9f22bb
+source_name: ''
+source_type: 4
+source_version: ''
+start_time: 1739916921417
+status: 3
+tags: []
+user_id: Tim
