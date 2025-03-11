@@ -335,7 +335,8 @@ class EcoreToMatrixConverter:
             t_package: The package to convert subpackages from.
         """
         for t_subpackage in t_package.subpackages:
-            current_subpackage = self.get_node_in_container(t_subpackage.tName, NodeTypes.PACKAGE.value, t_package.tName,
+            current_subpackage = self.get_node_in_container(t_subpackage.tName, NodeTypes.PACKAGE.value,
+                                                            t_package.tName,
                                                             NodeTypes.PACKAGE.value)
             if current_subpackage is None:
                 self.node_matrix.append(NodeTypes.PACKAGE.value)

@@ -34,7 +34,7 @@ def train():
 
     num_classes = int(len(defined_labels))
 
-    for graph in tqdm(trainloader,desc = "Training"):
+    for graph in tqdm(trainloader, desc="Training"):
 
         if device == 'cuda':
             graph.x = graph.x.to(device)
@@ -67,7 +67,7 @@ def test(loader):
     total = 0
     num_classes = int(len(defined_labels))
 
-    for graph in tqdm(loader,desc = "Testing"):
+    for graph in tqdm(loader, desc="Testing"):
 
         if device == 'cuda':
             graph.x = graph.x.to(device)

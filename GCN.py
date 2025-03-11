@@ -4,6 +4,7 @@ import torch_geometric.nn
 
 '''defines the architecture of the graph convolutional network'''
 
+
 class GCN(torch.nn.Module):
     def __init__(self, num_node_features, num_classes, hidden_channels):
         super(GCN, self).__init__()
