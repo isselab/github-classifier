@@ -239,7 +239,6 @@ def prepare_dataset(repository_directory, output_directory=None, repository_list
     global repo_multiprocess, ecore_graph
     global node_features, adj_list, edge_attribute
 
-
     # clone repositories for the dataset
     if repository_list is not None:
         download_repositories(repository_directory, repository_list)

@@ -11,7 +11,6 @@ from tqdm import tqdm
 
 from CustomDataset import RepositoryDataset
 from GCN import GCN
-from GraphClasses import defined_labels
 from settings import CONFIG
 
 '''please prepare the dataset you want to train the tool with by using prepareDataset.py,
@@ -27,6 +26,7 @@ figure_output = CONFIG['training']['figure_output']
 threshold = CONFIG['training']['threshold']
 save_classification_reports = CONFIG['training']['save_classification_reports']
 experiment_name = CONFIG['training']['experiment_name']
+defined_labels = CONFIG['graph']['defined_labels']
 
 
 def train():
@@ -34,7 +34,7 @@ def train():
 
     num_classes = int(len(defined_labels))
 
-    for graph in tqdm(trainloader,desc = "Training"):
+    for graph in tqdm(trainloader, desc="Training"):
 
         if device == 'cuda':
             graph.x = graph.x.to(device)
@@ -67,7 +67,7 @@ def test(loader):
     total = 0
     num_classes = int(len(defined_labels))
 
-    for graph in tqdm(loader,desc = "Testing"):
+    for graph in tqdm(loader, desc="Testing"):
 
         if device == 'cuda':
             graph.x = graph.x.to(device)

@@ -1099,7 +1099,7 @@ class ProjectEcoreGraph:
                         return current_method[0]
         return None
 
-    def create_method_signature(self, method_node, name, arguments, return_type = None):
+    def create_method_signature(self, method_node, name, arguments, return_type=None):
         """
         Creates a method signature for a method definition.
 
@@ -1134,7 +1134,7 @@ class ProjectEcoreGraph:
 
             # Add type for TParameter.type
             parameter_type = self.create_ecore_instance(NodeTypes.CLASS)
-            #parameter_type.tName = arg.annotation if arg.annotation else 'None'
+            # parameter_type.tName = arg.annotation if arg.annotation else 'None'
             parameter.type = parameter_type
 
         method_node.signature = method_signature

@@ -1,5 +1,6 @@
 import autopep8
 
+
 def format_python_file(path_to_file):
     try:
         # Read the current content of the file

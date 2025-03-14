@@ -9,7 +9,7 @@ from torch_geometric.data import Data
 from DataformatUtils import convert_edge_dim, convert_list_to_float_tensor, convert_list_to_long_tensor, \
     convert_hashed_names_to_float
 from Encoder import multi_hot_encoding
-from GraphClasses import defined_labels
+from settings import CONFIG
 
 
 class RepositoryDataset(Dataset):
@@ -30,7 +30,8 @@ class RepositoryDataset(Dataset):
                 print(e)
         # nodes have 11 features, their one hot encoded node type, hashed name, and one hot encoded library flag
         self.num_node_features = 11
-        self.num_classes = len(defined_labels)
+        self.defined_labels = CONFIG['graph']['defined_labels']
+        self.num_classes = len(self.defined_labels)
         self.directory = directory
         self.graph_names = []
         self.graph_dir = os.listdir(directory)
@@ -162,7 +163,7 @@ class RepositoryDataset(Dataset):
             graph_labels)  # count how many repos are in each class
 
         # encode labels
-        encoded_nodes = multi_hot_encoding(defined_labels, graph_labels)
+        encoded_nodes = multi_hot_encoding(self.defined_labels, graph_labels)
         file = zip(graph_names, encoded_nodes)
         return file
 
